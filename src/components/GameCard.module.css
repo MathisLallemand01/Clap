@@ -1,0 +1,87 @@
+/* Toutes les mesures sont en em : la taille de police vaut largeur / 20. */
+.card {
+  aspect-ratio: 5 / 7;
+  position: relative;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--display);
+  border: 0.14em solid var(--rc);
+  flex: none;
+}
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 0.4em; }
+.rarity {
+  display: flex; align-items: center; gap: 0.4em;
+  font-size: 0.8em; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--rc); white-space: nowrap;
+}
+.dot { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--rc); flex: none; }
+.diamond { width: 0.6em; height: 0.6em; transform: rotate(45deg); background: var(--rc); flex: none; }
+.num { font-family: var(--mono); font-size: 0.72em; color: var(--muted); white-space: nowrap; }
+
+.photo {
+  flex: 1; min-height: 0; position: relative; overflow: hidden;
+  background-color: var(--tone);
+  background-image: radial-gradient(rgba(242, 239, 232, 0.09) 0.06em, transparent 0.08em);
+  background-size: 0.45em 0.45em;
+}
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.initials {
+  position: absolute; left: 0.1em; bottom: -0.08em;
+  font-stretch: 62%; font-weight: 900; font-size: 5.6em; line-height: 0.78;
+  color: rgba(242, 239, 232, 0.13);
+}
+.source { position: absolute; top: 0.6em; right: 0.6em; font-family: var(--mono); font-size: 0.62em; letter-spacing: 0.06em; color: rgba(242, 239, 232, 0.6); }
+.foil { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+
+.first { font-size: 0.9em; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.last {
+  font-stretch: 62%; font-weight: 900; font-size: 2.3em; line-height: 0.9; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.meter { display: flex; gap: 0.2em; }
+.seg { width: 1.1em; height: 0.32em; border-radius: 0.1em; background: #2a2a30; }
+.seg.on { background: var(--rc); }
+.bottom { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; }
+.tag { font-family: var(--mono); font-size: 0.68em; color: var(--muted); white-space: nowrap; }
+
+/* Carte Acteur : un portrait. */
+.actor {
+  border-radius: 0.9em;
+  background: var(--panel);
+  padding: 0.55em;
+  display: flex; flex-direction: column; gap: 0.5em;
+}
+.actor .photo { border-radius: 0.5em; }
+
+/* Carte Rôle : un photogramme, perforations sur les bords. */
+.role {
+  border-radius: 0.5em;
+  background: #0e0e10;
+  display: grid;
+  grid-template-columns: 1.15em minmax(0, 1fr) 1.15em;
+}
+.role.icon { background: #1c0a14; box-shadow: 0 0 0 0.3em rgba(255, 46, 147, 0.18); }
+.rail { display: flex; justify-content: center; padding: 0.35em 0; }
+.rail span {
+  width: 0.55em;
+  background-image: repeating-linear-gradient(180deg, transparent 0 0.45em, #34343c 0.45em 1.15em, transparent 1.15em 1.6em);
+}
+.roleBody { display: flex; flex-direction: column; gap: 0.45em; padding: 0.55em 0.15em; min-width: 0; }
+.film {
+  font-family: var(--mono); font-size: 0.7em; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.role .photo { border-radius: 0.2em; display: flex; flex-direction: column; justify-content: flex-end; padding: 0.55em; }
+.as { position: relative; font-family: var(--mono); font-size: 0.64em; letter-spacing: 0.08em; color: var(--rc); }
+.character {
+  position: relative; font-stretch: 62%; font-weight: 900; font-size: 1.9em; line-height: 0.9; text-transform: uppercase;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.role .last { font-size: 1.7em; }
+.diamonds { display: flex; gap: 0.18em; padding-bottom: 0.2em; flex: none; }
+.diamonds span { width: 0.5em; height: 0.5em; transform: rotate(45deg); background: #2a2a30; }
+.diamonds span.on { background: var(--rc); }
+.roleFoot { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.4em; }
+.roleName { display: flex; flex-direction: column; min-width: 0; }
+.roleName .first { font-size: 0.8em; }

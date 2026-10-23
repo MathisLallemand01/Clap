@@ -1,0 +1,37 @@
+.wrap { position: relative; display: flex; align-items: center; justify-content: center; flex: none; }
+
+.tail {
+  position: absolute; left: 55%; top: 60%; width: 10em; height: 3.4em;
+  background-color: #111114;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 0.5em, #34343c 0.5em 1.2em, transparent 1.2em 1.8em),
+    repeating-linear-gradient(90deg, transparent 0 0.5em, #34343c 0.5em 1.2em, transparent 1.2em 1.8em);
+  background-size: 1.8em 0.55em, 1.8em 0.55em;
+  background-repeat: repeat-x, repeat-x;
+  background-position: 0 0.35em, 0 2.5em;
+  transform: rotate(-16deg);
+  transform-origin: left center;
+}
+
+.tin {
+  width: 21em; height: 21em; border-radius: 50%; position: relative;
+  background: var(--panel-2); border: 0.2em solid #2e2e35;
+  box-shadow: inset 0 0 0 1.3em #18181c, inset 0 0 0 1.4em #2e2e35;
+  display: flex; align-items: center; justify-content: center;
+}
+.hole { position: absolute; width: 3em; height: 3em; border-radius: 50%; background: var(--ink); border: 0.1em solid #2e2e35; }
+.hole:nth-child(1) { left: calc(50% - 1.5em); top: calc(50% - 8.6em); }
+.hole:nth-child(2) { left: calc(50% + 4.65em); top: calc(50% + 2.05em); }
+.hole:nth-child(3) { left: calc(50% - 7.65em); top: calc(50% + 2.05em); }
+
+.disc {
+  width: 10.6em; height: 10.6em; border-radius: 50%; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25em;
+  box-shadow: 0 0 0 0.3em var(--panel);
+}
+.pattern { position: absolute; inset: 0; }
+.code { position: relative; font-family: var(--mono); font-size: 0.75em; letter-spacing: 0.16em; }
+.label {
+  position: relative; font-stretch: 62%; font-weight: 900; font-size: 2.1em; line-height: 0.88;
+  text-transform: uppercase; text-align: center; white-space: pre-line;
+}

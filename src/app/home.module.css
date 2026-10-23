@@ -1,0 +1,33 @@
+.hero { display: flex; flex-wrap: wrap; gap: 48px; align-items: center; padding-top: 64px; padding-bottom: 56px; }
+.heroText { flex: 1 1 480px; display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.title { font-size: clamp(64px, 7.6vw, 116px); }
+.accent { color: var(--accent); }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.featured { flex: 1 1 560px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; min-width: 0; }
+
+.recent { padding: 40px 0 24px; }
+.recentHead { padding-bottom: 20px; }
+.strip { background: #111114; overflow-x: auto; }
+.sprockets {
+  height: 16px;
+  background-image: repeating-linear-gradient(90deg, transparent 0 6px, #34343c 6px 16px, transparent 16px 24px);
+  background-size: 24px 8px; background-repeat: repeat-x; background-position: 0 50%;
+}
+.stripCards { display: flex; gap: 20px; padding: 14px 24px; width: max-content; }
+
+.ladders { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; padding-top: 72px; padding-bottom: 72px; }
+.ladder { padding: 32px; display: flex; flex-direction: column; gap: 20px; }
+.ladderHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ladderHead h3 { font-size: 34px; }
+.ladder ul { list-style: none; margin: 0; padding: 0; }
+.ladder li { display: grid; grid-template-columns: 22px minmax(0, 1fr) 72px; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid #222227; }
+.ladder li > span:nth-child(2) { display: flex; flex-direction: column; gap: 3px; }
+.ladder li strong { font-size: 17px; }
+.ladder li small { font-size: 14px; color: var(--muted); }
+.ladder li .mono, .ladder li > span:last-child { text-align: right; font-size: 15px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+.stats > div { padding: 28px 32px; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid var(--line); }
+.stats strong { font-size: 64px; line-height: 0.9; }
+.stats small { font-size: 14px; color: var(--muted); }
