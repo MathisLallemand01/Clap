@@ -49,12 +49,17 @@ export function suggestedTickets(rarity: Rarity): number {
   return Math.round(RARITIES[rarity].entries / 100);
 }
 
-/** Rareté d'un acteur selon son rang de popularité TMDB (1 = le plus populaire). */
-export function actorRarityFromRank(rank: number): ActorRarity {
-  if (rank <= 100) return 'legende';
-  if (rank <= 1_000) return 'tete';
-  if (rank <= 5_000) return 'premier';
-  if (rank <= 20_000) return 'second';
+/**
+ * Rareté d'un acteur selon son rang de popularité TMDB (1 = le plus populaire)
+ * parmi `total` acteurs importés : 1 % de Légendes, 4 % de Têtes d'affiche,
+ * 15 % de Premiers rôles, 25 % de Seconds rôles, le reste en Figurants.
+ */
+export function actorRarityFromRank(rank: number, total: number): ActorRarity {
+  const p = rank / Math.max(total, 1);
+  if (p <= 0.01) return 'legende';
+  if (p <= 0.05) return 'tete';
+  if (p <= 0.2) return 'premier';
+  if (p <= 0.45) return 'second';
   return 'figurant';
 }
 

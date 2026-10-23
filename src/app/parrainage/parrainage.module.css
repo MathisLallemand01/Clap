@@ -1,0 +1,37 @@
+.hero { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+.heroText { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.codeCard { flex: 1 1 380px; background: var(--panel); border: 1px solid #1f1f24; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
+.ticket { display: flex; align-items: stretch; border-radius: 18px; overflow: hidden; background: var(--accent); color: var(--ink); position: relative; }
+.ticket .display { flex: 1; padding: 22px 26px; font-size: clamp(44px, 5vw, 64px); line-height: 0.9; letter-spacing: 0.04em; }
+.cut { width: 0; border-left: 2px dashed rgba(11, 11, 13, 0.45); margin: 12px 0; }
+.ticket::before, .ticket::after { content: ''; position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); transform: translateY(-50%); }
+.ticket::before { left: -11px; }
+.ticket::after { right: -11px; }
+.copyCode { width: 110px; border: 0; background: transparent; color: var(--ink); font-size: 15px; font-weight: 700; cursor: pointer; }
+.linkRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.linkRow code { flex: 1 1 200px; font-family: var(--mono); font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
+.tiers { display: flex; flex-direction: column; gap: 28px; }
+.tiersHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.track { position: relative; }
+.trackBar { position: absolute; left: 14px; right: 14px; top: 13px; height: 4px; border-radius: 2px; background: var(--line); }
+.trackBar span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.tierList { list-style: none; margin: 0; padding: 0; position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 700px) { .tierList { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trackBar { display: none; } }
+.tierList li { display: flex; flex-direction: column; gap: 10px; }
+.node { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line-2); background: var(--panel); }
+.tierList [data-state='done'] .node { background: var(--accent); border-color: var(--accent); }
+.tierList [data-state='next'] .node { border-color: var(--accent); }
+.tierList strong { font-size: 30px; line-height: 1; }
+.tierList span { font-size: 15px; color: var(--text-2); line-height: 1.45; }
+.tierList small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--faint); }
+.tierList [data-state='done'] small, .tierList [data-state='next'] small { color: var(--accent); }
+
+.list { display: flex; flex-direction: column; gap: 16px; }
+.list ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+.list li { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.list li:last-child { border-bottom: 0; }
+.list li strong { flex: 1 1 160px; font-size: 16px; }
+.steps { display: flex; gap: 4px; }
+.steps span { width: 28px; height: 6px; border-radius: 3px; background: var(--line); }
+.steps .stepOn { background: var(--accent); }

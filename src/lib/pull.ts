@@ -18,17 +18,14 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
 
 /**
  * Cartes éligibles pour une bobine thématique. Un Acteur est éligible s'il porte
- * le tag ou s'il a au moins un Rôle qui le porte (ex. un acteur d'un film des années 80).
+ * l'un des tags ou s'il a au moins un Rôle qui en porte un (ex. un acteur d'un film des années 80).
  */
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
-  const tag = def.tag;
-  if (!tag) return catalog;
-  const peopleWithTaggedRole = new Set(
-    catalog.filter((c) => c.kind === 'role' && c.tags.includes(tag)).map((c) => c.personId),
-  );
-  return catalog.filter(
-    (c) => c.tags.includes(tag) || (c.kind === 'actor' && peopleWithTaggedRole.has(c.personId)),
-  );
+  const tags = def.tags;
+  if (!tags?.length) return catalog;
+  const matches = (c: Card) => c.tags.some((t) => tags.includes(t));
+  const peopleWithTaggedRole = new Set(catalog.filter((c) => c.kind === 'role' && matches(c)).map((c) => c.personId));
+  return catalog.filter((c) => matches(c) || (c.kind === 'actor' && peopleWithTaggedRole.has(c.personId)));
 }
 
 /**

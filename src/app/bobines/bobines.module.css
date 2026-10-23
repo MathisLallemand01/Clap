@@ -1,0 +1,33 @@
+.ready {
+  display: flex; align-items: center; gap: 16px; padding: 18px 22px; border-radius: 18px;
+  background: #1d0f0a; border: 1px solid #5a2412; font-size: 16px; color: var(--text-2);
+}
+.ready strong { color: var(--text); }
+.pulse { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex: none; animation: pulse-ring 1.6s ease-out infinite; }
+
+.featured {
+  position: relative; overflow: hidden; border-radius: 28px; padding: clamp(28px, 4vw, 56px);
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 46, 147, 0) 0 64px, rgba(255, 46, 147, 0.06) 64px 70px, rgba(255, 46, 147, 0) 70px 140px),
+    radial-gradient(circle at 78% 50%, rgba(255, 46, 147, 0.28), rgba(255, 46, 147, 0) 55%),
+    #1a0c14;
+  border: 1px solid #3a1428;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 40px;
+}
+.featuredText { flex: 1 1 420px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.featuredText h2 { font-size: clamp(56px, 7vw, 112px); }
+.badge {
+  align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--icon); color: var(--icon);
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+}
+.badge span { width: 8px; height: 8px; transform: rotate(45deg); background: var(--icon); }
+.featuredStats { display: flex; flex-wrap: wrap; gap: 10px 24px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--muted); }
+.featuredStats b { color: var(--text); font-weight: 600; }
+.featuredCtas { display: flex; flex-wrap: wrap; gap: 12px; }
+.pink { background: var(--icon); border-color: var(--icon); color: var(--ink); font-weight: 700; }
+.pink:hover { background: #ff5aa9; border-color: #ff5aa9; }
+.featuredArt { flex: 0 0 auto; margin: 0 auto; padding: 10px 20px 30px; }
+
+.groups { display: flex; flex-wrap: wrap; gap: 8px; position: sticky; top: 72px; z-index: 5; background: rgba(11, 11, 13, 0.92); padding: 12px 0; margin: -12px 0; backdrop-filter: blur(10px); }
+.group { display: flex; flex-direction: column; gap: 24px; scroll-margin-top: 140px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px; }

@@ -1,0 +1,27 @@
+.wrap { position: relative; }
+.bell {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative;
+}
+.bell:hover { border-color: var(--line-2); }
+.badge {
+  position: absolute; top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent); color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--ink);
+}
+.panel {
+  position: absolute; right: 0; top: calc(100% + 10px); width: min(380px, calc(100vw - 32px)); z-index: 60;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); animation: fade-up 180ms ease both;
+}
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.head strong { font-size: 28px; }
+.head button { border: 0; background: none; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; }
+.panel ul { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto; }
+.panel li > a, .panel li > div { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 14px; padding: 14px 20px; border-bottom: 1px solid #1f1f24; }
+.panel li > a:hover { background: var(--panel-2); }
+.unread { background: #18181c; }
+.dot { width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; }
+.text { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4; }
+.text small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--faint); }
+.empty { padding: 28px 20px; margin: 0; color: var(--muted); font-size: 15px; }

@@ -9,7 +9,16 @@ type Props = {
   width?: number;
   /** Numéro de série de l'exemplaire ; à défaut, le numéro du catalogue n'est pas affiché. */
   serial?: number;
+  /** Charger la photo tout de suite (ouverture de bobine, haut de page). */
+  eager?: boolean;
 };
+
+/** Choisit la taille d'image TMDB adaptée à la largeur affichée (écrans haute densité compris). */
+function sized(url: string, kind: Card['kind'], width: number): string {
+  const px = width * 2;
+  const size = kind === 'actor' ? (px <= 185 ? 'w185' : px <= 342 ? 'w342' : 'w500') : (px <= 300 ? 'w300' : px <= 500 ? 'w500' : 'w780');
+  return url.replace(/\/t\/p\/w\d+\//, `/t/p/${size}/`);
+}
 
 const FOILS: Record<string, string> = {
   legende: 'repeating-linear-gradient(115deg, transparent 0 1.4em, rgba(255,200,61,0.18) 1.4em 1.55em, rgba(140,210,255,0.14) 1.55em 1.7em, transparent 1.7em 3.4em)',
@@ -18,7 +27,7 @@ const FOILS: Record<string, string> = {
 };
 
 /** Une carte Acteur (portrait) ou Rôle (photogramme), selon `card.kind`. */
-export function GameCard({ card, width = 240, serial }: Props) {
+export function GameCard({ card, width = 240, serial, eager = false }: Props) {
   const rarity = RARITIES[card.rarity];
   const ladder = ladderOf(card.kind);
   const style = {
@@ -31,7 +40,7 @@ export function GameCard({ card, width = 240, serial }: Props) {
   const number = serial ? `№ ${formatSerial(serial)}` : null;
   const photo = (source: string) => (
     <>
-      {card.image ? <img src={card.image} alt="" loading="lazy" /> : (
+      {card.image ? <img src={sized(card.image, card.kind, width)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" /> : (
         <>
           <span className={styles.initials}>{initials}</span>
           <span className={styles.source}>{source}</span>
@@ -74,11 +83,11 @@ export function GameCard({ card, width = 240, serial }: Props) {
           <span className={styles.rarity}><span className={styles.diamond} />{rarity.label}</span>
           {number && <span className={styles.num}>{number}</span>}
         </div>
-        <span className={styles.film}>{card.film} · {card.year}</span>
-        <div className={styles.photo}>
-          {photo('PHOTOGRAMME')}
+        <div className={styles.photo}>{photo('PHOTOGRAMME')}</div>
+        <div className={styles.roleText}>
           <span className={styles.as}>DANS LE RÔLE DE</span>
           <span className={styles.character}>{card.character}</span>
+          <span className={styles.film}>{card.film} · {card.year}</span>
         </div>
         <div className={styles.roleFoot}>
           <div className={styles.roleName}>

@@ -19,6 +19,10 @@ export type Card = {
   character?: string | null;
   /** Tags servant aux bobines thématiques : `country:FR`, `genre:scifi`, `decade:1980`, `blockbuster`. */
   tags: string[];
+  /** Rang de popularité TMDB de l'acteur (1 = le plus populaire). */
+  rank?: number | null;
+  /** Nombre de votes TMDB du film (cartes Rôle). */
+  votes?: number | null;
 };
 
 /** Un exemplaire possédé par un joueur. */

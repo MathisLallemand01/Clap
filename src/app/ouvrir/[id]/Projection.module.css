@@ -1,6 +1,26 @@
 .screen { position: fixed; inset: 0; background: var(--ink); overflow: hidden; color: var(--text); }
 
-.stage { position: absolute; left: 50%; top: 50%; transform-origin: center; }
+.stage { position: absolute; left: 50%; top: 50%; transform-origin: center; opacity: 0; transition: opacity 600ms ease; }
+.stageOn { opacity: 1; }
+.intro {
+  position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 74, 28, 0.14), rgba(255, 74, 28, 0) 45%);
+  pointer-events: none;
+}
+.celebration {
+  position: absolute; z-index: 4; left: 50%; top: 96px; transform: translateX(-50%);
+  min-width: min(520px, calc(100% - 32px)); padding: 18px 28px; border-radius: 20px; text-align: center;
+  background: rgba(11, 11, 13, 0.9); border: 2px solid var(--rc); box-shadow: 0 0 60px color-mix(in srgb, var(--rc) 45%, transparent);
+  display: flex; flex-direction: column; gap: 6px; animation: celebrate 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.celebration .eyebrow { color: var(--rc); }
+.celebration strong { font-size: clamp(36px, 5vw, 56px); color: var(--rc); }
+.celebration > span:last-child { color: var(--text-2); font-size: 15px; }
+@keyframes celebrate {
+  0% { opacity: 0; transform: translate(-50%, -16px) scale(0.92); }
+  12%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+}
 .stage svg { position: absolute; inset: 0; overflow: visible; }
 
 .gate { position: absolute; width: 204px; height: 264px; margin: -132px 0 0 -102px; pointer-events: none; }
@@ -24,7 +44,6 @@
   border-radius: 9px; overflow: hidden;
   box-shadow: 0 0 0 1px var(--line);
   transition: box-shadow 400ms ease;
-  will-change: offset-distance;
 }
 .frame[data-revealed='true'] { box-shadow: 0 0 0 2px var(--rc); }
 

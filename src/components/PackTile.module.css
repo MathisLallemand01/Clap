@@ -1,0 +1,16 @@
+.tile {
+  background: var(--panel); border: 1px solid #1f1f24; border-radius: var(--radius);
+  padding: 28px 22px 22px; display: flex; flex-direction: column; gap: 18px;
+  transition: border-color 200ms ease;
+}
+.tile:hover { border-color: var(--line-2); }
+.art { display: flex; justify-content: center; padding: 6px 0 10px; }
+.text { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.text h3 { font-size: 32px; line-height: 0.92; }
+.text p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text-2); }
+.odds { display: flex; gap: 4px; }
+.odds span { height: 6px; border-radius: 2px; }
+.progress { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--muted); }
+.bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; display: flex; }
+.actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+.actions > * { width: 100%; padding: 0 12px; }

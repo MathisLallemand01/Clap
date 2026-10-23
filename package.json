@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "seed": "node --disable-warning=ExperimentalWarning scripts/seed.ts",
-    "import:tmdb": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/import-tmdb.ts",
+    "import:tmdb": "node --use-env-proxy --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/import-tmdb.ts",
     "test": "node --test --disable-warning=ExperimentalWarning tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -16,7 +16,8 @@
     "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "undici": "^7.30.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

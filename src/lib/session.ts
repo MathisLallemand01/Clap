@@ -1,46 +1,70 @@
 import 'server-only';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { createSession, deleteSession, SESSION_DAYS, userForSession, type User } from './auth';
 import { getDb } from './db';
-import { FREE_BOOSTER_CAP } from './boosters';
-import { createPlayer, getPlayer, getStats, STARTING_TICKETS, type Player, type PlayerStats } from './game';
+import { getPlayer, getStats, type Player, type PlayerStats } from './game';
+import { recordVisit } from './missions';
+import { listNotifications, unreadCount, type Notification } from './notify';
 
-// En attendant les comptes (connexion Google / Apple / e-mail), chaque visiteur
-// reçoit un joueur invité identifié par un cookie.
-export const PLAYER_COOKIE = 'clap_pid';
-const ONE_YEAR = 60 * 60 * 24 * 365;
+export const SESSION_COOKIE = 'clap_session';
 
-/** Le joueur courant, ou null pour un visiteur qui n'a encore rien ouvert. */
-export async function currentPlayer(): Promise<Player | null> {
-  const id = (await cookies()).get(PLAYER_COOKIE)?.value;
-  return id ? getPlayer(getDb(), id) : null;
+export async function currentUser(): Promise<User | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? userForSession(getDb(), token) : null;
 }
 
-/** Le joueur courant, créé s'il n'existe pas. À appeler depuis un route handler ou une server action. */
-export async function ensurePlayer(): Promise<Player> {
+/** À appeler depuis une server action ou un route handler. */
+export async function startSession(userId: string): Promise<void> {
+  const { token } = createSession(getDb(), userId);
+  (await cookies()).set(SESSION_COOKIE, token, {
+    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: SESSION_DAYS * 24 * 3600,
+  });
+}
+
+export async function endSession(): Promise<void> {
   const jar = await cookies();
-  const existing = jar.get(PLAYER_COOKIE)?.value;
-  const db = getDb();
-  const player = (existing && getPlayer(db, existing)) || createPlayer(db);
-  if (player.id !== existing) {
-    jar.set(PLAYER_COOKIE, player.id, { httpOnly: true, sameSite: 'lax', maxAge: ONE_YEAR, path: '/' });
-  }
-  return player;
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (token) deleteSession(getDb(), token);
+  jar.delete(SESSION_COOKIE);
 }
 
 export type Wallet = { tickets: number; entries: number; freeStock: number; nextFreeAt: number | null };
 
-/** Ce qu'affiche la barre de navigation ; un visiteur voit les valeurs de départ. */
-export async function currentWallet(): Promise<{ player: Player | null; stats: PlayerStats | null; wallet: Wallet }> {
-  const player = await currentPlayer();
-  const stats = player ? getStats(getDb(), player.id) : null;
+export type Context = {
+  user: User;
+  player: Player;
+  stats: PlayerStats;
+  wallet: Wallet;
+  notifications: Notification[];
+  unread: number;
+};
+
+function contextFor(user: User): Context | null {
+  const db = getDb();
+  const player = getPlayer(db, user.playerId);
+  if (!player) return null;
+  recordVisit(db, player.id);
+  const stats = getStats(db, player.id);
   return {
+    user,
     player,
     stats,
-    wallet: {
-      tickets: player?.tickets ?? STARTING_TICKETS,
-      entries: stats?.entries ?? 0,
-      freeStock: player?.freeStock ?? FREE_BOOSTER_CAP,
-      nextFreeAt: player?.nextFreeAt ?? null,
-    },
+    wallet: { tickets: player.tickets, entries: stats.entries, freeStock: player.freeStock, nextFreeAt: player.nextFreeAt },
+    notifications: listNotifications(db, user.id, 10),
+    unread: unreadCount(db, user.id),
   };
+}
+
+/** Le contexte du joueur connecté, ou null pour un visiteur. */
+export async function optionalContext(): Promise<Context | null> {
+  const user = await currentUser();
+  return user ? contextFor(user) : null;
+}
+
+/** Le contexte du joueur connecté ; les visiteurs sont envoyés vers la connexion puis ramenés ici. */
+export async function requireContext(back: string): Promise<Context> {
+  const ctx = await optionalContext();
+  if (!ctx) redirect(`/connexion?suite=${encodeURIComponent(back)}`);
+  return ctx;
 }

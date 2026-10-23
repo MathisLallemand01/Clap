@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { BoosterPack } from '@/components/BoosterPack';
 import { GameCard } from '@/components/GameCard';
 import { CloseIcon, SoundIcon } from '@/components/Icons';
 import { Wordmark } from '@/components/Mark';
@@ -9,6 +10,8 @@ import type { BoosterDef } from '@/lib/boosters';
 import { formatNumber } from '@/lib/format';
 import type { OpenResult, PulledCard } from '@/lib/game';
 import { RARITIES } from '@/lib/rarity';
+import type { Card } from '@/lib/types';
+import { calmPreference, speedPreference } from '@/lib/prefs';
 import { createProjector, saveSoundPreference, soundPreference, type Projector } from '@/lib/sound';
 import styles from './Projection.module.css';
 
@@ -19,6 +22,8 @@ const MOVE_MS = 550;
 const HOLD_MS = 650;
 const FAST_MOVE_MS = 220;
 const FAST_HOLD_MS = 60;
+/** Vitesses choisies dans les paramètres : [déplacement, pause] en millisecondes. */
+const SPEEDS = { normal: [MOVE_MS, HOLD_MS], rapide: [320, 280], instant: [FAST_MOVE_MS, FAST_HOLD_MS] } as const;
 
 type Layout = {
   w: number;
@@ -81,7 +86,7 @@ function Reel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   );
 }
 
-export function Projection({ booster }: { booster: BoosterDef }) {
+export function Projection({ booster, cover }: { booster: BoosterDef; cover: Card | null }) {
   const [layoutName, setLayoutName] = useState<keyof typeof LAYOUTS>('landscape');
   const [scale, setScale] = useState(1);
   const [frames, setFrames] = useState<Frame[]>([]);
@@ -94,6 +99,9 @@ export function Projection({ booster }: { booster: BoosterDef }) {
   const [fast, setFast] = useState(false);
   const [sound, setSound] = useState(true);
   const [calm, setCalm] = useState(false);
+  // Le paquet s'affiche, se déchire, puis la bande démarre.
+  const [intro, setIntro] = useState<'pack' | 'tearing' | 'done'>('pack');
+  const [celebration, setCelebration] = useState<PulledCard | null>(null);
 
   const layout = LAYOUTS[layoutName];
   const framesRef = useRef<Frame[]>([]);
@@ -104,6 +112,8 @@ export function Projection({ booster }: { booster: BoosterDef }) {
   const projector = useRef<Projector | null>(null);
   const motion = useRef({ offset: layout.gate - SPACING, step: null as null | { from: number; start: number }, holdUntil: 0, moving: false });
   const fastRef = useRef(false);
+  const speedRef = useRef<readonly [number, number]>(SPEEDS.normal);
+  const introDone = useRef(false);
   const started = useRef(false);
   const batchCount = useRef(0);
   const gateRef = useRef(layout.gate);
@@ -129,7 +139,8 @@ export function Projection({ booster }: { booster: BoosterDef }) {
   }, []);
 
   useEffect(() => {
-    setCalm(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    setCalm(window.matchMedia('(prefers-reduced-motion: reduce)').matches || calmPreference());
+    speedRef.current = SPEEDS[speedPreference()];
     const on = soundPreference();
     setSound(on);
     projector.current = createProjector(on);
@@ -153,10 +164,18 @@ export function Projection({ booster }: { booster: BoosterDef }) {
       setTickets(data.player.tickets);
       setFreeStock(data.player.freeStock);
       setFast(false);
+      if (!introDone.current) {
+        setIntro('tearing');
+        projector.current?.rip();
+        window.setTimeout(() => {
+          introDone.current = true;
+          setIntro('done');
+        }, 1250);
+      }
       const index = batchCount.current++;
       setFrames((f) => [
         ...f,
-        { key: `leader-${data.pullId}`, type: 'leader', batch: index, name: booster.label },
+        { key: `leader-${data.pullId}`, type: 'leader', batch: index, name: booster.name },
         ...data.cards.map((card, slot): Frame => ({ key: `${data.pullId}-${slot}`, type: 'card', batch: index, slot, card })),
       ]);
       setBatches((prev) => [...prev, { index, size: data.cards.length, paidWith: data.paidWith }]);
@@ -181,6 +200,10 @@ export function Projection({ booster }: { booster: BoosterDef }) {
     p?.click();
     const level = stingLevel(frame.card);
     if (level && !fastRef.current) p?.sting(level as 1 | 2 | 3);
+    if (level === 3) {
+      setCelebration(frame.card);
+      window.setTimeout(() => setCelebration((c) => (c === frame.card ? null : c)), 3200);
+    }
   }, []);
 
   // Moteur de la bande.
@@ -192,10 +215,10 @@ export function Projection({ booster }: { booster: BoosterDef }) {
 
     const tick = (now: number) => {
       const list = framesRef.current;
-      const moveMs = fastRef.current ? FAST_MOVE_MS : MOVE_MS;
-      const holdMs = fastRef.current ? FAST_HOLD_MS : HOLD_MS;
+      const moveMs = fastRef.current ? FAST_MOVE_MS : speedRef.current[0];
+      const holdMs = fastRef.current ? FAST_HOLD_MS : speedRef.current[1];
       const lastDistance = m.offset - (list.length - 1) * SPACING;
-      const pending = list.length > 0 && lastDistance < layout.gate;
+      const pending = introDone.current && list.length > 0 && lastDistance < layout.gate;
 
       if (m.step) {
         const t = Math.min(1, (now - m.step.start) / moveMs);
@@ -277,7 +300,7 @@ export function Projection({ booster }: { booster: BoosterDef }) {
           ))}
         </div>
       ) : (
-        <div className={styles.stage} style={{ width: layout.w, height: layout.h, transform: `translate(-50%, -50%) scale(${scale})` }}>
+        <div className={`${styles.stage} ${intro === 'done' ? styles.stageOn : ''}`} style={{ width: layout.w, height: layout.h, transform: `translate(-50%, -50%) scale(${scale})` }}>
           <svg ref={svgRef} width={layout.w} height={layout.h} viewBox={`0 0 ${layout.w} ${layout.h}`} aria-hidden="true">
             {layout.reels.map((r) => <Reel key={`${r.cx}-${r.cy}`} {...r} />)}
             <path ref={pathRef} d={layout.path} fill="none" stroke="#111114" strokeWidth="252" />
@@ -326,13 +349,28 @@ export function Projection({ booster }: { booster: BoosterDef }) {
                   </div>
                 ) : (
                   <>
-                    <div className={styles.cardWrap}><GameCard card={f.card} width={150} serial={f.card.serial} /></div>
+                    <div className={styles.cardWrap}><GameCard card={f.card} width={150} serial={f.card.serial} eager /></div>
                     <div className={styles.shutter}><span>VIGN. {String(f.slot + 1).padStart(2, '0')}</span></div>
                   </>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {intro !== 'done' && !calm && (
+        <div className={styles.intro} aria-hidden="true">
+          <BoosterPack booster={booster} cover={cover} width={Math.round(Math.min(300, 260 / Math.max(scale, 0.6)) * Math.max(scale, 0.6))} float={intro === 'pack'} tearing={intro === 'tearing'} />
+          <span className="eyebrow">{intro === 'pack' ? (error ? '' : 'Chargement de la bobine…') : 'Moteur…'}</span>
+        </div>
+      )}
+
+      {celebration && (
+        <div className={styles.celebration} style={{ ['--rc' as string]: RARITIES[celebration.rarity].color }} role="status">
+          <span className="eyebrow">◆ Nouvelle {RARITIES[celebration.rarity].label} ◆</span>
+          <strong className="display">{celebration.character ?? `${celebration.first} ${celebration.last}`}</strong>
+          <span>{celebration.first} {celebration.last}{celebration.film ? ` · ${celebration.film}` : ''}</span>
         </div>
       )}
 
@@ -379,6 +417,7 @@ export function Projection({ booster }: { booster: BoosterDef }) {
                 <button type="button" className="btn btn-sm" onClick={() => void open()} disabled={loading || !canAfford}>
                   Une autre · {nextCost}
                 </button>
+                <Link href="/bobines" className="btn btn-sm">Changer de bobine</Link>
                 <Link href="/collection" className="btn btn-sm btn-primary">Ranger</Link>
               </>
             )}

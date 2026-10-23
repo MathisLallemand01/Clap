@@ -1,0 +1,40 @@
+/* Styles partagés des fiches Acteur et Rôle. */
+.crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--muted); margin-bottom: -24px; }
+.crumbs a:hover { color: var(--text); }
+
+.hero { display: flex; flex-wrap: wrap; gap: clamp(32px, 5vw, 72px); align-items: flex-start; }
+.heroCard { flex: 0 0 auto; margin: 0 auto; max-width: 100%; }
+.heroCard > div { max-width: calc(100vw - 2 * var(--gutter)); }
+.heroText { flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+.heroText h1 { font-size: clamp(64px, 9vw, 150px); line-height: 0.82; }
+.rarityPill {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px;
+  border: 1px solid; border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.rarityPill span { width: 8px; height: 8px; border-radius: 50%; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
+.bio { display: flex; flex-direction: column; gap: 12px; max-width: 680px; }
+.bio p { margin: 0; font-size: 18px; line-height: 1.65; color: #d8d5cc; }
+.lead2 { font-size: 22px; line-height: 1.45; color: #d8d5cc; margin: 0; }
+.lead2 b { color: var(--text); }
+.section { display: flex; flex-direction: column; gap: 28px; }
+
+/* Lecteur de bande-annonce */
+.player { position: relative; border-radius: 22px; overflow: hidden; background: #111114; border: 1px solid var(--line); }
+.frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.poster { position: absolute; inset: 0; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.poster::before { content: ''; position: absolute; inset: 0; background: rgba(11, 11, 13, 0.55); }
+.play {
+  position: relative; width: 104px; height: 104px; border-radius: 50%; border: 0; background: var(--accent); color: var(--ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; animation: pulse-ring 2s ease-out infinite;
+}
+.play:hover { background: var(--accent-hover); }
+.posterTitle { position: relative; font-size: clamp(28px, 4vw, 44px); text-align: center; padding: 0 16px; }
+.versions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted); }
+.empty { aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; background-size: cover; background-position: center; position: relative; }
+.empty::before { content: ''; position: absolute; inset: 0; background: rgba(11, 11, 13, 0.7); }
+.empty > * { position: relative; }
+.cinema { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: 40; pointer-events: none; animation: fade-up 300ms ease both; }
+.playerOn { z-index: 41; }
