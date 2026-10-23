@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
+import { Curtain } from '@/components/Curtain';
+import { SESSION_COOKIE } from '@/lib/session';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -8,7 +11,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#0b0b0d' };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Le rideau de connexion se lève quand la session change (connexion, déconnexion).
+  const signedIn = (await cookies()).has(SESSION_COOKIE);
   return (
     <html lang="fr">
       <head>
@@ -20,7 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Curtain signedIn={signedIn} />
+      </body>
     </html>
   );
 }

@@ -16,7 +16,10 @@ export const metadata: Metadata = { title: 'Connexion' };
 const GOOGLE_ERRORS: Record<string, string> = {
   'google-config': 'La connexion Google n’est pas encore activée sur ce serveur : utilisez votre e-mail en attendant.',
   google: 'La connexion avec Google a échoué. Réessayez, ou utilisez votre e-mail.',
-  discord: 'Aucun compte CLAP n’est lié à ce Discord. Connectez-vous d’abord, puis liez-le dans Paramètres.',
+  discord: 'La connexion avec Discord a échoué. Réessayez, ou utilisez votre e-mail.',
+  'discord-config': 'La connexion Discord n’est pas encore activée sur ce serveur : renseignez DISCORD_CLIENT_ID et DISCORD_CLIENT_SECRET dans .env, puis redémarrez.',
+  'discord-cle': 'Discord a refusé la connexion : vérifiez DISCORD_CLIENT_SECRET et que la redirection du portail Discord est exactement <adresse du site>/api/auth/discord/callback.',
+  'discord-refus': 'Connexion annulée sur Discord.',
 };
 
 type Search = { mode?: string; suite?: string; parrain?: string; erreur?: string };

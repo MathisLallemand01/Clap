@@ -1,9 +1,12 @@
 import type { BoosterDef, Slot } from './boosters.ts';
-import { ladderOf, type Rarity } from './rarity.ts';
+import { ladderOf, RARITIES, type Rarity } from './rarity.ts';
 import { themeFor } from './themes.ts';
 import type { Card } from './types.ts';
 
 export type Rng = () => number;
+
+/** Un film « que tout le monde a vu » : au moins 15 000 votes sur TMDB. */
+export const FAMOUS_VOTES = 15_000;
 
 /** Tire une rareté selon les poids du slot. */
 export function rollRarity(slot: Slot, rng: Rng): Rarity {
@@ -23,6 +26,7 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
  */
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
   if (def.pool === 'themes') return catalog.filter((c) => themeFor(c));
+  if (def.pool === 'famous') return catalog.filter((c) => c.kind === 'role' && (c.votes ?? 0) >= FAMOUS_VOTES && RARITIES[c.rarity].tier >= 3);
   const tags = def.tags;
   if (!tags?.length) return catalog;
   const matches = (c: Card) => c.tags.some((t) => tags.includes(t));

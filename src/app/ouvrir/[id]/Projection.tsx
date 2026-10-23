@@ -13,7 +13,7 @@ import type { OpenResult, PulledCard } from '@/lib/game';
 import { RARITIES } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import { calmPreference, speedPreference } from '@/lib/prefs';
-import { createProjector, saveSoundPreference, soundPreference, type Projector } from '@/lib/sound';
+import { createProjector, saveSoundPreference, saveVolumePreference, soundPreference, volumePreference, type Projector } from '@/lib/sound';
 import { createThemePlayer, loadTheme, type ThemeInfo } from '@/lib/themePlayer';
 import { themeFor } from '@/lib/themes';
 import styles from './Projection.module.css';
@@ -128,6 +128,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const [error, setError] = useState<string | null>(null);
   const [fast, setFast] = useState(false);
   const [sound, setSound] = useState(true);
+  const [volume, setVolume] = useState(0.3);
   // La musique culte en cours (Rôle d'un acteur principal d'un film qui en a une).
   const [nowPlaying, setNowPlaying] = useState<ThemeInfo | null>(null);
   const [calm, setCalm] = useState(false);
@@ -188,6 +189,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     speedRef.current = SPEEDS[speedPreference()];
     const on = soundPreference();
     setSound(on);
+    setVolume(volumePreference());
     soundRef.current = on;
     projector.current = createProjector(on);
     themes.current = createThemePlayer(setNowPlaying);
@@ -392,6 +394,13 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     if (!next) themes.current?.stop();
   };
 
+  const changeVolume = (v: number) => {
+    setVolume(v);
+    saveVolumePreference(v);
+    projector.current?.setVolume(v);
+    themes.current?.setVolume(v);
+  };
+
   const current = batches[batches.length - 1];
   const currentCards = frames.filter((f): f is Extract<Frame, { type: 'card' }> => f.type === 'card' && f.batch === current?.index);
   const revealedCount = currentCards.filter((f) => revealed.has(f.key)).length;
@@ -568,11 +577,17 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
           <span className="eyebrow">Projection en cours</span>
         </div>
         <div className={styles.headerRight}>
-          <button type="button" className={styles.soundBtn} onClick={toggleSound} aria-pressed={sound} aria-label="Son de la projection">
-            <SoundIcon on={sound} />
-            <span className={styles.soundLabel}>{sound ? 'Son activé' : 'Son coupé'}</span>
-            
-          </button>
+          <div className={styles.soundBox}>
+            <button type="button" className={styles.soundBtn} onClick={toggleSound} aria-pressed={sound} aria-label={sound ? 'Couper le son' : 'Activer le son'}>
+              <SoundIcon on={sound} />
+            </button>
+            <input
+              type="range" min={0} max={100} step={1} value={Math.round(volume * 100)} disabled={!sound}
+              className={styles.volume} aria-label="Volume" style={{ '--v': `${Math.round(volume * 100)}%` } as CSSProperties}
+              onChange={(e) => changeVolume(Number(e.target.value) / 100)}
+            />
+            <span className={styles.volumeValue} aria-hidden="true">{sound ? `${Math.round(volume * 100)} %` : 'COUPÉ'}</span>
+          </div>
           <Link href={guest ? '/' : '/collection'} className={styles.round} aria-label="Fermer la projection"><CloseIcon /></Link>
         </div>
       </header>

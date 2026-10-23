@@ -184,6 +184,40 @@ export function linkDiscord(db: DatabaseSync, userId: string, profile: { id: str
     .run(profile.id, profile.name, discordAvatarUrl(profile.id, profile.avatar), userId);
 }
 
+/**
+ * Connexion avec Discord : le compte déjà lié à ce Discord, sinon celui qui a le même e-mail (vérifié),
+ * sinon un nouveau compte au nom et à la photo de Discord.
+ */
+export function upsertDiscordUser(
+  db: DatabaseSync,
+  profile: { id: string; name: string; avatar: string | null; email: string | null },
+  referral: string | undefined,
+  now = Date.now(),
+): User {
+  return transaction(db, () => {
+    const linked = db.prepare('SELECT * FROM users WHERE discord_id = ?').get(profile.id) as UserRow | undefined;
+    if (linked) {
+      // Nom et photo à jour (une nouvelle photo Nitro, un nouveau pseudo…).
+      db.prepare('UPDATE users SET discord_name = ?, discord_avatar = ? WHERE id = ?').run(profile.name, discordAvatarUrl(profile.id, profile.avatar), linked.id);
+      return getUser(db, linked.id)!;
+    }
+    const email = profile.email ? normalizeEmail(profile.email) : null;
+    const byEmail = email ? (db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined) : undefined;
+    let userId = byEmail?.id;
+    if (!userId) {
+      let referredBy: string | null = null;
+      try {
+        referredBy = findReferrer(db, referral);
+      } catch {
+        referredBy = null;
+      }
+      userId = insertUser(db, { name: availableName(db, profile.name), email, passwordHash: null, referredBy }, now).id;
+    }
+    linkDiscord(db, userId, profile);
+    return getUser(db, userId)!;
+  });
+}
+
 export function unlinkDiscord(db: DatabaseSync, userId: string): void {
   db.prepare('UPDATE users SET discord_id = NULL, discord_name = NULL, discord_avatar = NULL WHERE id = ?').run(userId);
 }

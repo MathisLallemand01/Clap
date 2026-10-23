@@ -137,3 +137,9 @@ test('Bande originale : uniquement des Rôles à musique culte ; Tout Clap : tou
   assert.ok(boosterPool(soundtrack, catalog).every((c) => themeFor(c)));
   assert.equal(boosterPool(getBooster('tout-clap')!, catalog).length, catalog.length);
 });
+
+test('Panthéon : uniquement des grands rôles de films très vus', () => {
+  const db = openDb(':memory:');
+  const pool = boosterPool(getBooster('pantheon')!, getCatalog(db));
+  assert.ok(pool.every((c) => c.kind === 'role' && (c.votes ?? 0) >= 15_000 && RARITIES[c.rarity].tier >= 3));
+});

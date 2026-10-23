@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertGoogleUser } from '../src/lib/auth.ts';
+import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertDiscordUser, upsertGoogleUser } from '../src/lib/auth.ts';
 import { markCelebrationSeen, nextCelebration } from '../src/lib/celebrations.ts';
 import { openDb } from '../src/lib/db.ts';
 import { GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
@@ -38,6 +38,20 @@ test('Discord : liaison, photo animée (Nitro), unicité, déliaison', async () 
   unlinkDiscord(db, a.id);
   assert.equal(getUser(db, a.id)!.discord, null);
   assert.equal(getUserByDiscord(db, '42'), null);
+});
+
+test('Discord : connexion, rattachement par e-mail, création d’un compte', async () => {
+  const db = openDb(':memory:');
+  const existing = await signUp(db, { name: 'Nora', email: 'nora@exemple.fr', password: 'motdepasse' });
+  const byEmail = upsertDiscordUser(db, { id: '7', name: 'Nora 🎬', avatar: null, email: 'Nora@exemple.fr' }, undefined);
+  assert.equal(byEmail.id, existing.id);
+  assert.equal(byEmail.discord?.name, 'Nora 🎬');
+  assert.equal(upsertDiscordUser(db, { id: '7', name: 'Nora', avatar: 'a_x', email: null }, undefined).id, existing.id);
+  assert.match(getUser(db, existing.id)!.avatar!, /a_x\.gif/);
+  const fresh = upsertDiscordUser(db, { id: '8', name: 'Ψ', avatar: null, email: null }, undefined);
+  assert.notEqual(fresh.id, existing.id);
+  assert.equal(fresh.discord?.id, '8');
+  assert.ok(fresh.name.length >= 3);
 });
 
 test('Google : même compte au retour, rattachement par e-mail', async () => {

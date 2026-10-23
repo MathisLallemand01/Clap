@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Footer, Nav } from '@/components/Nav';
 import { DiscordLogo } from '@/components/DiscordLogo';
+import { LogoutButton } from '@/components/LogoutButton';
 import { SideRails } from '@/components/SideRails';
 import { NOTIFY_KINDS } from '@/lib/notify';
 import { requireContext } from '@/lib/session';
-import { logout } from '../actions';
 import { removeAccount, removeDiscord, saveAccount, saveNotifications } from './actions';
 import { PlayPrefs } from './PlayPrefs';
 import styles from './parametres.module.css';
@@ -37,7 +37,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <a href="#compte">Compte</a>
               <Link href="/parrainage">Parrainage</Link>
             </nav>
-            <form action={logout}><button type="submit" className="btn btn-sm btn-block">Se déconnecter</button></form>
+            <LogoutButton className="btn btn-sm btn-block" />
           </aside>
 
           <div className={styles.sections}>
@@ -70,7 +70,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   <input className="input" name="name" defaultValue={u.name} minLength={3} maxLength={20} required style={{ maxWidth: 260 }} />
                 </label>
                 <div className={styles.row}>
-                  <div><strong>E-mail</strong><span>{u.hasPassword ? 'Pour vous connecter.' : 'Compte relié à Google.'}</span></div>
+                  <div><strong>E-mail</strong><span>{u.hasPassword ? 'Pour vous connecter.' : u.discord ? 'Compte relié à Discord.' : 'Compte relié à Google.'}</span></div>
                   <span className="mono" style={{ fontSize: 14 }}>{u.email ?? '—'}</span>
                 </div>
                 <label className={styles.row}>
@@ -80,7 +80,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <div className={styles.saveRow}><button type="submit" className="btn btn-sm btn-light">Enregistrer</button></div>
               </form>
               <div className={`${styles.row} ${styles.discordRow}`}>
-                <div><strong>Discord</strong><span>{u.discord ? 'Votre nom et votre photo Discord (animée avec Nitro) s’affichent sur CLAP. Vous pouvez aussi vous connecter avec.' : 'Liez votre compte : votre nom et votre photo Discord (animée avec Nitro) s’afficheront sur CLAP.'}</span></div>
+                <div><strong>Discord</strong><span>{u.discord ? 'Votre nom et votre photo Discord (animée avec Nitro) s’affichent sur CLAP. « Continuer avec Discord » vous connecte.' : 'Liez votre compte : votre nom et votre photo Discord (animée avec Nitro) s’afficheront sur CLAP.'}</span></div>
                 {u.discord ? (
                   <div className={styles.discordLinked}>
                     <img src={u.discord.avatar} alt="" width={40} height={40} />

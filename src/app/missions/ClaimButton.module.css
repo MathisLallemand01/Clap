@@ -1,4 +1,4 @@
-.overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; overflow: hidden; }
 .dim { position: absolute; inset: 0; background: rgba(5, 5, 6, 0.78); animation: dim-in 300ms ease both; }
 .flying .dim { animation: dim-out 600ms ease both; }
 .rays {

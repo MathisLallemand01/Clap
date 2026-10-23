@@ -1,0 +1,65 @@
+/* Écran de chargement des connexions : l'amorce d'un film avant la séance (maquette 30). */
+.curtain {
+  position: fixed; inset: 0; z-index: 1000; overflow: hidden;
+  background: radial-gradient(ellipse 60% 70% at 50% 50%, #17130F, #0B0B0D 60%, #060607);
+  animation: curtain-in 220ms ease both, flicker 2.8s steps(12) infinite;
+}
+.leaving { animation: curtain-out 450ms ease both; }
+.beam { position: absolute; left: 50%; top: -10%; width: 760px; height: 120%; margin-left: -380px; background: radial-gradient(ellipse 50% 60% at 50% 45%, rgba(255, 200, 140, 0.1), rgba(255, 200, 140, 0) 70%); animation: beam 3s ease-in-out infinite; }
+
+.film { position: absolute; left: 0; right: 0; height: 64px; overflow: hidden; opacity: 0.9; }
+.filmTop { top: 34px; }
+.filmBottom { bottom: 34px; }
+/* La pellicule : une image tous les 120 px, trois perforations en haut et en bas. */
+.film i {
+  position: absolute; top: 0; bottom: 0; left: -120px; right: -120px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 14px, #2E2E35 14px 28px, transparent 28px 40px) 0 8px / 120px 9px repeat-x,
+    repeating-linear-gradient(90deg, transparent 0 14px, #2E2E35 14px 28px, transparent 28px 40px) 0 47px / 120px 9px repeat-x,
+    linear-gradient(90deg, #111114 118px, #060607 118px) 0 0 / 120px 64px repeat-x;
+  animation: film-left 1.2s linear infinite;
+}
+.filmBottom i { animation-name: film-right; }
+
+.rec, .tc, .sideA, .sideB { position: absolute; font-family: var(--mono); }
+.rec { left: 48px; top: 122px; display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.14em; color: var(--text); }
+.rec i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: rec 1.4s steps(1, end) infinite; }
+.tc { right: 48px; top: 122px; font-size: 12px; color: var(--muted); }
+.sideA, .sideB { bottom: 122px; font-size: 11px; letter-spacing: 0.18em; color: #3e3e46; }
+.sideA { left: 48px; }
+.sideB { right: 48px; }
+
+.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; width: min(560px, calc(100% - 32px)); }
+.leader { position: relative; width: clamp(180px, 22vw, 260px); aspect-ratio: 1; margin-bottom: 16px; }
+.ring, .ringIn, .sweep { position: absolute; border-radius: 50%; }
+.ring { inset: 0; border: 3px solid var(--text); opacity: 0.9; }
+.ringIn { inset: 8.5%; border: 1px solid #f2efe855; }
+.crossV { position: absolute; left: 50%; top: -9%; bottom: -9%; width: 1px; background: #f2efe855; }
+.crossH { position: absolute; top: 50%; left: -9%; right: -9%; height: 1px; background: #f2efe855; }
+.sweep { inset: 4px; background: conic-gradient(from 0deg, rgba(255, 74, 28, 0) 0deg, rgba(255, 74, 28, 0) 250deg, rgba(255, 74, 28, 0.55) 350deg, var(--accent) 360deg); animation: sweep 0.6s linear infinite; }
+.count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; font-size: clamp(110px, 14vw, 168px); line-height: 1; color: var(--text); }
+.count::after { content: '3'; animation: count 1.8s steps(1, end) infinite; }
+.title { font-size: clamp(34px, 4.6vw, 46px); line-height: 0.9; text-transform: uppercase; }
+.sub { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; color: var(--muted); }
+.bar { width: min(320px, 80%); height: 4px; margin-top: 16px; border-radius: 4px; background: #1f1f24; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); animation: bar 1.1s cubic-bezier(0.3, 0.6, 0.2, 1) both; }
+.brand { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; font-stretch: 62%; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; }
+.brand b { display: inline-flex; flex-direction: column; gap: 3px; }
+.brand i { width: 6px; height: 6px; border-radius: 1px; background: var(--accent); }
+
+@keyframes curtain-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes curtain-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@keyframes flicker { 0%, 100% { filter: brightness(1); } 47% { filter: brightness(0.88); } 50% { filter: brightness(1.04); } 53% { filter: brightness(0.92); } }
+@keyframes beam { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.85; } }
+@keyframes film-left { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+@keyframes film-right { from { transform: translateX(-120px); } to { transform: translateX(0); } }
+@keyframes rec { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
+@keyframes sweep { to { transform: rotate(360deg); } }
+@keyframes count { 0%, 32% { content: '3'; } 33%, 65% { content: '2'; } 66%, 100% { content: '1'; } }
+@keyframes bar { 0% { width: 4%; } 100% { width: 96%; } }
+
+@media (max-width: 719px) { .rec, .tc, .sideA, .sideB { display: none; } .brand { bottom: 116px; } }
+@media (prefers-reduced-motion: reduce) {
+  .curtain, .film i, .sweep, .beam, .count::after { animation: none; }
+  .leaving { animation: curtain-out 200ms ease both; }
+}

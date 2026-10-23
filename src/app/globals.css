@@ -213,8 +213,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 }
 
 /* Fenêtre modale sans JavaScript (rendue côté serveur via un paramètre d'URL). */
-.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(6, 6, 7, 0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade-up 200ms ease both; }
-.modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: rgba(6, 6, 7, 0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade-up 200ms ease both; }
+.modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
 .modal h2 { font-size: 44px; }
 .modal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .modal .actions > * { flex: 1; }
@@ -259,3 +259,8 @@ body::after {
 /* Le compteur de tickets qui reçoit une récompense. */
 .ticket-bump { display: inline-block; color: var(--accent); animation: ticket-bump 900ms cubic-bezier(0.2, 1.4, 0.4, 1); }
 @keyframes ticket-bump { 0% { transform: scale(1); } 25% { transform: scale(1.45); } 100% { transform: scale(1); } }
+
+/* Popups : on peut faire défiler un contenu trop haut, mais aucune barre de défilement ne s'affiche,
+   même un instant pendant les animations d'entrée. */
+.modal, .modal-backdrop { scrollbar-width: none; }
+.modal::-webkit-scrollbar, .modal-backdrop::-webkit-scrollbar { display: none; }

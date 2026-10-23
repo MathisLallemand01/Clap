@@ -1,5 +1,7 @@
 'use client';
 
+import { loudness, volumePreference } from './sound';
+
 /** La musique culte d'une carte, avec son extrait (url) quand on l'a trouvé. */
 export type ThemeInfo = { song: string; artist: string; url: string | null; link: string | null };
 
@@ -18,7 +20,9 @@ export function loadTheme(cardId: string): Promise<ThemeInfo | null> {
   return p;
 }
 
-const VOLUME = 0.55;
+/** Les extraits sont mixés fort : à 100 % du curseur, on les joue à 60 % de leur niveau. */
+const MUSIC_GAIN = 0.6;
+const musicVolume = (v = volumePreference()) => MUSIC_GAIN * loudness(v);
 
 /**
  * Joue un extrait à la fois : fondu d'entrée, puis fondu de sortie avant la fin de l'extrait (30 s)
@@ -62,10 +66,13 @@ export function createThemePlayer(onChange: (playing: ThemeInfo | null) => void)
     void el.play().then(() => {
       if (audio !== el) return;
       onChange(theme);
-      ramp(el, VOLUME, 900);
+      ramp(el, musicVolume(), 900);
       stopTimer = window.setTimeout(() => { if (audio === el) stop(1500); }, 26_000);
     }).catch(() => { if (audio === el) audio = null; });
   };
 
-  return { play, stop, dispose: () => stop(0) };
+  /** Change le volume (0 à 1) de l'extrait en cours. */
+  const setVolume = (v: number) => { if (audio) ramp(audio, musicVolume(v), 150); };
+
+  return { play, stop, setVolume, dispose: () => stop(0) };
 }

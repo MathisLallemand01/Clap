@@ -3,7 +3,10 @@
 
 const STORAGE_KEY = 'clap:sound';
 const VOLUME_KEY = 'clap:volume';
-const DEFAULT_VOLUME = 0.5;
+/** Volume de départ : modéré. Réglable dans la projection et dans les paramètres. */
+const DEFAULT_VOLUME = 0.3;
+/** Gain maximal des sons synthétisés (à volume 100 %). */
+const SFX_GAIN = 0.32;
 
 export function soundPreference(): boolean {
   try {
@@ -39,6 +42,14 @@ export function saveVolumePreference(v: number): void {
   }
 }
 
+/**
+ * Le volume perçu suit une courbe : à 30 % du curseur, on entend environ 15 % de la puissance.
+ * Ça rend le bas du curseur utilisable (un réglage linéaire saute de « trop fort » à « muet »).
+ */
+export function loudness(v: number): number {
+  return Math.pow(Math.min(1, Math.max(0, v)), 1.6);
+}
+
 export type Projector = {
   /** Clic d'obturateur, à chaque vignette révélée. */
   click(): void;
@@ -51,6 +62,8 @@ export type Projector = {
   /** Ronron du projecteur pendant que la bande avance. */
   hum(on: boolean): void;
   setEnabled(on: boolean): void;
+  /** Change le volume (0 à 1) en direct. */
+  setVolume(v: number): void;
   dispose(): void;
 };
 
@@ -69,7 +82,7 @@ export function createProjector(enabled: boolean): Projector {
       comp.threshold.value = -24;
       comp.ratio.value = 4;
       master = ctx.createGain();
-      master.gain.value = 0.45 * volumePreference();
+      master.gain.value = SFX_GAIN * Math.max(0.08, Math.sqrt(loudness(volumePreference())));
       master.connect(comp).connect(ctx.destination);
     }
     if (ctx.state === 'suspended') void ctx.resume();
@@ -224,6 +237,9 @@ export function createProjector(enabled: boolean): Projector {
     setEnabled(next) {
       on = next;
       if (!next) stopHum();
+    },
+    setVolume(v) {
+      if (master && ctx) master.gain.setTargetAtTime(SFX_GAIN * Math.max(0.08, Math.sqrt(loudness(v))), ctx.currentTime, 0.05);
     },
     dispose() {
       stopHum();

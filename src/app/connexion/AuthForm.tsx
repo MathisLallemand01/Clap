@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
+import { lowerCurtain, raiseCurtain } from '@/components/Curtain';
 import { DiscordLogo } from '@/components/DiscordLogo';
 import { loginAction, signupAction, type AuthState } from './actions';
 import styles from './connexion.module.css';
@@ -23,6 +24,9 @@ export function AuthForm({ mode, next, referral, googleError }: Props) {
   const isSignup = mode === 'inscription';
   const [state, action, pending] = useActionState<AuthState, FormData>(isSignup ? signupAction : loginAction, {});
   const googleHref = `/api/auth/google?suite=${encodeURIComponent(next)}${referral ? `&parrain=${encodeURIComponent(referral)}` : ''}`;
+  // Une erreur (mot de passe, pseudo pris…) : le rideau retombe tout de suite pour montrer le message.
+  useEffect(() => { if (state.error) lowerCurtain(); }, [state]);
+  const curtain = () => raiseCurtain(isSignup ? 'inscription' : 'connexion');
   const switchHref = (m: string) => `/connexion?mode=${m}${next !== '/bobines' ? `&suite=${encodeURIComponent(next)}` : ''}${referral ? `&parrain=${encodeURIComponent(referral)}` : ''}`;
 
   return (
@@ -37,19 +41,17 @@ export function AuthForm({ mode, next, referral, googleError }: Props) {
         <p>{isSignup ? 'Trois bobines offertes et 600 tickets pour commencer.' : 'Vos bobines vous attendent.'}</p>
       </div>
 
-      <a href={googleHref} className={`btn btn-lg btn-block ${styles.google}`}>
+      <a href={googleHref} className={`btn btn-lg btn-block ${styles.google}`} onClick={curtain}>
         <GoogleLogo /> {isSignup ? 'S’inscrire avec Google' : 'Continuer avec Google'}
       </a>
-      {!isSignup && (
-        <a href={`/api/auth/discord?suite=${encodeURIComponent(next)}`} className={`btn btn-lg btn-block ${styles.discord}`}>
-          <DiscordLogo /> Continuer avec Discord
-        </a>
-      )}
+      <a href={`/api/auth/discord?suite=${encodeURIComponent(next)}${referral ? `&parrain=${encodeURIComponent(referral)}` : ''}`} className={`btn btn-lg btn-block ${styles.discord}`} onClick={curtain}>
+        <DiscordLogo /> {isSignup ? 'S’inscrire avec Discord' : 'Continuer avec Discord'}
+      </a>
       {googleError && <p className="alert alert-info" role="status">{googleError}</p>}
 
       <div className={styles.or}><span />OU PAR E-MAIL<span /></div>
 
-      <form action={action} className={styles.form}>
+      <form action={action} className={styles.form} onSubmit={curtain}>
         <input type="hidden" name="suite" value={next} />
         {isSignup && (
           <label className="field">Pseudo

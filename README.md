@@ -38,13 +38,16 @@ Créez un identifiant OAuth « Application Web » dans la console Google Cloud, 
 et `APP_URL` dans `.env`. Sans ces clés, le bouton Google affiche un message et l’inscription par
 e-mail reste disponible.
 
-## Liaison Discord
+## Connexion Discord
 
 Dans le [portail développeur Discord](https://discord.com/developers/applications), créez une application ;
-dans « OAuth2 », ajoutez la redirection `<adresse du site>/api/auth/discord/callback` et copiez l’ID client et
-le secret dans `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET`. Les joueurs lient leur compte dans Paramètres
-(portée `identify` : pseudo et photo seulement) ; leur nom et leur photo Discord (en GIF animé avec Nitro)
-s’affichent alors dans le menu et le classement, et « Continuer avec Discord » les connecte ensuite.
+dans « OAuth2 » → « Redirects », ajoutez **exactement** `<adresse du site>/api/auth/discord/callback`
+(en local : `http://localhost:3000/api/auth/discord/callback`), puis copiez l’ID client et le secret
+(« Reset Secret ») dans `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET`, et redémarrez le serveur. Laissez vide
+« Interactions Endpoint URL » (il sert aux bots). « Continuer avec Discord » connecte le compte lié, rattache
+un compte existant par e-mail vérifié, ou crée un compte au nom et à la photo Discord ; un joueur déjà connecté
+peut aussi lier Discord dans Paramètres. Leur nom et leur photo Discord (GIF animé avec Nitro) s’affichent dans
+le menu et le classement. En cas de refus, la raison exacte renvoyée par Discord est écrite dans la console du serveur.
 
 ## Musiques cultes
 

@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { formatEntries, formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
-import { logout } from '@/app/actions';
 import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
 import { SeatIcon, TicketIcon } from './Icons';
+import { LogoutButton } from './LogoutButton';
 import { Wordmark } from './Mark';
 import { NotificationBell } from './NotificationBell';
 import { TicketCounter } from './TicketCounter';
@@ -59,7 +59,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                   </nav>
                   <Link href="/parrainage">Parrainage</Link>
                   <Link href="/parametres">Paramètres</Link>
-                  <form action={logout}><button type="submit">Se déconnecter</button></form>
+                  <LogoutButton />
                 </div>
               </details>
             </div>
