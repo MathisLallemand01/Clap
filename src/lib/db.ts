@@ -196,6 +196,9 @@ function migrate(db: DatabaseSync): void {
   const columns = new Set((db.prepare('PRAGMA table_info(cards)').all() as { name: string }[]).map((c) => c.name));
   if (!columns.has('rank')) db.exec('ALTER TABLE cards ADD COLUMN rank INTEGER');
   if (!columns.has('votes')) db.exec('ALTER TABLE cards ADD COLUMN votes INTEGER');
+  const playerColumns = new Set((db.prepare('PRAGMA table_info(players)').all() as { name: string }[]).map((c) => c.name));
+  // Comptes de test : tickets illimités (jamais débités).
+  if (!playerColumns.has('unlimited')) db.exec('ALTER TABLE players ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0');
 }
 
 /** Ouvre (ou crée) une base ; le catalogue de démarrage est inséré si la table est vide. */

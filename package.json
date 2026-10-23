@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "account:test": "node --disable-warning=ExperimentalWarning scripts/test-account.ts",
     "seed": "node --disable-warning=ExperimentalWarning scripts/seed.ts",
     "import:tmdb": "node --use-env-proxy --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/import-tmdb.ts",
     "test": "node --test --disable-warning=ExperimentalWarning tests/*.test.ts",

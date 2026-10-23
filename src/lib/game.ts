@@ -28,9 +28,14 @@ export type Player = {
   freeStock: number;
   /** Instant où la prochaine bobine offerte arrive, ou null si la réserve est pleine. */
   nextFreeAt: number | null;
+  /** Compte de test : les tickets ne sont jamais débités. */
+  unlimited: boolean;
 };
 
-type PlayerRow = { id: string; tickets: number; free_stock: number; free_updated_at: number };
+/** Solde affiché pour un compte illimité : assez pour que tous les achats passent. */
+export const UNLIMITED_TICKETS = 999_999_999;
+
+type PlayerRow = { id: string; tickets: number; free_stock: number; free_updated_at: number; unlimited: number };
 
 export class GameError extends Error {
   readonly code: string;
@@ -52,9 +57,10 @@ function regenerate(row: PlayerRow, now: number): { stock: number; updatedAt: nu
 function toPlayer(row: PlayerRow, stock: number, updatedAt: number): Player {
   return {
     id: row.id,
-    tickets: row.tickets,
+    tickets: row.unlimited ? UNLIMITED_TICKETS : row.tickets,
     freeStock: stock,
     nextFreeAt: stock >= FREE_BOOSTER_CAP ? null : updatedAt + FREE_BOOSTER_EVERY_MS,
+    unlimited: row.unlimited === 1,
   };
 }
 
@@ -62,11 +68,11 @@ export function createPlayer(db: DatabaseSync, now = Date.now()): Player {
   const id = randomUUID();
   db.prepare('INSERT INTO players (id, created_at, tickets, free_stock, free_updated_at) VALUES (?, ?, ?, ?, ?)')
     .run(id, now, STARTING_TICKETS, FREE_BOOSTER_CAP, now);
-  return { id, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null };
+  return { id, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null, unlimited: false };
 }
 
 export function getPlayer(db: DatabaseSync, id: string, now = Date.now()): Player | null {
-  const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at FROM players WHERE id = ?').get(id) as
+  const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at, unlimited FROM players WHERE id = ?').get(id) as
     | PlayerRow
     | undefined;
   if (!row) return null;
@@ -76,6 +82,7 @@ export function getPlayer(db: DatabaseSync, id: string, now = Date.now()): Playe
 
 /** Crédite (ou débite, si négatif) des tickets ; refuse de passer sous zéro. */
 export function addTickets(db: DatabaseSync, playerId: string, amount: number): void {
+  if (amount < 0 && (db.prepare('SELECT unlimited FROM players WHERE id = ?').get(playerId) as { unlimited: number } | undefined)?.unlimited) return;
   const res = db.prepare('UPDATE players SET tickets = tickets + ? WHERE id = ? AND tickets + ? >= 0').run(amount, playerId, amount);
   if (res.changes === 0) throw new GameError('not-enough-tickets', 'Pas assez de tickets.');
 }
@@ -138,7 +145,7 @@ export function openBoosterFor(
   const pool = poolOf(db, def);
 
   return transaction(db, () => {
-    const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at FROM players WHERE id = ?').get(playerId) as
+    const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at, unlimited FROM players WHERE id = ?').get(playerId) as
       | PlayerRow
       | undefined;
     if (!row) throw new GameError('unknown-player', 'Joueur inconnu');
@@ -151,8 +158,8 @@ export function openBoosterFor(
       if (stock >= FREE_BOOSTER_CAP) updatedAt = now;
       stock -= 1;
       paidWith = 'free';
-    } else if (tickets >= def.price) {
-      tickets -= def.price;
+    } else if (row.unlimited || tickets >= def.price) {
+      if (!row.unlimited) tickets -= def.price;
       paidWith = 'tickets';
     } else {
       throw new GameError('not-enough-tickets', `Il faut ${def.price} tickets pour ouvrir ${def.name}.`);

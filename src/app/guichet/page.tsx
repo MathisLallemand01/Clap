@@ -134,7 +134,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
                       <li><span>Prix conseillé</span><b>{formatNumber(selected.suggested)} TK</b></li>
                       <li><span>Valeur</span><b>{formatEntries(RARITIES[selected.card.rarity].entries)} entrées</b></li>
                       <li><span>Vous l’avez déjà</span><b style={{ color: owned.has(selected.card.id) ? 'var(--ok)' : 'var(--accent)' }}>{owned.has(selected.card.id) ? 'Oui' : 'Non'}</b></li>
-                      <li><span>Votre solde</span><b>{formatNumber(ctx.wallet.tickets)} TK</b></li>
+                      <li><span>Votre solde</span><b>{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.tickets)} TK</b></li>
                     </ul>
                     {selected.sellerId === ctx.player.id ? (
                       <form action={cancelAction}><input type="hidden" name="listing" value={selected.id} /><button className="btn btn-block" type="submit">Retirer mon annonce</button></form>

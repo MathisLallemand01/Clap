@@ -37,7 +37,7 @@ export default async function BoostersPage() {
         <header className="page-head">
           <h1 className="display h1">Bobines</h1>
           <div className="meta">
-            <span><b>{ctx.wallet.freeStock}</b> BOBINE{ctx.wallet.freeStock > 1 ? 'S' : ''} OFFERTE{ctx.wallet.freeStock > 1 ? 'S' : ''} · <b>{formatNumber(ctx.wallet.tickets)}</b> TICKETS</span>
+            <span><b>{ctx.wallet.freeStock}</b> BOBINE{ctx.wallet.freeStock > 1 ? 'S' : ''} OFFERTE{ctx.wallet.freeStock > 1 ? 'S' : ''} · <b>{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.tickets)}</b> TICKETS</span>
             {ctx.wallet.nextFreeAt && <span>PROCHAINE OFFERTE DANS <b><Countdown until={ctx.wallet.nextFreeAt} /></b></span>}
           </div>
         </header>

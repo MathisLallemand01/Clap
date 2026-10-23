@@ -37,7 +37,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                 <SeatIcon />{formatEntries(ctx.wallet.entries)}<span className="visually-hidden"> entrées</span>
               </Link>
               <Link href="/missions" className={`pill ${styles.wallet}`} title="Tickets à dépenser : bobines en plus, achats au Guichet">
-                <TicketIcon />{formatNumber(ctx.wallet.tickets)}<span className="visually-hidden"> tickets</span>
+                <TicketIcon />{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.tickets)}<span className="visually-hidden"> tickets</span>
               </Link>
               <NotificationBell notifications={ctx.notifications} unread={ctx.unread} />
               <details className={styles.menu}>
