@@ -43,12 +43,22 @@ function pickCard(kind: Card['kind'], rarity: Rarity, pool: Card[], rng: Rng): C
   return null;
 }
 
-/** Ouvre une bobine : une carte par slot, dans l'ordre des slots. */
-export function openBooster(def: BoosterDef, catalog: Card[], rng: Rng = Math.random): Card[] {
+/** La rareté la plus haute qu'un slot peut donner. */
+export function topRarity(slot: Slot): Rarity {
+  const ladder = ladderOf(slot.kind);
+  const possible = (Object.entries(slot.odds) as [Rarity, number][]).filter(([, w]) => w > 0).map(([r]) => r);
+  return possible.sort((a, b) => ladder.indexOf(b) - ladder.indexOf(a))[0];
+}
+
+/**
+ * Ouvre une bobine : une carte par slot, dans l'ordre des slots.
+ * `topFirst` : la première carte est de la rareté la plus haute du slot (cadeau de la toute première bobine).
+ */
+export function openBooster(def: BoosterDef, catalog: Card[], rng: Rng = Math.random, { topFirst = false } = {}): Card[] {
   const pool = boosterPool(def, catalog);
   const cards: Card[] = [];
-  for (const slot of def.slots) {
-    const card = pickCard(slot.kind, rollRarity(slot, rng), pool, rng);
+  for (const [i, slot] of def.slots.entries()) {
+    const card = pickCard(slot.kind, topFirst && i === 0 ? topRarity(slot) : rollRarity(slot, rng), pool, rng);
     if (card) cards.push(card);
   }
   return cards;

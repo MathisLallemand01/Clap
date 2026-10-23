@@ -1,25 +1,11 @@
 .screen { position: fixed; inset: 0; background: var(--ink); overflow: hidden; color: var(--text); }
 
-.stage { position: absolute; left: 50%; top: 50%; transform-origin: center; opacity: 0; transition: opacity 600ms ease; }
+.stage { position: absolute; left: 50%; top: 50%; transform-origin: center; opacity: 0; transition: opacity 600ms ease; pointer-events: none; }
 .stageOn { opacity: 1; }
 .intro {
   position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
   background: radial-gradient(circle at 50% 45%, rgba(255, 74, 28, 0.14), rgba(255, 74, 28, 0) 45%);
   pointer-events: none;
-}
-.celebration {
-  position: absolute; z-index: 4; left: 50%; top: 96px; transform: translateX(-50%);
-  min-width: min(520px, calc(100% - 32px)); padding: 18px 28px; border-radius: 20px; text-align: center;
-  background: rgba(11, 11, 13, 0.9); border: 2px solid var(--rc); box-shadow: 0 0 60px color-mix(in srgb, var(--rc) 45%, transparent);
-  display: flex; flex-direction: column; gap: 6px; animation: celebrate 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.celebration .eyebrow { color: var(--rc); }
-.celebration strong { font-size: clamp(36px, 5vw, 56px); color: var(--rc); }
-.celebration > span:last-child { color: var(--text-2); font-size: 15px; }
-@keyframes celebrate {
-  0% { opacity: 0; transform: translate(-50%, -16px) scale(0.92); }
-  12%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
 }
 .stage svg { position: absolute; inset: 0; overflow: visible; }
 
@@ -119,3 +105,103 @@
   .trayHead strong { font-size: 22px; }
   .slot { width: 52px; height: 26px; }
 }
+
+/* Décor de la salle : faisceau, poussière, repères de cadrage, textes de pellicule sur les côtés. */
+.beam { z-index: 0; }
+.dust { z-index: 0; left: 10%; right: 40%; top: 10%; bottom: 30%; position: absolute; }
+.marks { position: absolute; inset: 88px clamp(12px, 2.4vw, 32px) clamp(12px, 2.4vw, 32px); pointer-events: none; z-index: 1; }
+.marks > span { position: absolute; width: 28px; height: 28px; border: 0 solid #34343c; }
+.marks > span:nth-child(1) { left: 0; top: 0; border-left-width: 2px; border-top-width: 2px; }
+.marks > span:nth-child(2) { right: 0; top: 0; border-right-width: 2px; border-top-width: 2px; }
+.marks > span:nth-child(3) { left: 0; bottom: 0; border-left-width: 2px; border-bottom-width: 2px; }
+.marks > span:nth-child(4) { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
+.rec { position: absolute; left: 40px; top: 6px; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.rec i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: rec-blink 1.4s steps(1, end) infinite; }
+.tc { position: absolute; right: 40px; top: 6px; font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+.sideL, .sideR { position: absolute; top: 50%; font-style: normal; font-family: var(--mono); font-size: 9px; letter-spacing: 0.3em; color: #3e3e46; writing-mode: vertical-rl; white-space: nowrap; }
+.sideL { left: 6px; transform: translateY(-50%) rotate(180deg); }
+.sideR { right: 6px; transform: translateY(-50%); }
+@keyframes rec-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
+@media (max-width: 719px) { .sideL, .sideR, .tc { display: none; } }
+
+/* Un clic n'importe où sur la scène fait avancer la bande. */
+.advance { position: absolute; inset: 0; z-index: 1; border: 0; background: transparent; cursor: pointer; }
+.hint {
+  position: absolute; width: 280px; margin-left: -140px; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center;
+}
+.hint > * { flex: none; }
+.hintRing {
+  margin-top: 196px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; background: rgba(11, 11, 13, 0.8);
+  animation: hint-pulse 1.4s ease-out infinite;
+}
+.hintText { margin-top: 12px; font-stretch: 62%; font-weight: 900; font-size: 26px; text-transform: uppercase; white-space: nowrap; animation: hint-blink 1.4s ease-in-out infinite; }
+.hintKey { margin-top: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+@keyframes hint-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 74, 28, 0.6); } 100% { box-shadow: 0 0 0 22px rgba(255, 74, 28, 0); } }
+@keyframes hint-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* Animations de rareté : du cran 2 (discret) au cran 5 (plein écran). */
+.burst { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.burst > span, .sparks { position: absolute; left: var(--bx); top: var(--by); }
+.dim { display: none; }
+.flash { display: none; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rc) 70%, white) 0, color-mix(in srgb, var(--rc) 35%, transparent) 25%, transparent 60%); }
+.burstRays { display: none; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: repeating-conic-gradient(color-mix(in srgb, var(--rc) 55%, transparent) 0 5deg, transparent 5deg 15deg); -webkit-mask-image: radial-gradient(circle, #000 6%, transparent 55%); mask-image: radial-gradient(circle, #000 6%, transparent 55%); }
+.ring { width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; border: 3px solid var(--rc); opacity: 0; animation: burst-ring 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.ring2 { display: none; animation-delay: 160ms; }
+.sparks { width: 0; height: 0; }
+.sparks i {
+  position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--rc);
+  box-shadow: 0 0 12px var(--rc); opacity: 0; transform: rotate(var(--a)) translateX(0) scale(var(--s));
+  animation: burst-spark 900ms cubic-bezier(0.1, 0.6, 0.3, 1) both;
+}
+@keyframes burst-ring { 0% { opacity: 0.9; transform: scale(0.3); } 100% { opacity: 0; transform: scale(2.2); } }
+@keyframes burst-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(var(--s)); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.2); } }
+@keyframes burst-flash { 0% { opacity: 0; transform: scale(0.4); } 20% { opacity: 0.9; } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes burst-rays { 0% { opacity: 0; transform: rotate(0deg) scale(0.6); } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: rotate(80deg) scale(1.1); } }
+
+.lv2 .ring { border-width: 2px; }
+.lv3 .ring2 { display: block; }
+.lv3 .burstRays { display: block; width: 520px; height: 520px; margin: -260px 0 0 -260px; animation: burst-rays 1000ms ease-out both; }
+
+.lv4 .ring2 { display: block; }
+.lv4 .ring { width: 300px; height: 300px; margin: -150px 0 0 -150px; animation-duration: 1000ms; }
+.lv4 .flash { display: block; animation: burst-flash 700ms ease-out both; }
+.lv4 .burstRays { display: block; animation: burst-rays 1500ms ease-out both; }
+.lv4 .sparks i { animation-duration: 1200ms; }
+
+/* Cran 5 (Légende, Icône) : la salle s'assombrit, la carte vient au centre sous les rayons. */
+.lv5 .dim { display: block; left: 0; top: 0; inset: 0; background: rgba(5, 5, 6, 0.82); animation: burst-dim 3600ms ease both; }
+.lv5 .flash { display: block; width: 1600px; height: 1600px; margin: -800px 0 0 -800px; animation: burst-flash 900ms ease-out both, burst-flash 900ms 450ms ease-out both; }
+.lv5 .burstRays { display: block; width: 1800px; height: 1800px; margin: -900px 0 0 -900px; animation: burst-rays 3600ms linear both; }
+.lv5 .ring, .lv5 .ring2 { display: block; width: 420px; height: 420px; margin: -210px 0 0 -210px; animation-duration: 1300ms; }
+.lv5 .sparks i { width: 10px; height: 10px; animation-duration: 1600ms; }
+.spotCard {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  filter: drop-shadow(0 0 40px color-mix(in srgb, var(--rc) 60%, transparent));
+  animation: spot-card 3600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.banner {
+  position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 1;
+  min-width: min(520px, calc(100% - 32px)); padding: 16px 26px; border-radius: 20px; text-align: center;
+  background: rgba(11, 11, 13, 0.9); border: 2px solid var(--rc); box-shadow: 0 0 60px color-mix(in srgb, var(--rc) 45%, transparent);
+  display: flex; flex-direction: column; gap: 6px; animation: banner 1500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.lv4 .banner { top: 48%; }
+.lv5 .banner { animation-duration: 3600ms; top: auto; bottom: 7vh; }
+.banner :global(.eyebrow) { color: var(--rc); }
+.banner strong { font-size: clamp(32px, 4.4vw, 52px); color: var(--rc); }
+.banner > span:last-child { color: var(--text-2); font-size: 15px; }
+@keyframes burst-dim { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes spot-card { 0% { opacity: 0; transform: scale(0.3) rotate(-14deg); } 18% { opacity: 1; transform: scale(1.08) rotate(3deg); } 26% { transform: scale(1) rotate(0); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.9); } }
+@keyframes banner { 0% { opacity: 0; transform: translate(-50%, -16px) scale(0.92); } 12%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); } }
+
+/* Secousse de la scène sur les cartes de cran 4 et 5 (propriété translate : n'écrase pas la mise à l'échelle). */
+.shake { animation: shake 420ms ease-out; }
+@keyframes shake { 0%, 100% { translate: 0 0; } 20% { translate: -7px 3px; } 40% { translate: 6px -4px; } 60% { translate: -4px 2px; } 80% { translate: 3px -1px; } }
+
+/* Fenêtre « gardez vos cartes » pour les visiteurs. */
+.keep { width: min(620px, 100%); }
+.keep p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.keep b { color: var(--text); }
+.keepCards { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }

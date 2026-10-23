@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { BoosterPack } from '@/components/BoosterPack';
+import { Beam, Dust } from '@/components/Decor';
 import { GameCard } from '@/components/GameCard';
 import { CloseIcon, SoundIcon } from '@/components/Icons';
 import { Wordmark } from '@/components/Mark';
@@ -70,6 +71,19 @@ function stingLevel(card: PulledCard): 0 | 1 | 2 | 3 {
   return 0;
 }
 
+/** Durée de l'animation de rareté, par cran (2 à 5) : la bande attend qu'elle se termine. */
+const BURST_MS: Record<number, number> = { 2: 700, 3: 1000, 4: 1500, 5: 3600 };
+/** Étincelles déterministes (pas de hasard au rendu) ; chaque cran en utilise davantage. */
+const SPARKS = Array.from({ length: 56 }, (_, i) => ({
+  a: (i * 137.5) % 360,
+  d: 120 + ((i * 53) % 9) * 38,
+  s: 0.6 + ((i * 29) % 5) * 0.18,
+  delay: (i % 7) * 30,
+}));
+const SPARK_COUNT: Record<number, number> = { 2: 8, 3: 16, 4: 30, 5: 56 };
+
+type Burst = { key: string; level: number; card: PulledCard; x: number; y: number };
+
 function Reel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   const holes = Array.from({ length: 6 }, (_, k) => {
     const a = ((k * 60 + 30) * Math.PI) / 180;
@@ -86,7 +100,7 @@ function Reel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   );
 }
 
-export function Projection({ booster, cover }: { booster: BoosterDef; cover: Card | null }) {
+export function Projection({ booster, cover, guest = false }: { booster: BoosterDef; cover: Card | null; guest?: boolean }) {
   const [layoutName, setLayoutName] = useState<keyof typeof LAYOUTS>('landscape');
   const [scale, setScale] = useState(1);
   const [frames, setFrames] = useState<Frame[]>([]);
@@ -101,7 +115,10 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
   const [calm, setCalm] = useState(false);
   // Le paquet s'affiche, se déchire, puis la bande démarre.
   const [intro, setIntro] = useState<'pack' | 'tearing' | 'done'>('pack');
-  const [celebration, setCelebration] = useState<PulledCard | null>(null);
+  const [burst, setBurst] = useState<Burst | null>(null);
+  // La bande attend un clic avant chaque nouvelle vignette.
+  const [awaiting, setAwaiting] = useState(false);
+  const [keepOpen, setKeepOpen] = useState(false);
 
   const layout = LAYOUTS[layoutName];
   const framesRef = useRef<Frame[]>([]);
@@ -110,7 +127,11 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
   const pathRef = useRef<SVGPathElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const projector = useRef<Projector | null>(null);
-  const motion = useRef({ offset: layout.gate - SPACING, step: null as null | { from: number; start: number }, holdUntil: 0, moving: false });
+  const motion = useRef({ offset: layout.gate - SPACING, step: null as null | { from: number; start: number }, holdUntil: 0, moving: false, queued: 0, blockUntil: 0, awaiting: false });
+  const scaleRef = useRef(1);
+  const gatePos = useRef<{ x: number; y: number } | null>(null);
+  const timecode = useRef<HTMLSpanElement>(null);
+  const startedAt = useRef(0);
   const fastRef = useRef(false);
   const speedRef = useRef<readonly [number, number]>(SPEEDS.normal);
   const introDone = useRef(false);
@@ -121,6 +142,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
 
   framesRef.current = frames;
   fastRef.current = fast;
+  scaleRef.current = scale;
 
   // Orientation et mise à l'échelle de la scène.
   useLayoutEffect(() => {
@@ -200,11 +222,37 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
     p?.click();
     const level = stingLevel(frame.card);
     if (level && !fastRef.current) p?.sting(level as 1 | 2 | 3);
-    if (level === 3) {
-      setCelebration(frame.card);
-      window.setTimeout(() => setCelebration((c) => (c === frame.card ? null : c)), 3200);
+    // Animation de rareté : plus la carte est rare, plus elle est grandiose (crans 2 à 5).
+    const tier = RARITIES[frame.card.rarity].tier;
+    if (tier >= 2 && !fastRef.current) {
+      const g = gatePos.current;
+      const s = scaleRef.current;
+      const origin = tier >= 5 || !g
+        ? { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+        : { x: window.innerWidth / 2 + (g.x - LAYOUTS[window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait'].w / 2) * s, y: window.innerHeight / 2 + (g.y - LAYOUTS[window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait'].h / 2) * s };
+      motion.current.blockUntil = performance.now() + (tier >= 4 ? BURST_MS[tier] : 0);
+      setBurst({ key: frame.key, level: tier, card: frame.card, ...origin });
+      window.setTimeout(() => setBurst((b) => (b?.key === frame.key ? null : b)), BURST_MS[tier]);
     }
   }, []);
+
+  /** Demande la vignette suivante (clic, Espace, Entrée ou flèche droite). */
+  const advance = useCallback(() => {
+    const m = motion.current;
+    if (m.awaiting || m.step) m.queued = Math.min(m.queued + 1, 1);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLElement && e.target.closest('button, a, input')) return;
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        advance();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [advance]);
 
   // Moteur de la bande.
   useEffect(() => {
@@ -230,11 +278,28 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
           const atGate = Math.round((m.offset - layout.gate) / SPACING);
           if (atGate >= 0 && atGate < list.length) reveal(list[atGate]);
         }
-      } else if (pending && now >= m.holdUntil) {
-        m.step = { from: m.offset, start: now };
+      } else if (pending && now >= m.holdUntil && now >= m.blockUntil) {
+        // Les amorces passent seules ; chaque carte attend un clic (sauf « Tout révéler »).
+        const next = list[Math.round((m.offset - layout.gate) / SPACING) + 1];
+        const needsClick = next?.type === 'card' && !fastRef.current;
+        if (!needsClick || m.queued > 0) {
+          if (needsClick) m.queued -= 1;
+          m.step = { from: m.offset, start: now };
+        }
+      }
+      const waiting = !m.step && pending && now >= m.holdUntil && now >= m.blockUntil && !fastRef.current;
+      if (waiting !== m.awaiting) {
+        m.awaiting = waiting;
+        setAwaiting(waiting);
+      }
+      if (timecode.current) {
+        if (!startedAt.current) startedAt.current = now;
+        const t = Math.floor((now - startedAt.current) / (1000 / 24));
+        const pad = (n: number) => String(n).padStart(2, '0');
+        timecode.current.textContent = `00:${pad(Math.floor(t / 1440) % 60)}:${pad(Math.floor(t / 24) % 60)}:${pad(t % 24)}`;
       }
 
-      const moving = m.step !== null || (pending && now < m.holdUntil);
+      const moving = m.step !== null;
       if (moving !== m.moving) {
         m.moving = moving;
         projector.current?.hum(moving);
@@ -274,6 +339,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
     const p = path.getPointAtLength(layout.gate);
     const q = path.getPointAtLength(layout.gate + 1);
     setGate({ x: p.x, y: p.y, angle: (Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI });
+    gatePos.current = { x: p.x, y: p.y };
   }, [layout]);
 
   const toggleSound = () => {
@@ -290,9 +356,27 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
   const nextCost = freeStock && freeStock > 0 ? 'offerte' : `${formatNumber(booster.price)} tickets`;
   const canAfford = (freeStock ?? 0) > 0 || (tickets ?? 0) >= booster.price;
   const pathStyle = { offsetPath: `path('${layout.path}')` } as CSSProperties;
+  const best = currentCards.map((f) => f.card).sort((a, b) => RARITIES[b.rarity].entries - RARITIES[a.rarity].entries)[0];
+
+  // Visiteur sans compte : la fenêtre « gardez vos cartes » s'ouvre une fois la bobine révélée.
+  useEffect(() => {
+    if (!guest || !done) return;
+    const id = window.setTimeout(() => setKeepOpen(true), 1400);
+    return () => window.clearTimeout(id);
+  }, [guest, done]);
 
   return (
     <div className={styles.screen}>
+      <Beam from="left" className={styles.beam} />
+      <Dust className={styles.dust} />
+      <div className={styles.marks} aria-hidden="true">
+        <span /><span /><span /><span />
+        <b className={styles.rec}><i />REC</b>
+        <b className={styles.tc} ref={timecode}>00:00:00:00</b>
+        <em className={styles.sideL}>CLAP · PROJECTION · SALLE 7 · {booster.name.toUpperCase()}</em>
+        <em className={styles.sideR}>35 MM · 24 IM/S · VERSION ORIGINALE</em>
+      </div>
+      {!calm && <button type="button" className={styles.advance} onClick={advance} aria-label="Vignette suivante" tabIndex={-1} />}
       {calm ? (
         <div className={styles.calm}>
           {frames.map((f) => f.type === 'card' && (
@@ -300,7 +384,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
           ))}
         </div>
       ) : (
-        <div className={`${styles.stage} ${intro === 'done' ? styles.stageOn : ''}`} style={{ width: layout.w, height: layout.h, transform: `translate(-50%, -50%) scale(${scale})` }}>
+        <div className={`${styles.stage} ${intro === 'done' ? styles.stageOn : ''} ${burst && burst.level >= 4 ? styles.shake : ''}`} style={{ width: layout.w, height: layout.h, transform: `translate(-50%, -50%) scale(${scale})` }}>
           <svg ref={svgRef} width={layout.w} height={layout.h} viewBox={`0 0 ${layout.w} ${layout.h}`} aria-hidden="true">
             {layout.reels.map((r) => <Reel key={`${r.cx}-${r.cy}`} {...r} />)}
             <path ref={pathRef} d={layout.path} fill="none" stroke="#111114" strokeWidth="252" />
@@ -324,6 +408,16 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
             <div className={styles.gate} style={{ left: gate.x, top: gate.y, transform: `rotate(${gate.angle}deg)` }} aria-hidden="true">
               <span /><span /><span /><span />
               <span className={styles.gateLabel}>▸ OBTURATEUR</span>
+            </div>
+          )}
+
+          {gate && awaiting && (
+            <div className={styles.hint} style={{ left: gate.x, top: gate.y }} role="status">
+              <span className={styles.hintRing}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>
+              </span>
+              <span className={styles.hintText}>Cliquez pour avancer</span>
+              <span className={styles.hintKey}>ou Espace</span>
             </div>
           )}
 
@@ -366,11 +460,54 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
         </div>
       )}
 
-      {celebration && (
-        <div className={styles.celebration} style={{ ['--rc' as string]: RARITIES[celebration.rarity].color }} role="status">
-          <span className="eyebrow">◆ Nouvelle {RARITIES[celebration.rarity].label} ◆</span>
-          <strong className="display">{celebration.character ?? `${celebration.first} ${celebration.last}`}</strong>
-          <span>{celebration.first} {celebration.last}{celebration.film ? ` · ${celebration.film}` : ''}</span>
+      {burst && (
+        <div
+          key={burst.key}
+          className={`${styles.burst} ${styles[`lv${burst.level}`]}`}
+          style={{ '--rc': RARITIES[burst.card.rarity].color, '--bx': `${burst.x}px`, '--by': `${burst.y}px` } as CSSProperties}
+          role={burst.level >= 5 ? 'status' : undefined}
+          aria-hidden={burst.level < 5 || undefined}
+        >
+          <span className={styles.dim} />
+          <span className={styles.flash} />
+          <span className={styles.burstRays} />
+          <span className={styles.ring} />
+          <span className={`${styles.ring} ${styles.ring2}`} />
+          <div className={styles.sparks}>
+            {SPARKS.slice(0, SPARK_COUNT[burst.level] ?? 0).map((sp, i) => (
+              <i key={i} style={{ '--a': `${sp.a}deg`, '--d': `${sp.d}px`, '--s': sp.s, animationDelay: `${sp.delay}ms` } as CSSProperties} />
+            ))}
+          </div>
+          {burst.level >= 4 && (
+            <div className={styles.banner}>
+              <span className="eyebrow">◆ {RARITIES[burst.card.rarity].label} ◆</span>
+              <strong className="display">{burst.card.character ?? `${burst.card.first} ${burst.card.last}`}</strong>
+              <span>{burst.card.kind === 'role' ? `${burst.card.first} ${burst.card.last} · ${burst.card.film}` : `Carte Acteur${burst.card.origin ? ` · ${burst.card.origin}` : ''}`}</span>
+            </div>
+          )}
+          {burst.level >= 5 && (
+            <div className={styles.spotCard}><GameCard card={burst.card} width={260} eager live /></div>
+          )}
+        </div>
+      )}
+
+      {keepOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="garder">
+          <div className={`modal ${styles.keep}`}>
+            <span className="eyebrow" style={{ color: 'var(--accent)' }}>Bobine offerte</span>
+            <h2 id="garder" className="display">Gardez vos {currentCards.length} cartes</h2>
+            <p>
+              {best && <>Dont <b>{best.character ?? `${best.first} ${best.last}`}</b>, {RARITIES[best.rarity].label}. </>}
+              Elles sont mises de côté : créez un compte gratuit et elles rejoignent votre collection, avec 3 bobines offertes et 600 tickets.
+            </p>
+            <div className={styles.keepCards}>
+              {currentCards.map((f) => <GameCard key={f.key} card={f.card} width={92} eager />)}
+            </div>
+            <div className="actions">
+              <Link href="/connexion?mode=inscription&suite=/collection" className="btn btn-primary">Créer mon compte</Link>
+              <Link href="/connexion?suite=/collection" className="btn">J’ai déjà un compte</Link>
+            </div>
+          </div>
         </div>
       )}
 
@@ -385,7 +522,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
             <span className={styles.soundLabel}>{sound ? 'Son activé' : 'Son coupé'}</span>
             
           </button>
-          <Link href="/collection" className={styles.round} aria-label="Fermer la projection"><CloseIcon /></Link>
+          <Link href={guest ? '/' : '/collection'} className={styles.round} aria-label="Fermer la projection"><CloseIcon /></Link>
         </div>
       </header>
 
@@ -412,7 +549,10 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
             {!done && current && (
               <button type="button" className="btn btn-sm" onClick={() => setFast(true)} disabled={fast}>Tout révéler</button>
             )}
-            {done && (
+            {done && guest && (
+              <button type="button" className="btn btn-sm btn-primary" onClick={() => setKeepOpen(true)}>Garder mes cartes</button>
+            )}
+            {done && !guest && (
               <>
                 <button type="button" className="btn btn-sm" onClick={() => void open()} disabled={loading || !canAfford}>
                   Une autre · {nextCost}
@@ -428,7 +568,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
             {error} <Link href="/bobines" style={{ textDecoration: 'underline' }}>Voir les bobines</Link>
           </span>
         )}
-        {done && !canAfford && !error && (
+        {done && !guest && !canAfford && !error && (
           <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
             PLUS DE BOBINE OFFERTE NI ASSEZ DE TICKETS POUR CELLE-CI.
           </span>

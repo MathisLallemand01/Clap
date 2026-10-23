@@ -138,7 +138,7 @@ export function openBoosterFor(
   db: DatabaseSync,
   playerId: string,
   boosterId: string,
-  { now = Date.now(), rng = Math.random as Rng } = {},
+  { now = Date.now(), rng = Math.random as Rng, topFirst = false } = {},
 ): OpenResult {
   const def = getBooster(boosterId);
   if (!def) throw new GameError('unknown-booster', `Bobine inconnue : ${boosterId}`);
@@ -175,7 +175,7 @@ export function openBoosterFor(
     const countMine = db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ? AND player_id = ?');
     const insertOwned = db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, ?, ?, ?)');
 
-    const cards = openBooster({ ...def, tags: undefined }, pool, rng).map((card): PulledCard => {
+    const cards = openBooster({ ...def, tags: undefined }, pool, rng, { topFirst }).map((card): PulledCard => {
       const serial = (countCopies.get(card.id) as { n: number }).n + 1;
       const isNew = (countMine.get(card.id, playerId) as { n: number }).n === 0;
       insertOwned.run(playerId, card.id, serial, pullId, now);
@@ -288,5 +288,23 @@ export function recycleDuplicates(db: DatabaseSync, playerId: string, now = Date
       logEvent(db, playerId, 'recycle', cards, now);
     }
     return { cards, tickets };
+  });
+}
+
+/** Les visiteurs sans compte ont droit à une seule bobine, gardée de côté jusqu'à l'inscription. */
+export function guestHasOpened(db: DatabaseSync, guestId: string): boolean {
+  return Boolean(db.prepare('SELECT 1 FROM pulls WHERE player_id = ? LIMIT 1').get(guestId));
+}
+
+/** À l'inscription (ou la connexion), les cartes tirées sans compte rejoignent la collection du joueur. */
+export function adoptGuest(db: DatabaseSync, guestId: string, playerId: string): number {
+  if (guestId === playerId) return 0;
+  if (db.prepare('SELECT 1 FROM users WHERE player_id = ?').get(guestId)) return 0;
+  return transaction(db, () => {
+    const moved = db.prepare('UPDATE owned SET player_id = ? WHERE player_id = ?').run(playerId, guestId).changes;
+    db.prepare('UPDATE pulls SET player_id = ? WHERE player_id = ?').run(playerId, guestId);
+    db.prepare('UPDATE events SET player_id = ? WHERE player_id = ?').run(playerId, guestId);
+    db.prepare('DELETE FROM players WHERE id = ?').run(guestId);
+    return Number(moved);
   });
 }
