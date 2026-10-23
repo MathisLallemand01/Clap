@@ -5,6 +5,7 @@ import { logout } from '@/app/actions';
 import { SeatIcon, TicketIcon } from './Icons';
 import { Wordmark } from './Mark';
 import { NotificationBell } from './NotificationBell';
+import { TicketCounter } from './TicketCounter';
 import styles from './Nav.module.css';
 
 export const NAV_LINKS = [
@@ -37,8 +38,8 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
               <Link href="/collection" className={`pill ${styles.wallet}`} title="Box-office : la valeur de votre collection, en entrées">
                 <SeatIcon />{formatEntries(ctx.wallet.entries)}<span className="visually-hidden"> entrées</span>
               </Link>
-              <Link href="/missions" className={`pill ${styles.wallet}`} title="Tickets à dépenser : bobines en plus, achats au Guichet">
-                <TicketIcon />{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.tickets)}<span className="visually-hidden"> tickets</span>
+              <Link href="/missions" id="wallet-tickets" className={`pill ${styles.wallet}`} title="Tickets à dépenser : bobines en plus, achats au Guichet">
+                <TicketIcon /><TicketCounter value={ctx.wallet.tickets} unlimited={ctx.player.unlimited} /><span className="visually-hidden"> tickets</span>
               </Link>
               <NotificationBell notifications={ctx.notifications} unread={ctx.unread} />
               <details className={styles.menu}>

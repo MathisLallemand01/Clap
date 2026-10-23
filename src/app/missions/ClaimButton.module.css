@@ -1,0 +1,32 @@
+.overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.dim { position: absolute; inset: 0; background: rgba(5, 5, 6, 0.78); animation: dim-in 300ms ease both; }
+.flying .dim { animation: dim-out 600ms ease both; }
+.rays {
+  position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px;
+  background: repeating-conic-gradient(rgba(255, 74, 28, 0.22) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 50%); mask-image: radial-gradient(circle, #000 8%, transparent 50%);
+  animation: rays-spin 6s linear infinite, dim-in 400ms ease both;
+}
+.flying .rays { animation: dim-out 400ms ease both; }
+
+/* Le ticket apparaît au centre, puis file vers le compteur (--tx, --ty) en rapetissant. */
+.ticket {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  padding: 26px 64px 26px 40px; border-radius: 14px; background: var(--accent); color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 74, 28, 0.35);
+  -webkit-mask-image: radial-gradient(circle at 100% 50%, transparent 14px, #000 14.5px); mask-image: radial-gradient(circle at 100% 50%, transparent 14px, #000 14.5px);
+  animation: ticket-pop 600ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  transition: left 650ms cubic-bezier(0.6, 0, 0.3, 1), top 650ms cubic-bezier(0.6, 0, 0.3, 1), scale 650ms cubic-bezier(0.6, 0, 0.3, 1), opacity 650ms ease;
+}
+.ticket::after { content: ''; position: absolute; right: 30px; top: 10px; bottom: 10px; border-left: 2px dashed rgba(11, 11, 13, 0.45); }
+.flying .ticket { left: var(--tx); top: var(--ty); scale: 0.12; opacity: 0.2; }
+.label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+.ticket strong { font-size: clamp(72px, 9vw, 112px); line-height: 0.85; }
+.unit { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-weight: 600; font-size: 14px; letter-spacing: 0.12em; }
+
+@keyframes ticket-pop { 0% { scale: 0.3; rotate: -12deg; opacity: 0; } 100% { scale: 1; rotate: 0deg; opacity: 1; } }
+@keyframes dim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dim-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes rays-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ticket { transition: none; } }

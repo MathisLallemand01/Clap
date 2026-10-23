@@ -253,3 +253,7 @@ body::after {
 .slug { margin: 0; display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: #4a4a52; text-transform: uppercase; }
 .slug span { white-space: nowrap; }
 .page > .slug { margin-bottom: calc(12px - clamp(40px, 6vw, 72px)); }
+
+/* Le compteur de tickets qui reçoit une récompense. */
+.ticket-bump { display: inline-block; color: var(--accent); animation: ticket-bump 900ms cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes ticket-bump { 0% { transform: scale(1); } 25% { transform: scale(1.45); } 100% { transform: scale(1); } }

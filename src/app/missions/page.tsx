@@ -7,7 +7,7 @@ import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { missionStates, periodStart, STREAK_BONUS, STREAK_DAYS, visitStreak, type MissionScope } from '@/lib/missions';
 import { requireContext } from '@/lib/session';
-import { claimAction } from './actions';
+import { ClaimButton } from './ClaimButton';
 import styles from './missions.module.css';
 
 export const metadata: Metadata = { title: 'Missions' };
@@ -95,10 +95,7 @@ export default async function MissionsPage({ searchParams }: { searchParams: Pro
                         {m.claimed ? (
                           <span className={styles.got}>✓ REÇU</span>
                         ) : m.done ? (
-                          <form action={claimAction}>
-                            <input type="hidden" name="mission" value={m.id} />
-                            <button type="submit" className="btn btn-sm btn-primary">Récupérer</button>
-                          </form>
+                          <ClaimButton missionId={m.id} />
                         ) : null}
                       </div>
                     </article>

@@ -44,6 +44,8 @@ export type Projector = {
   click(): void;
   /** Accroche de rareté : 1 = rare, 2 = très rare, 3 = Légende ou Icône. */
   sting(level: 1 | 2 | 3): void;
+  /** Pièces qui tombent dans la caisse : récompense de mission (plus le gain est gros, plus il y en a). */
+  coins(count: number): void;
   /** Déchirure du paquet, au début de l'ouverture. */
   rip(): void;
   /** Ronron du projecteur pendant que la bande avance. */
@@ -192,6 +194,27 @@ export function createProjector(enabled: boolean): Projector {
       if (level === 3 && hum) {
         hum.gain.gain.setValueAtTime(0, c.currentTime);
         hum.gain.gain.linearRampToValueAtTime(0.07, c.currentTime + 1.6);
+      }
+    },
+    coins(count) {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const n = Math.max(3, Math.min(10, count));
+      for (let i = 0; i < n; i++) {
+        const t = c.currentTime + 0.05 + i * 0.075;
+        for (const f of [1318.5 * (1 + (i % 3) * 0.06), 1975.5]) {
+          const osc = c.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, t);
+          const g = c.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.05, t + 0.008);
+          g.gain.exponentialRampToValueAtTime(0.0006, t + 0.22);
+          osc.connect(g).connect(m);
+          osc.start(t);
+          osc.stop(t + 0.25);
+        }
       }
     },
     hum(play) {
