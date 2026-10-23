@@ -193,6 +193,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
   .reveal { opacity: 1; transform: none; }
+  /* Les bandes qui défilent restent en mouvement : lentes, sans clignotement, et elles s'arrêtent au survol. */
+  .keep-moving { animation-duration: var(--marquee-dur, 80s) !important; animation-iteration-count: infinite !important; }
 }
 
 .card-link { display: block; border-radius: 12px; transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 260ms ease; }
@@ -242,3 +244,8 @@ body::after {
   background: radial-gradient(ellipse 50% 60% at 50% 0%, rgba(242, 239, 232, 0.07), rgba(242, 239, 232, 0) 70%);
 }
 .no-glow::before { content: none; }
+
+/* Ligne de scénario au-dessus des titres : « INT. SALLE — NUIT », très discrète. */
+.slug { margin: 0; display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: #4a4a52; text-transform: uppercase; }
+.slug span { white-space: nowrap; }
+.page > .slug { margin-bottom: calc(12px - clamp(40px, 6vw, 72px)); }

@@ -1,22 +1,19 @@
-.ticker {
-  height: 48px; display: flex; align-items: center; overflow: hidden;
-  background: var(--ink-2); border-bottom: 1px solid #1c1c21;
-}
+/* Le bandeau tient dans la largeur du site, sans fond : juste deux filets et le texte qui glisse. */
+.ticker { display: flex; align-items: stretch; height: 48px; }
+.ticker > * { border-top: 1px solid #1c1c21; border-bottom: 1px solid #1c1c21; }
 .label {
-  flex: none; height: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 0 18px 0 var(--gutter); border-right: 1px solid #1c1c21;
+  flex: none; display: flex; align-items: center; gap: 10px; padding-right: 18px;
   font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; color: var(--accent);
-  position: relative; z-index: 1; background: inherit;
 }
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse-ring 1.6s ease-out infinite; }
 .viewport {
-  flex: 1; min-width: 0; height: 100%; overflow: hidden;
+  flex: 1; min-width: 0; overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
 }
 .track { display: flex; width: max-content; height: 100%; align-items: center; animation: marquee 60s linear infinite; }
 .ticker:hover .track, .ticker:focus-within .track { animation-play-state: paused; }
-.item { display: flex; align-items: center; gap: 10px; padding: 0 24px; height: 100%; font-size: 15px; white-space: nowrap; color: var(--text); transition: color 160ms ease; }
+.item { display: flex; align-items: center; gap: 10px; padding: 0 24px; height: 100%; font-size: 15px; white-space: nowrap; color: var(--text); }
 a.item:hover .text { color: var(--accent); }
 .dot, .diamond { width: 9px; height: 9px; flex: none; box-shadow: 0 0 10px currentColor; }
 .dot { border-radius: 50%; }
@@ -29,25 +26,10 @@ a.item:hover .text { color: var(--accent); }
 .up { color: var(--ok); }
 .down { color: #ff6b6b; }
 .flat { color: var(--muted); }
-
-/* Variante « À l'affiche » : bande orange, gros caractères. */
-.news { background: var(--accent); color: var(--ink); border-bottom: 0; height: 52px; }
-.news .label { background: var(--ink); color: var(--accent); border-right: 0; font-family: var(--display); font-stretch: 62%; font-weight: 900; font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase; }
-.news .viewport { -webkit-mask-image: none; mask-image: none; }
-.news .item { color: var(--ink); gap: 14px; padding: 0 0 0 28px; font-stretch: 62%; font-weight: 900; font-size: 22px; text-transform: uppercase; }
-.news .text { font-weight: 900; }
-.star { width: 16px; height: 16px; fill: var(--ink); flex: none; }
-
-.market .label { color: var(--text); }
+.star { width: 12px; height: 12px; fill: var(--accent); flex: none; }
 
 @media (max-width: 640px) {
   .ticker { height: 40px; }
-  .news { height: 44px; }
   .item { font-size: 13px; padding: 0 16px; }
-  .news .item, .news .label { font-size: 18px; }
   .label { font-size: 11px; padding-right: 12px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .viewport { overflow-x: auto; }
-  .track { animation: none; }
 }

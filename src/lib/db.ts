@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Ce que fait un joueur (pour les missions) : open, rare, trade, trailer, recycle, sell, buy
+CREATE TABLE IF NOT EXISTS season_rewards (
+  player_id TEXT NOT NULL REFERENCES players (id),
+  season TEXT NOT NULL,
+  rank INTEGER,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, season)
+);
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id TEXT NOT NULL REFERENCES players (id),

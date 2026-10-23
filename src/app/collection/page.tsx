@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { Ticker } from '@/components/Ticker';
 import { countByRarity, getCatalog, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -49,7 +50,9 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
     <>
       <Nav ctx={ctx} current="/collection" />
       <Ticker items={tickerDrops(db)} variant="live" />
+      <SideRails left="CLAP · COLLECTION · INVENTAIRE DES BOBINES" right="RÉSERVE · RAYON A · ÉTAGÈRE 3" />
       <main className="container page">
+        <p className="slug">INT. LA RÉSERVE DES BOBINES — NUIT <span>PLAN 02 / PRISE 01</span></p>
         <header className={styles.header}>
           <div className={styles.titleBlock}>
             <h1 className="display h1">Collection</h1>

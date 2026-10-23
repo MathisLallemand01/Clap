@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { CropMarks } from '@/components/Decor';
+import { SideRails } from '@/components/SideRails';
+import { showcase } from '@/lib/catalog';
 import { getUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
@@ -49,6 +52,7 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const ctx = await requireContext('/echanges');
   const db = getDb();
+  const demo = [...showcase(db, { count: 1, kind: 'actor', rarities: ['tete'] }), ...showcase(db, { count: 1, kind: 'role', rarities: ['chef'] })];
   const me = ctx.user.id;
   const { friends, incoming, outgoing } = listFriends(db, me);
   const { pending, history } = listTrades(db, me);
@@ -61,7 +65,9 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <Nav ctx={ctx} current="/echanges" />
+      <SideRails left="CLAP · PELLICULE 35 MM · KODAK VISION3 5219 · 24 IPS" right="TC 00:42:17:08 · BOBINE 06 / 19" />
       <main className="container page">
+        <p className="slug">INT. SALLE DES ÉCHANGES — NUIT <span>PLAN 04 / PRISE 02</span></p>
         <header className="page-head">
           <h1 className="display h1">Échanges</h1>
           <div className="meta">
@@ -122,9 +128,17 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
             {friend ? (
               <TradeBuilder friendId={friend.id} friendName={friend.name} mine={toItems(ctx.player.id)} theirs={toItems(friend.playerId)} myTickets={ctx.wallet.tickets} />
             ) : (
-              <div className={`panel ${styles.placeholder}`}>
-                <h2 className="display h2">Nouvel échange</h2>
-                <p className="lead">Choisissez un ami à gauche : vous verrez sa collection et la vôtre, côte à côte, avec la valeur de chaque carte.</p>
+              <div className={styles.placeholder}>
+                <CropMarks className={styles.crop} />
+                <div className={styles.swapDemo} aria-hidden="true">
+                  {demo[0] && <div className={styles.swapA}><GameCard card={demo[0]} width={150} /></div>}
+                  {demo[1] && <div className={styles.swapB}><GameCard card={demo[1]} width={150} /></div>}
+                  <span className={styles.swapIcon}>⇄</span>
+                </div>
+                <div className={styles.placeholderText}>
+                  <h2 className="display h2">Nouvel échange</h2>
+                  <p className="lead">Choisissez un ami à gauche : vous verrez sa collection et la vôtre, côte à côte, avec la valeur de chaque carte.</p>
+                </div>
               </div>
             )}
 

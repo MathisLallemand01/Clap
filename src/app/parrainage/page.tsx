@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { REFERRAL_PULLS, REFERRAL_REWARD } from '@/lib/game';
@@ -30,7 +31,9 @@ export default async function ReferralPage() {
   return (
     <>
       <Nav ctx={ctx} />
+      <SideRails left="CLAP · INVITATIONS · ENTRÉE GRATUITE" right="FILE D’ATTENTE · PORTE B" />
       <main className="container page">
+        <p className="slug">EXT. DEVANT LE CINÉMA — SOIR <span>PLAN 05 / PRISE 01</span></p>
         <section className={styles.hero}>
           <div className={styles.heroText}>
             <span className="eyebrow" style={{ color: 'var(--accent)' }}>Parrainage</span>

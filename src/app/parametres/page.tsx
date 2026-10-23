@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { NOTIFY_KINDS } from '@/lib/notify';
 import { requireContext } from '@/lib/session';
 import { logout } from '../actions';
@@ -20,7 +21,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <Nav ctx={ctx} />
+      <SideRails left="CLAP · RÉGLAGES DU PROJECTEUR" right="LAMPE XÉNON · 4K · 24 IPS" />
       <main className="container page">
+        <p className="slug">INT. CABINE DE PROJECTION — NUIT <span>PLAN 06 / PRISE 01</span></p>
         <header className="page-head">
           <h1 className="display h1">Paramètres</h1>
           <div className="meta"><span>CONNECTÉ EN TANT QUE <b>{ctx.user.name}</b></span></div>

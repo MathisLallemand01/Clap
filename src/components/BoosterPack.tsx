@@ -12,14 +12,12 @@ type Props = {
   interactive?: boolean;
   /** Animation d'ouverture (le haut se déchire). */
   tearing?: boolean;
-  /** Couleur du fond de page, pour les encoches de déchirure. */
-  page?: string;
   className?: string;
   style?: CSSProperties;
 };
 
 /** Contour cranté (dents de soudure) en haut et en bas, en pourcentages. */
-function crimpPath(teeth = 22, depth = 1.1): string {
+function crimpPath(teeth = 24, depth = 1): string {
   const top: string[] = [];
   const bottom: string[] = [];
   for (let i = 0; i <= teeth * 2; i++) {
@@ -31,61 +29,66 @@ function crimpPath(teeth = 22, depth = 1.1): string {
 }
 
 const CLIP = crimpPath();
+/** La bande du haut qui s'arrache à l'ouverture : seulement les dents du haut. */
 const CLIP_TOP_ONLY = (() => {
   const pts: string[] = [];
-  for (let i = 0; i <= 44; i++) pts.push(`${((i / 44) * 100).toFixed(2)}% ${i % 2 ? 0 : 10}%`);
+  for (let i = 0; i <= 48; i++) pts.push(`${((i / 48) * 100).toFixed(2)}% ${i % 2 ? 0 : 9}%`);
   return `polygon(${pts.join(', ')}, 100% 100%, 0% 100%)`;
 })();
 
-export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, page, className, style }: Props) {
-  const t = booster.theme;
+function contents(booster: BoosterDef): string {
   const { actor, role } = slotKinds(booster);
+  if (!role) return `${actor} ACTEURS`;
+  if (!actor) return `${role} RÔLES`;
+  return `${actor} ACTEUR${actor > 1 ? 'S' : ''} + ${role} RÔLE${role > 1 ? 'S' : ''}`;
+}
+
+/** Un sachet de cartes en aluminium sombre, teinté de la couleur du thème. */
+export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, className, style }: Props) {
+  const t = booster.theme;
   const vars = {
     width,
     fontSize: width / 20,
-    '--bg': t.bg,
-    '--motif': t.motif ?? 'none',
-    '--band': t.band ?? 'none',
-    '--ink-c': t.ink,
-    '--plate': t.plate,
-    '--plate-ink': t.plateInk,
-    '--page': page ?? 'var(--ink)',
+    '--hue': t.hue,
+    '--base': t.base,
+    '--metal': t.metal,
     ...style,
   } as CSSProperties;
   const classes = [styles.pack, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, className].filter(Boolean).join(' ');
+  const image = cover?.image?.replace(/\/t\/p\/\w+\//, width * 2 > 500 ? '/t/p/h632/' : '/t/p/w500/');
 
   return (
     <div className={classes} style={vars} role="img" aria-label={`Bobine ${booster.name}`}>
       <div className={styles.body} style={{ clipPath: CLIP }}>
-        <div className={styles.motif} />
-        {t.band && <div className={styles.band} />}
-        <div className={`${styles.cover} ${t.tint ? styles.tinted : ''}`}>
-          {cover?.image && <img src={cover.image.replace(/\/w\d+\//, width > 260 ? '/w500/' : '/w342/')} alt="" loading="lazy" decoding="async" />}
-          {t.tint && <span className={styles.tint} style={{ background: t.tint }} />}
-          {cover && <span className={styles.coverLabel}>{cover.first} {cover.last}</span>}
+        {image && <img className={styles.photo} src={image} alt="" loading="lazy" decoding="async" />}
+        <span className={styles.tint} />
+        <span className={styles.fade} />
+        <span className={styles.crinkle} />
+        <span className={`${styles.perf} ${styles.perfL}`} />
+        <span className={`${styles.perf} ${styles.perfR}`} />
+
+        <div className={styles.head}>
+          <span className={styles.logo}><span className={styles.bars}><i /><i /><i /></span>CLAP</span>
+          <span>BOBINE {booster.code}</span>
         </div>
-        <div className={styles.plate}>
-          <div className={styles.plateTop}><span>CLAP · {booster.code}</span><span>{actor + role} CARTES</span></div>
-          <div className={styles.name}>{booster.name}</div>
-          <div className={styles.tagline}>{t.tagline}</div>
+        {t.chance && (
+          <span className={styles.chance}><small>{t.chance[0]}</small>{t.chance[1]}</span>
+        )}
+        <div className={styles.title}>
+          <span className={styles.label}>{t.label}</span>
+          <span className={styles.name}>{t.title ?? booster.name}</span>
+          <span className={styles.rule} />
         </div>
-        <div className={styles.foot}>
-          <span>{[actor && `${actor} ACT.`, role && `${role} RÔLE${role > 1 ? 'S' : ''}`].filter(Boolean).join(' + ')}</span>
-          <span>35 MM</span>
-        </div>
-        <div className={`${styles.crimp} ${styles.crimpBottom}`} />
-        <div className={styles.sheen} />
+        <div className={styles.foot}><span>{contents(booster)}</span><span>35 MM</span></div>
+
+        <span className={`${styles.seal} ${styles.sealBottom}`} />
+        <span className={styles.edges} />
+        <span className={styles.sheen} />
       </div>
       <div className={styles.strip} style={{ clipPath: CLIP_TOP_ONLY }}>
-        <div>
-          <div className={styles.motif} />
-          <div className={`${styles.crimp} ${styles.crimpTop}`}><span>CLAP</span></div>
-          {t.band && <div className={styles.band} />}
-        </div>
+        <span className={`${styles.seal} ${styles.sealTop}`} />
+        <span className={styles.tear}>ouvrir ici</span>
       </div>
-      <span className={styles.notch} />
-      <span className={styles.notch} />
-      <div className={styles.tear} style={{ color: t.ink }}>ouvrir ici</div>
     </div>
   );
 }

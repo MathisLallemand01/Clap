@@ -12,7 +12,21 @@
 .friendName small { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
 
 .main { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
-.placeholder { padding: clamp(28px, 4vw, 48px); display: flex; flex-direction: column; gap: 16px; }
+.placeholder {
+  position: relative; padding: clamp(28px, 4vw, 48px); border: 1px dashed #2e2e35; border-radius: 22px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 32px 40px;
+}
+.crop { inset: 14px; }
+.placeholderText { flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px; }
+/* Deux cartes qui changent de main, pour montrer ce qui va se passer. */
+.swapDemo { position: relative; width: 320px; max-width: 100%; height: 240px; flex: none; margin: 0 auto; }
+.swapA, .swapB { position: absolute; top: 10px; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.5)); }
+.swapA { left: 0; animation: swap-a 6s ease-in-out infinite; }
+.swapB { right: 0; animation: swap-b 6s ease-in-out infinite; }
+.swapIcon { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; z-index: 3; border-radius: 50%; background: var(--accent); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
+@keyframes swap-a { 0%, 35% { transform: translateX(0) rotate(-8deg); } 50%, 85% { transform: translateX(150px) rotate(6deg); } 100% { transform: translateX(0) rotate(-8deg); } }
+@keyframes swap-b { 0%, 35% { transform: translateX(0) rotate(8deg); } 50%, 85% { transform: translateX(-150px) rotate(-6deg); } 100% { transform: translateX(0) rotate(8deg); } }
+@media (max-width: 420px) { .swapDemo { scale: 0.8; } }
 
 .builder { display: flex; flex-direction: column; gap: 16px; }
 .sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px; }

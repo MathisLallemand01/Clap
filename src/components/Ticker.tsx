@@ -5,7 +5,7 @@ import styles from './Ticker.module.css';
 
 type Variant = 'live' | 'market' | 'news';
 
-const LABELS: Record<Variant, string> = { live: 'EN DIRECT', market: 'GUICHET', news: 'À l’affiche' };
+const LABELS: Record<Variant, string> = { live: 'EN DIRECT', market: 'GUICHET', news: 'À L’AFFICHE' };
 
 /** Le bandeau d'infos qui défile sous la navigation. S'arrête au survol ; chaque élément mène à sa fiche. */
 export function Ticker({ items, variant = 'live' }: { items: TickerItem[]; variant?: Variant }) {
@@ -34,13 +34,13 @@ export function Ticker({ items, variant = 'live' }: { items: TickerItem[]; varia
       : <span key={key} className={styles.item} {...(copy === 1 ? { 'aria-hidden': true } : {})}>{body}</span>;
   });
   return (
-    <div className={`${styles.ticker} ${styles[variant]}`} role="region" aria-label={variant === 'live' ? 'Derniers grands tirages' : variant === 'market' ? 'Dernières ventes du Guichet' : 'À l’affiche'}>
+    <div className={`container ${styles.ticker}`} role="region" aria-label={variant === 'live' ? 'Derniers grands tirages' : variant === 'market' ? 'Dernières ventes du Guichet' : 'À l’affiche'}>
       <span className={styles.label}>
-        {variant === 'live' && <span className={styles.pulse} />}
+        <span className={styles.pulse} />
         {LABELS[variant]}
       </span>
       <div className={styles.viewport}>
-        <div className={styles.track} style={{ animationDuration: `${speed}s` }}>
+        <div className={`keep-moving ${styles.track}`} style={{ animationDuration: `${speed}s`, ['--marquee-dur' as string]: `${speed}s` }}>
           {row(0)}
           {row(1)}
         </div>

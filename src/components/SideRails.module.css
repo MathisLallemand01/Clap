@@ -1,0 +1,36 @@
+.rails { display: none; }
+@media (min-width: 1180px) { .rails { display: block; } }
+.rail {
+  position: fixed; top: 140px; bottom: 32px; width: 24px; z-index: 1; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  font-family: var(--mono); font-size: 10px; color: #4a4a52;
+}
+.left { left: calc((100vw - min(100vw, 1360px + 2 * var(--gutter))) / 2 + 14px); }
+.right { right: calc((100vw - min(100vw, 1360px + 2 * var(--gutter))) / 2 + 14px); }
+.rec { color: var(--accent); letter-spacing: 0.1em; white-space: nowrap; }
+.text { writing-mode: vertical-rl; letter-spacing: 0.32em; white-space: nowrap; text-transform: uppercase; }
+.up { transform: rotate(180deg); }
+.ruler {
+  position: relative; flex: 1; width: 24px;
+  background:
+    linear-gradient(#1c1c21, #1c1c21) center / 1px 100% no-repeat,
+    repeating-linear-gradient(180deg, #2e2e35 0 1px, transparent 1px 24px) center / 12px 100% no-repeat,
+    repeating-linear-gradient(180deg, #3a3a42 0 1px, transparent 1px 120px) center / 22px 100% no-repeat;
+}
+.ruler i { position: absolute; left: -6px; font-style: normal; font-size: 9px; color: #6e6c66; background: var(--ink); padding: 1px 0; }
+.small { white-space: nowrap; }
+.blink { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: rec-blink 1.4s steps(1, end) infinite; }
+@keyframes rec-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
+.perfs {
+  flex: 1; width: 12px; border-left: 1px solid #1c1c21; border-right: 1px solid #1c1c21;
+  background-image: repeating-linear-gradient(180deg, #26262b 0 8px, transparent 8px 24px);
+  animation: perfs-roll 2s linear infinite;
+}
+@keyframes perfs-roll { to { background-position: 0 48px; } }
+.barcode { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.barcode i { display: block; height: 2px; background: #3a3a42; }
+.barcode i:nth-child(1), .barcode i:nth-child(5) { width: 22px; }
+.barcode i:nth-child(2) { width: 14px; }
+.barcode i:nth-child(3) { width: 22px; height: 3px; }
+.barcode i:nth-child(4) { width: 10px; }
+.barcode i:nth-child(6) { width: 18px; height: 4px; }

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createSession, deleteSession, SESSION_DAYS, userForSession, type User } from './auth';
 import { getDb } from './db';
 import { getPlayer, getStats, type Player, type PlayerStats } from './game';
+import { claimSeasonReward } from './ranking';
 import { recordVisit } from './missions';
 import { listNotifications, unreadCount, type Notification } from './notify';
 
@@ -45,6 +46,7 @@ function contextFor(user: User): Context | null {
   const player = getPlayer(db, user.playerId);
   if (!player) return null;
   recordVisit(db, player.id);
+  claimSeasonReward(db, player.id);
   const stats = getStats(db, player.id);
   return {
     user,

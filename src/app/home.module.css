@@ -46,9 +46,13 @@
 .more { font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; }
 .more:hover { color: var(--accent-hover); }
 
-/* Bande de cartes : une seule ligne, sur une pellicule qui se fond dans le noir. */
-.strip { padding: 18px 0; }
-.stripViewport { overflow: hidden; padding: 14px 0 18px; }
+/* Bande de cartes : une seule ligne dans la largeur du site, sans fond, qui s'efface sur les bords. */
+.strip { padding: 0; }
+.stripViewport {
+  overflow: hidden; padding: 18px 0 28px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 72px, #000 calc(100% - 72px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 72px, #000 calc(100% - 72px), transparent 100%);
+}
 .stripTrack { display: flex; gap: 22px; width: max-content; animation: marquee 80s linear infinite; }
 .strip:hover .stripTrack { animation-play-state: paused; }
 

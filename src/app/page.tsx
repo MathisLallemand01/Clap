@@ -114,10 +114,9 @@ export default async function LandingPage() {
               <Link href={play} className={styles.more}>Tout le catalogue ▸</Link>
             </div>
           </div>
-          <div className={`band ${styles.strip}`}>
-            <div className="sprockets" />
+          <div className={`container ${styles.strip}`}>
             <div className={styles.stripViewport}>
-              <div className={styles.stripTrack}>
+              <div className={`keep-moving ${styles.stripTrack}`}>
                 {[0, 1].map((copy) => strip.map((c) => (
                   <div key={`${copy}-${c.id}`} aria-hidden={copy === 1 || undefined}>
                     {copy === 0 ? <CardLink card={c}><GameCard card={c} width={200} /></CardLink> : <GameCard card={c} width={200} />}
@@ -125,7 +124,6 @@ export default async function LandingPage() {
                 )))}
               </div>
             </div>
-            <div className="sprockets" />
           </div>
         </section>
 
@@ -190,7 +188,7 @@ export default async function LandingPage() {
               {packs.map((b, i) => (
                 <div key={b.id} className={styles.pack}>
                   <Link href={ctx ? `/bobines/${b.id}` : play} aria-label={`Bobine ${b.name}`}>
-                    <BoosterPack booster={b} cover={boosterCover(db, b)} width={i === 1 ? 260 : 210} float interactive page="#120e0b" style={{ animationDelay: `${-i * 1.3}s` }} />
+                    <BoosterPack booster={b} cover={boosterCover(db, b)} width={i === 1 ? 260 : 210} float interactive style={{ animationDelay: `${-i * 1.3}s` }} />
                   </Link>
                   <span className={styles.packName}>{b.name}</span>
                   <span className="eyebrow">{b.price} tickets · ou offerte</span>

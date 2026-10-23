@@ -1,100 +1,118 @@
-/* Un paquet scellé : tout est en em, la police vaut largeur / 20. */
+/* Un sachet scellé : tout est en em, la police vaut largeur / 20. */
 .pack {
   position: relative;
-  aspect-ratio: 5 / 8;
+  aspect-ratio: 20 / 31;
   flex: none;
-  color: var(--ink-c);
+  color: var(--text);
   font-family: var(--display);
-  filter: drop-shadow(0 1.4em 1.6em rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 1.6em 2.2em rgba(0, 0, 0, 0.6)) drop-shadow(0 0 2em color-mix(in srgb, var(--hue) 14%, transparent));
   transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .float { animation: float 6s ease-in-out infinite; }
 .interactive:hover { transform: translateY(-0.5em) rotate(-1.5deg) scale(1.02); }
 
 .body {
+  position: absolute; inset: 0; overflow: hidden;
+  background: linear-gradient(170deg, var(--base), #09090b 72%);
+}
+
+/* La vedette, en couleur atténuée, qui se fond dans le noir vers le bas. */
+.photo {
+  position: absolute; left: 0; top: 2em; width: 100%; height: 70%;
+  object-fit: cover; object-position: center 15%;
+  filter: saturate(0.7) contrast(1.06) brightness(0.86);
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%); mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+}
+.tint { position: absolute; inset: 0; background: var(--hue); mix-blend-mode: soft-light; opacity: 0.7; }
+.fade {
   position: absolute; inset: 0;
-  background: var(--bg);
-  overflow: hidden;
-}
-.motif { position: absolute; inset: 0; background: var(--motif); pointer-events: none; }
-
-/* Soudures crantées en haut et en bas. */
-.crimp {
-  position: absolute; left: 0; right: 0; height: 1.7em; z-index: 2;
-  background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 0.12em, rgba(255, 255, 255, 0.1) 0.12em 0.24em);
-  display: flex; align-items: center; justify-content: center;
-}
-.crimp::after { content: ''; position: absolute; left: 0; right: 0; height: 0.08em; background: rgba(0, 0, 0, 0.25); }
-.crimpTop { top: 0; }
-.crimpTop::after { bottom: 0; }
-.crimpBottom { bottom: 0; }
-.crimpBottom::after { top: 0; }
-.crimpTop span { font-family: var(--mono); font-size: 0.55em; letter-spacing: 0.4em; opacity: 0.7; }
-
-.band { position: absolute; left: 0; right: 0; top: 1.7em; height: 1.4em; background: var(--band); z-index: 1; }
-
-.tear {
-  position: absolute; left: 0.7em; right: 0.7em; top: 3.6em; z-index: 2;
-  display: flex; align-items: center; gap: 0.4em;
-  font-family: var(--mono); font-size: 0.5em; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75;
-}
-.tear::before, .tear::after { content: ''; flex: 1; border-top: 0.14em dashed currentColor; }
-.notch { position: absolute; top: 3.25em; width: 0.7em; height: 0.7em; border-radius: 50%; background: var(--page, #0b0b0d); z-index: 3; }
-.notch:first-of-type { left: -0.35em; }
-.notch:last-of-type { right: -0.35em; }
-
-.cover {
-  position: absolute; left: 50%; top: 5.2em; transform: translateX(-50%);
-  width: 12.4em; aspect-ratio: 4 / 5; z-index: 1;
-  border-radius: 0.7em; overflow: hidden;
-  background: #0b0b0d;
-  box-shadow: 0 0 0 0.22em var(--plate), 0 0.6em 1.4em rgba(0, 0, 0, 0.35);
-}
-.cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
-.tinted img { filter: grayscale(1) contrast(1.15) brightness(1.05); }
-.tint { position: absolute; inset: 0; mix-blend-mode: color; opacity: 0.85; }
-.coverLabel {
-  position: absolute; left: 0.5em; bottom: 0.5em; z-index: 1;
-  font-family: var(--mono); font-size: 0.48em; letter-spacing: 0.12em; text-transform: uppercase;
-  background: rgba(11, 11, 13, 0.72); color: #f2efe8; padding: 0.35em 0.6em; border-radius: 0.3em;
+  background: linear-gradient(180deg, transparent 40%, #09090b 74%), radial-gradient(ellipse 80% 60% at 50% 35%, transparent 45%, rgba(0, 0, 0, 0.5) 100%);
 }
 
-.plate {
-  position: absolute; left: 0.8em; right: 0.8em; bottom: 3em; z-index: 2;
-  background: var(--plate); color: var(--plate-ink);
-  border-radius: 0.5em; padding: 0.55em 0.7em 0.6em;
-  display: flex; flex-direction: column; gap: 0.25em;
+/* Aluminium froissé : des plis de lumière qui bougent à peine. */
+.crinkle {
+  position: absolute; inset: 0; mix-blend-mode: screen; opacity: 0.5; pointer-events: none;
+  background-image:
+    linear-gradient(103deg, transparent 38%, rgba(255, 255, 255, 0.09) 39%, transparent 41%),
+    linear-gradient(76deg, transparent 62%, rgba(255, 255, 255, 0.07) 63%, transparent 65%),
+    linear-gradient(140deg, transparent 24%, rgba(255, 255, 255, 0.06) 25%, transparent 27%),
+    linear-gradient(118deg, transparent 14%, color-mix(in srgb, var(--hue) 22%, transparent) 28%, transparent 40%, transparent 62%, color-mix(in srgb, var(--hue) 16%, transparent) 74%, transparent 86%);
+  animation: crinkle 10s ease-in-out infinite;
 }
-.plateTop { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.52em; letter-spacing: 0.14em; opacity: 0.85; }
-.name { font-stretch: 62%; font-weight: 900; text-transform: uppercase; font-size: 2.15em; line-height: 0.86; overflow-wrap: anywhere; }
-.tagline { font-size: 0.62em; font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes crinkle { 0%, 100% { background-position: 0 0; } 50% { background-position: 24% 8%; } }
 
-.foot {
-  position: absolute; left: 0.9em; right: 0.9em; bottom: 1.95em; z-index: 2;
+/* Perforations de pellicule le long des bords. */
+.perf {
+  position: absolute; top: 2.6em; bottom: 2.6em; width: 0.5em;
+  background-image: repeating-linear-gradient(180deg, transparent 0 0.45em, rgba(242, 239, 232, 0.16) 0.45em 1.05em, transparent 1.05em 1.5em);
+}
+.perfL { left: 0.45em; }
+.perfR { right: 0.45em; }
+
+.head {
+  position: absolute; left: 1.4em; right: 1.4em; top: 4.2em;
   display: flex; justify-content: space-between; align-items: center;
-  font-family: var(--mono); font-size: 0.5em; letter-spacing: 0.14em;
 }
+.head > span:last-child { font-family: var(--mono); font-size: 0.55em; letter-spacing: 0.14em; color: rgba(242, 239, 232, 0.75); }
+.logo { display: flex; align-items: center; gap: 0.35em; font-stretch: 62%; font-weight: 900; font-size: 1.1em; letter-spacing: 0.04em; color: var(--text); }
+.bars { display: flex; flex-direction: column; gap: 0.11em; }
+.bars i { display: block; width: 0.36em; height: 0.22em; border-radius: 0.06em; background: var(--hue); }
 
-/* Reflet holographique qui balaie le paquet. */
+.chance {
+  position: absolute; right: 1.04em; top: 5.6em; width: 3.04em; height: 3.04em; border-radius: 50%;
+  border: 0.08em solid var(--hue); background: rgba(9, 9, 11, 0.55); color: var(--hue);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  font-stretch: 62%; font-weight: 900; font-size: 1.25em; line-height: 0.95; transform: rotate(10deg);
+}
+.chance small { font-family: var(--mono); font-stretch: 100%; font-weight: 400; font-size: 0.36em; letter-spacing: 0.1em; }
+
+.title { position: absolute; left: 1.4em; right: 1.4em; bottom: 5.2em; display: flex; flex-direction: column; gap: 0.5em; }
+.label { font-family: var(--mono); font-size: 0.55em; letter-spacing: 0.16em; color: var(--hue); }
+.name {
+  font-stretch: 62%; font-weight: 900; font-size: 3em; line-height: 0.84; text-transform: uppercase;
+  white-space: pre-line; overflow-wrap: anywhere; text-shadow: 0 0.06em 0.3em rgba(0, 0, 0, 0.5);
+}
+.rule { width: 2.4em; height: 0.18em; background: var(--hue); }
+.foot {
+  position: absolute; left: 1.4em; right: 1.4em; bottom: 2.9em;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.foot span { font-family: var(--mono); font-size: 0.52em; letter-spacing: 0.12em; color: rgba(242, 239, 232, 0.7); }
+
+/* Soudures métalliques cannelées. */
+.seal {
+  position: absolute; left: 0; right: 0; height: 2.1em;
+  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 0.08em, transparent 0.08em 0.36em);
+}
+.sealTop { top: 0; background-color: var(--metal); background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 0.08em, transparent 0.08em 0.36em), linear-gradient(180deg, var(--metal), var(--base)); }
+.sealBottom { bottom: 0; background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 0.08em, transparent 0.08em 0.36em), linear-gradient(0deg, var(--metal), #09090b); }
+.edges {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hue) 25%, transparent) 0, rgba(255, 255, 255, 0.08) 2.5%, transparent 12%, transparent 88%, rgba(255, 255, 255, 0.06) 97.5%, color-mix(in srgb, var(--hue) 25%, transparent) 100%);
+}
 .sheen {
-  position: absolute; inset: 0; z-index: 4; pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.28) 45%, rgba(255, 210, 240, 0.18) 50%, rgba(170, 240, 255, 0.18) 55%, transparent 65%);
-  background-size: 250% 100%;
-  mix-blend-mode: overlay;
-  animation: sheen 5.5s ease-in-out infinite;
+  position: absolute; top: 0; bottom: 0; left: 0; width: 35%; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  animation: pack-sheen 5.5s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
-.interactive:hover .sheen { animation-duration: 1.6s; }
+.interactive:hover .sheen { animation-duration: 1.8s; }
+@keyframes pack-sheen { 0% { transform: translateX(-140%) skewX(-16deg); } 60%, 100% { transform: translateX(320%) skewX(-16deg); } }
 
-/* Ouverture : le haut se déchire et s'envole. */
+/* Bande du haut, avec la ligne « ouvrir ici » : c'est elle qui s'arrache. */
+.strip { position: absolute; left: 0; right: 0; top: 0; height: 3.6em; z-index: 5; overflow: hidden; }
+.tear {
+  position: absolute; left: 2.8em; right: 2.8em; top: 5.2em; display: flex; align-items: center; gap: 0.4em;
+  font-family: var(--mono); font-size: 0.5em; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(242, 239, 232, 0.55);
+}
+.tear::before { content: '✂'; }
+.tear::before, .tear::after { flex: none; }
+.tear::after { content: ''; flex: 1; border-top: 0.12em dashed rgba(242, 239, 232, 0.35); }
+
 .tearing .body { animation: pack-shrink 900ms 450ms cubic-bezier(0.6, 0, 0.4, 1) forwards; }
-.tearing .strip { animation: tear-off 700ms cubic-bezier(0.5, 0, 0.4, 1) forwards; }
-.strip { position: absolute; left: 0; right: 0; top: 0; height: 3.55em; z-index: 5; overflow: hidden; }
-.strip > div { position: absolute; left: 0; right: 0; top: 0; height: 100%; background: var(--bg); }
+.tearing .strip { animation: tear-off 700ms cubic-bezier(0.5, 0, 0.4, 1) forwards; background: linear-gradient(180deg, var(--metal), var(--base)); }
 @keyframes tear-off {
   0% { transform: none; opacity: 1; }
   30% { transform: translate(0.3em, -0.2em) rotate(-2deg); }
   100% { transform: translate(6em, -9em) rotate(28deg); opacity: 0; }
 }
-@keyframes pack-shrink {
-  to { transform: translateY(3em) scale(0.6); opacity: 0; }
-}
+@keyframes pack-shrink { to { transform: translateY(3em) scale(0.6); opacity: 0; } }

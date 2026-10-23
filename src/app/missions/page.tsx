@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Countdown } from '@/components/Countdown';
 import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { missionStates, periodStart, STREAK_BONUS, STREAK_DAYS, visitStreak, type MissionScope } from '@/lib/missions';
@@ -35,7 +36,9 @@ export default async function MissionsPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <Nav ctx={ctx} current="/missions" />
+      <SideRails left="CLAP · FEUILLE DE SERVICE DU JOUR" right="TOURNAGE · JOUR 1 · ÉQUIPE A" />
       <main className="container page">
+        <p className="slug">INT. LE BUREAU DE PRODUCTION — JOUR <span>PLAN 03 / PRISE 04</span></p>
         <header className="page-head">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <h1 className="display h1">Missions</h1>

@@ -12,6 +12,7 @@ export const NAV_LINKS = [
   { href: '/collection', label: 'Collection' },
   { href: '/guichet', label: 'Le Guichet' },
   { href: '/missions', label: 'Missions' },
+  { href: '/classement', label: 'Classement' },
   { href: '/echanges', label: 'Échanges' },
 ] as const;
 

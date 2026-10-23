@@ -4,6 +4,7 @@ import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { Ticker } from '@/components/Ticker';
 import { getCard, ownedCardIds, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -59,8 +60,10 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
     <>
       <Nav ctx={ctx} current="/guichet" />
       <Ticker items={tickerSales(db)} variant="market" />
+      <SideRails left="CLAP · BILLETTERIE · MARCHÉ DES SPECTATEURS" right="CAISSE 2 · TICKETS UNIQUEMENT" />
       <main className="page" style={{ paddingTop: 0 }}>
         <div className="container page" style={{ paddingBottom: 0 }}>
+          <p className="slug">INT. LE GUICHET — SOIR <span>PLAN 07 / PRISE 03</span></p>
           <header className="page-head">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <h1 className="display h1">Le Guichet</h1>

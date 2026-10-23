@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { BOOSTERS } from './boosters.ts';
+import { BOOSTERS, boosterOfTheDay, featuredEvent } from './boosters.ts';
 import { getCard, getCatalog, showcase } from './catalog.ts';
 import { formatEntries, formatNumber } from './format.ts';
 import { recentSales } from './market.ts';
@@ -77,14 +77,15 @@ export function tickerNews(db: DatabaseSync): TickerItem[] {
   const catalog = getCatalog(db);
   const actors = catalog.filter((c) => c.kind === 'actor').length;
   const icons = catalog.filter((c) => c.rarity === 'icone').length;
-  const themed = BOOSTERS.filter((b) => b.group !== 'permanent').map((b) => b.name);
   const daily = MISSIONS.filter((m) => m.scope === 'daily').reduce((sum, m) => sum + m.reward, 0);
-  const pick = themed[Math.floor(Date.now() / 86_400_000) % Math.max(themed.length, 1)];
+  const event = featuredEvent();
+  const days = Math.ceil((event.endsAt - Date.now()) / 86_400_000);
   const plain = (key: string, text: string): TickerItem => ({ key, color: 'var(--ink)', shape: 'dot', text });
   return [
     plain('cat', `${formatNumber(actors)} acteurs · ${formatNumber(catalog.length - actors)} rôles`),
     plain('free', 'Une bobine offerte toutes les 4 heures'),
-    plain('day', `Bobine du jour : ${pick}`),
+    plain('day', `Bobine du jour : ${boosterOfTheDay().name}`),
+    plain('event', `Événement : ${event.booster.name} · encore ${days} jour${days > 1 ? 's' : ''}`),
     plain('icons', `${icons} Icônes à débusquer`),
     plain('mission', `Missions du jour : jusqu’à +${daily} tickets`),
     plain('packs', `${BOOSTERS.length} bobines thématiques`),
