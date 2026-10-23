@@ -66,3 +66,9 @@
 
 /* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.avatar, .mini { overflow: hidden; }
+.avatar img, .mini img { width: 100%; height: 100%; object-fit: cover; }
+.discord { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; color: #8f97ff; letter-spacing: 0.04em; }
+.names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.names small { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: #8f97ff; font-weight: 400; }

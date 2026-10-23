@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { logIn, signUp, upsertGoogleUser } from '../src/lib/auth.ts';
+import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertGoogleUser } from '../src/lib/auth.ts';
 import { openDb } from '../src/lib/db.ts';
 import { GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
 import { buyListing, createListing, openListings, priceRange, sellerReceives } from '../src/lib/market.ts';
@@ -20,6 +20,23 @@ test('inscription, connexion, refus des doublons et des mauvais mots de passe', 
   await assert.rejects(signUp(db, { name: 'Autre', email: 'camille@exemple.fr', password: 'motdepasse' }), isCode('email-taken'));
   await assert.rejects(signUp(db, { name: 'camille', email: 'x@exemple.fr', password: 'motdepasse' }), isCode('name-taken'));
   await assert.rejects(signUp(db, { name: 'Bob', email: 'b@exemple.fr', password: 'court' }), isCode('weak-password'));
+});
+
+test('Discord : liaison, photo animée (Nitro), unicité, déliaison', async () => {
+  const db = openDb(':memory:');
+  const a = await signUp(db, { name: 'Lina', email: 'lina@exemple.fr', password: 'motdepasse' });
+  const b = await signUp(db, { name: 'Malo', email: 'malo@exemple.fr', password: 'motdepasse' });
+  assert.equal(discordAvatarUrl('80351110224678912', 'abc'), 'https://cdn.discordapp.com/avatars/80351110224678912/abc.png?size=128');
+  assert.match(discordAvatarUrl('80351110224678912', null), /embed\/avatars\/[0-5]\.png$/);
+  linkDiscord(db, a.id, { id: '42', name: 'Lina ✦', avatar: 'a_f00' });
+  const linked = getUser(db, a.id)!;
+  assert.deepEqual(linked.discord, { id: '42', name: 'Lina ✦', avatar: 'https://cdn.discordapp.com/avatars/42/a_f00.gif?size=128' });
+  assert.equal(linked.avatar, linked.discord!.avatar);
+  assert.equal(getUserByDiscord(db, '42')!.id, a.id);
+  assert.throws(() => linkDiscord(db, b.id, { id: '42', name: 'x', avatar: null }), isCode('discord-taken'));
+  unlinkDiscord(db, a.id);
+  assert.equal(getUser(db, a.id)!.discord, null);
+  assert.equal(getUserByDiscord(db, '42'), null);
 });
 
 test('Google : même compte au retour, rattachement par e-mail', async () => {

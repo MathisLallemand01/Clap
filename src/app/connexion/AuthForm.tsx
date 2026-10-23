@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
+import { DiscordLogo } from '@/components/DiscordLogo';
 import { loginAction, signupAction, type AuthState } from './actions';
 import styles from './connexion.module.css';
 
@@ -39,6 +40,11 @@ export function AuthForm({ mode, next, referral, googleError }: Props) {
       <a href={googleHref} className={`btn btn-lg btn-block ${styles.google}`}>
         <GoogleLogo /> {isSignup ? 'S’inscrire avec Google' : 'Continuer avec Google'}
       </a>
+      {!isSignup && (
+        <a href={`/api/auth/discord?suite=${encodeURIComponent(next)}`} className={`btn btn-lg btn-block ${styles.discord}`}>
+          <DiscordLogo /> Continuer avec Discord
+        </a>
+      )}
       {googleError && <p className="alert alert-info" role="status">{googleError}</p>}
 
       <div className={styles.or}><span />OU PAR E-MAIL<span /></div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Scene, Searchlights } from '@/components/Decor';
 import { Footer, Nav } from '@/components/Nav';
+import { DiscordLogo } from '@/components/DiscordLogo';
 import { SideRails } from '@/components/SideRails';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
@@ -74,8 +75,9 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                 <div key={place} className={`${styles.step} ${styles[`p${place}`]}`}>
                   {r ? (
                     <div className={styles.winner}>
-                      <span className={styles.avatar} style={{ background: avatarColor(r.name) }}>{r.name.slice(0, 2).toUpperCase()}</span>
+                      <span className={styles.avatar} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span>
                       <span className={styles.who}>{r.name}{r.playerId === ctx.player.id && <em>VOUS</em>}</span>
+                      {r.discord && <span className={styles.discord}><DiscordLogo size={11} />{r.discord}</span>}
                       <span className={styles.score}>{fmt(r.points)} {unit}{r.streak > 1 && <> · <Flame /> {r.streak} J</>}</span>
                     </div>
                   ) : <span className={styles.empty}>Place libre</span>}
@@ -101,7 +103,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                   {[...list, ...(meOutside ? [me] : [])].map((r) => (
                     <tr key={r.playerId} className={r.playerId === ctx.player.id ? styles.mine : undefined}>
                       <td className={styles.rank}>{r.rank}</td>
-                      <td><span className={styles.player}><span className={styles.mini} style={{ background: avatarColor(r.name) }}>{r.name.slice(0, 2).toUpperCase()}</span>{r.name}{r.playerId === ctx.player.id && <em>VOUS</em>}</span></td>
+                      <td><span className={styles.player}><span className={styles.mini} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span><span className={styles.names}>{r.name}{r.discord && <small><DiscordLogo size={10} />{r.discord}</small>}</span>{r.playerId === ctx.player.id && <em>VOUS</em>}</span></td>
                       {view !== 'box-office' && <><td className={`${styles.opt} ${styles.streak}`}>{r.streak > 0 ? <><Flame /> {r.streak} j</> : '—'}</td><td className={styles.opt}>{r.days}</td></>}
                       <td className={styles.num}>{fmt(r.points)}</td>
                     </tr>

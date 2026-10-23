@@ -16,6 +16,7 @@ export const metadata: Metadata = { title: 'Connexion' };
 const GOOGLE_ERRORS: Record<string, string> = {
   'google-config': 'La connexion Google n’est pas encore activée sur ce serveur : utilisez votre e-mail en attendant.',
   google: 'La connexion avec Google a échoué. Réessayez, ou utilisez votre e-mail.',
+  discord: 'Aucun compte CLAP n’est lié à ce Discord. Connectez-vous d’abord, puis liez-le dans Paramètres.',
 };
 
 type Search = { mode?: string; suite?: string; parrain?: string; erreur?: string };

@@ -206,6 +206,12 @@ function migrate(db: DatabaseSync): void {
   const playerColumns = new Set((db.prepare('PRAGMA table_info(players)').all() as { name: string }[]).map((c) => c.name));
   // Comptes de test : tickets illimités (jamais débités).
   if (!playerColumns.has('unlimited')) db.exec('ALTER TABLE players ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0');
+  const userColumns = new Set((db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name));
+  // Compte Discord lié : identifiant, nom affiché et adresse de la photo (GIF si Nitro).
+  if (!userColumns.has('discord_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN discord_id TEXT; ALTER TABLE users ADD COLUMN discord_name TEXT; ALTER TABLE users ADD COLUMN discord_avatar TEXT;');
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_discord ON users (discord_id)');
+  }
 }
 
 /** Ouvre (ou crée) une base ; le catalogue de démarrage est inséré si la table est vide. */

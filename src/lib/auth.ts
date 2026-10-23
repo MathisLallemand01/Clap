@@ -20,19 +20,25 @@ export type User = {
   publicProfile: boolean;
   notify: Record<string, boolean>;
   hasPassword: boolean;
+  /** Compte Discord lié (nom et photo affichés à la place des nôtres). */
+  discord: Discord | null;
   createdAt: number;
 };
+
+export type Discord = { id: string; name: string; avatar: string };
 
 type UserRow = {
   id: string; name: string; email: string | null; avatar: string | null; player_id: string; referral_code: string;
   referred_by: string | null; public_profile: number; notify: string; password_hash: string | null; created_at: number;
+  discord_id: string | null; discord_name: string | null; discord_avatar: string | null;
 };
 
 function toUser(r: UserRow): User {
   return {
-    id: r.id, name: r.name, email: r.email, avatar: r.avatar, playerId: r.player_id, referralCode: r.referral_code,
+    id: r.id, name: r.name, email: r.email, avatar: r.discord_avatar ?? r.avatar, playerId: r.player_id, referralCode: r.referral_code,
     referredBy: r.referred_by, publicProfile: r.public_profile === 1, notify: JSON.parse(r.notify) as Record<string, boolean>,
     hasPassword: r.password_hash !== null, createdAt: r.created_at,
+    discord: r.discord_id ? { id: r.discord_id, name: r.discord_name ?? '', avatar: r.discord_avatar ?? '' } : null,
   };
 }
 
@@ -158,6 +164,32 @@ export function upsertGoogleUser(
 
 export function getUser(db: DatabaseSync, id: string): User | null {
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | undefined;
+  return row ? toUser(row) : null;
+}
+
+/**
+ * Photo de profil Discord : les avatars animés (Nitro) ont un hash qui commence par « a_ » et existent en GIF ;
+ * sans photo, l'avatar par défaut que Discord attribue à l'identifiant.
+ */
+export function discordAvatarUrl(id: string, hash: string | null): string {
+  if (!hash) return `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(id) >> BigInt(22)) % BigInt(6))}.png`;
+  return `https://cdn.discordapp.com/avatars/${id}/${hash}.${hash.startsWith('a_') ? 'gif' : 'png'}?size=128`;
+}
+
+/** Lie (ou met à jour) un compte Discord ; refuse s'il est déjà lié à un autre joueur. */
+export function linkDiscord(db: DatabaseSync, userId: string, profile: { id: string; name: string; avatar: string | null }): void {
+  const other = db.prepare('SELECT id FROM users WHERE discord_id = ? AND id <> ?').get(profile.id, userId);
+  if (other) throw new GameError('discord-taken', 'Ce compte Discord est déjà lié à un autre joueur.');
+  db.prepare('UPDATE users SET discord_id = ?, discord_name = ?, discord_avatar = ? WHERE id = ?')
+    .run(profile.id, profile.name, discordAvatarUrl(profile.id, profile.avatar), userId);
+}
+
+export function unlinkDiscord(db: DatabaseSync, userId: string): void {
+  db.prepare('UPDATE users SET discord_id = NULL, discord_name = NULL, discord_avatar = NULL WHERE id = ?').run(userId);
+}
+
+export function getUserByDiscord(db: DatabaseSync, discordId: string): User | null {
+  const row = db.prepare('SELECT * FROM users WHERE discord_id = ?').get(discordId) as UserRow | undefined;
   return row ? toUser(row) : null;
 }
 

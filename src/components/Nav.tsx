@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { formatEntries, formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
 import { logout } from '@/app/actions';
+import { DiscordLogo } from './DiscordLogo';
 import { SeatIcon, TicketIcon } from './Icons';
 import { Wordmark } from './Mark';
 import { NotificationBell } from './NotificationBell';
@@ -49,6 +50,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                 <div className={styles.dropdown}>
                   <div className={styles.who}>
                     <strong>{ctx.user.name}</strong>
+                    {ctx.user.discord && <span className={styles.discord}><DiscordLogo size={11} />{ctx.user.discord.name}</span>}
                     <span className="mono">{formatEntries(ctx.wallet.entries)} ENTRÉES</span>
                   </div>
                   <nav className={styles.mobileLinks} aria-label="Navigation">

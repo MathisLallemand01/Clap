@@ -37,6 +37,7 @@
 .who { padding: 12px 14px 14px; border-bottom: 1px solid var(--line); margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
 .who strong { font-size: 17px; }
 .who span { font-size: 12px; color: var(--muted); }
+.who .discord { display: inline-flex; align-items: center; gap: 6px; color: #8f97ff; font-size: 13px; }
 .mobileLinks { display: flex; flex-direction: column; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 6px; }
 @media (min-width: 1100px) { .mobileLinks { display: none; } }
 

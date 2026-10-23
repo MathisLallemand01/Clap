@@ -21,3 +21,11 @@
 .slider { display: flex; align-items: center; gap: 12px; }
 .slider input { width: 200px; accent-color: var(--accent); }
 .slider .mono { font-size: 13px; color: var(--text-2); width: 44px; }
+
+.discordBtn { background: #5865f2; border-color: #5865f2; color: #fff; gap: 8px; }
+.discordBtn:hover { background: #4752c4; border-color: #4752c4; }
+.discordLinked { display: flex; align-items: center; gap: 12px; }
+.discordLinked img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #5865f2; }
+.discordLinked > span { display: flex; flex-direction: column; gap: 2px; }
+.row .discordLinked b { color: var(--text); font-size: 15px; }
+.row .discordLinked em { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: #8f97ff; display: inline-flex; align-items: center; gap: 5px; }

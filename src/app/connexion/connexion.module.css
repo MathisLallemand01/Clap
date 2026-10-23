@@ -41,6 +41,8 @@
 .title p { margin: 0; font-size: 16px; color: var(--text-2); }
 .google { background: var(--ink); border-color: var(--line-2); gap: 12px; }
 .google:hover { border-color: var(--text-2); }
+.discord { background: #5865f2; border-color: #5865f2; color: #fff; gap: 12px; margin-top: -4px; }
+.discord:hover { background: #4752c4; border-color: #4752c4; }
 .or { display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--faint); }
 .or span { flex: 1; height: 1px; background: var(--line); }
 .form { display: flex; flex-direction: column; gap: 16px; }

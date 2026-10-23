@@ -42,7 +42,7 @@ export function seasonOf(now = Date.now()): Season {
   return { key: `${y}-${String(m).padStart(2, '0')}`, label: `${MONTHS[m - 1]} ${y}`, start, end };
 }
 
-export type RankRow = { rank: number; playerId: string; name: string; points: number; streak: number; days: number };
+export type RankRow = { rank: number; playerId: string; name: string; points: number; streak: number; days: number; avatar?: string | null; discord?: string | null };
 
 const dayIndex = (t: number) => {
   const [y, m, d] = periodStart('daily', t).key.split('-').map(Number);
@@ -88,12 +88,15 @@ export function boxOfficeBoard(db: DatabaseSync): RankRow[] {
 }
 
 function rank(db: DatabaseSync, rows: Omit<RankRow, 'rank' | 'name'>[]): RankRow[] {
-  const users = new Map((db.prepare('SELECT player_id, name, public_profile FROM users').all() as { player_id: string; name: string; public_profile: number }[])
-    .map((u) => [u.player_id, u.public_profile ? u.name : 'Spectateur anonyme']));
+  type U = { player_id: string; name: string; public_profile: number; avatar: string | null; discord_name: string | null; discord_avatar: string | null };
+  const users = new Map((db.prepare('SELECT player_id, name, public_profile, avatar, discord_name, discord_avatar FROM users').all() as U[])
+    .map((u) => [u.player_id, u.public_profile
+      ? { name: u.name, avatar: u.discord_avatar ?? u.avatar, discord: u.discord_name }
+      : { name: 'Spectateur anonyme', avatar: null, discord: null }]));
   return rows
     .filter((r) => users.has(r.playerId) && r.points > 0)
     .sort((a, b) => b.points - a.points || b.days - a.days)
-    .map((r, i) => ({ ...r, rank: i + 1, name: users.get(r.playerId)! }));
+    .map((r, i) => ({ ...r, rank: i + 1, ...users.get(r.playerId)! }));
 }
 
 /**
