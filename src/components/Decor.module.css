@@ -100,6 +100,7 @@
 .rays {
   position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none;
   background: repeating-conic-gradient(var(--ray) 0 5deg, transparent 5deg 15deg);
+  opacity: 0.65; /* rayons de rareté : présents, sans crier */
   -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 52%); mask-image: radial-gradient(circle, #000 8%, transparent 52%);
   animation: spin 30s linear infinite;
 }

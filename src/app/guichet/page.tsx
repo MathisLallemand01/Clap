@@ -15,6 +15,7 @@ import { RARITIES, RARITIES_BY_VALUE, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { tickerSales } from '@/lib/ticker';
 import { buyAction, cancelAction } from './actions';
+import { Purchase } from './Purchase';
 import { SellForm } from './SellForm';
 import styles from './guichet.module.css';
 
@@ -79,7 +80,9 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
 
         <div className="container page no-glow" style={{ paddingTop: 0 }}>
           {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
-          {bought && <p className="alert alert-ok" role="status">Achat réussi : {bought.card.first} {bought.card.last}{bought.card.character ? ` (${bought.card.character})` : ''} rejoint votre collection.</p>}
+          {bought && bought.status === 'sold' && bought.sellerId !== ctx.player.id && (
+            <Purchase card={bought.card} serial={bought.serial} price={bought.price} balance={ctx.wallet.tickets} unlimited={ctx.player.unlimited} />
+          )}
           {sp.vente && <p className="alert alert-ok" role="status">Votre annonce est en ligne.</p>}
 
           {view === 'acheter' && (

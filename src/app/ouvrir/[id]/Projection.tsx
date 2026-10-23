@@ -100,6 +100,20 @@ function Reel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   );
 }
 
+function burstStyle(b: Burst): CSSProperties {
+  return { '--rc': RARITIES[b.card.rarity].color, '--bx': `${b.x}px`, '--by': `${b.y}px` } as CSSProperties;
+}
+
+function Sparks({ level }: { level: number }) {
+  return (
+    <div className={styles.sparks}>
+      {SPARKS.slice(0, SPARK_COUNT[level] ?? 0).map((sp, i) => (
+        <i key={i} style={{ '--a': `${sp.a}deg`, '--d': `${sp.d}px`, '--s': sp.s, animationDelay: `${sp.delay}ms` } as CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
 export function Projection({ booster, cover, guest = false }: { booster: BoosterDef; cover: Card | null; guest?: boolean }) {
   const [layoutName, setLayoutName] = useState<keyof typeof LAYOUTS>('landscape');
   const [scale, setScale] = useState(1);
@@ -119,6 +133,8 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   // La bande attend un clic avant chaque nouvelle vignette.
   const [awaiting, setAwaiting] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
+  // Le mode d'emploi ne s'affiche qu'une fois, avant la première carte.
+  const [hintSeen, setHintSeen] = useState(false);
 
   const layout = LAYOUTS[layoutName];
   const framesRef = useRef<Frame[]>([]);
@@ -195,6 +211,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
         }, 1250);
       }
       const index = batchCount.current++;
+      motion.current.queued = 0; // un clic laissé de la bobine précédente ne saute pas la première carte
       setFrames((f) => [
         ...f,
         { key: `leader-${data.pullId}`, type: 'leader', batch: index, name: booster.name },
@@ -239,7 +256,9 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   /** Demande la vignette suivante (clic, Espace, Entrée ou flèche droite). */
   const advance = useCallback(() => {
     const m = motion.current;
-    if (m.awaiting || m.step) m.queued = Math.min(m.queued + 1, 1);
+    // Un seul clic suffit : retenu même pendant un déplacement, une pause ou une animation de rareté.
+    m.queued = 1;
+    setHintSeen(true);
   }, []);
 
   useEffect(() => {
@@ -377,6 +396,16 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
         <em className={styles.sideR}>35 MM · 24 IM/S · VERSION ORIGINALE</em>
       </div>
       {!calm && <button type="button" className={styles.advance} onClick={advance} aria-label="Vignette suivante" tabIndex={-1} />}
+      {burst && burst.level < 5 && (
+        // Derrière la bande : les rayons et l'éclat ne passent jamais devant la carte révélée.
+        <div key={`${burst.key}-back`} className={`${styles.burst} ${styles.burstBack} ${styles[`lv${burst.level}`]}`} style={burstStyle(burst)} aria-hidden="true">
+          <span className={styles.flash} />
+          <span className={styles.burstRays} />
+          <span className={styles.ring} />
+          <span className={`${styles.ring} ${styles.ring2}`} />
+          <Sparks level={burst.level} />
+        </div>
+      )}
       {calm ? (
         <div className={styles.calm}>
           {frames.map((f) => f.type === 'card' && (
@@ -408,16 +437,6 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
             <div className={styles.gate} style={{ left: gate.x, top: gate.y, transform: `rotate(${gate.angle}deg)` }} aria-hidden="true">
               <span /><span /><span /><span />
               <span className={styles.gateLabel}>▸ OBTURATEUR</span>
-            </div>
-          )}
-
-          {gate && awaiting && (
-            <div className={styles.hint} style={{ left: gate.x, top: gate.y }} role="status">
-              <span className={styles.hintRing}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>
-              </span>
-              <span className={styles.hintText}>Cliquez pour avancer</span>
-              <span className={styles.hintKey}>ou Espace</span>
             </div>
           )}
 
@@ -460,34 +479,42 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
         </div>
       )}
 
-      {burst && (
+      {burst && burst.level >= 4 && (
         <div
-          key={burst.key}
+          key={`${burst.key}-front`}
           className={`${styles.burst} ${styles[`lv${burst.level}`]}`}
-          style={{ '--rc': RARITIES[burst.card.rarity].color, '--bx': `${burst.x}px`, '--by': `${burst.y}px` } as CSSProperties}
-          role={burst.level >= 5 ? 'status' : undefined}
-          aria-hidden={burst.level < 5 || undefined}
+          style={burstStyle(burst)}
+          role="status"
         >
-          <span className={styles.dim} />
-          <span className={styles.flash} />
-          <span className={styles.burstRays} />
-          <span className={styles.ring} />
-          <span className={`${styles.ring} ${styles.ring2}`} />
-          <div className={styles.sparks}>
-            {SPARKS.slice(0, SPARK_COUNT[burst.level] ?? 0).map((sp, i) => (
-              <i key={i} style={{ '--a': `${sp.a}deg`, '--d': `${sp.d}px`, '--s': sp.s, animationDelay: `${sp.delay}ms` } as CSSProperties} />
-            ))}
-          </div>
-          {burst.level >= 4 && (
-            <div className={styles.banner}>
-              <span className="eyebrow">◆ {RARITIES[burst.card.rarity].label} ◆</span>
-              <strong className="display">{burst.card.character ?? `${burst.card.first} ${burst.card.last}`}</strong>
-              <span>{burst.card.kind === 'role' ? `${burst.card.first} ${burst.card.last} · ${burst.card.film}` : `Carte Acteur${burst.card.origin ? ` · ${burst.card.origin}` : ''}`}</span>
-            </div>
+          {burst.level >= 5 && (
+            <>
+              <span className={styles.dim} />
+              <span className={styles.flash} />
+              <span className={styles.burstRays} />
+              <span className={styles.ring} />
+              <span className={`${styles.ring} ${styles.ring2}`} />
+              <Sparks level={burst.level} />
+            </>
           )}
+          <div className={styles.banner}>
+            <span className="eyebrow">◆ {RARITIES[burst.card.rarity].label} ◆</span>
+            <strong className="display">{burst.card.character ?? `${burst.card.first} ${burst.card.last}`}</strong>
+            <span>{burst.card.kind === 'role' ? `${burst.card.first} ${burst.card.last} · ${burst.card.film}` : `Carte Acteur${burst.card.origin ? ` · ${burst.card.origin}` : ''}`}</span>
+          </div>
           {burst.level >= 5 && (
             <div className={styles.spotCard}><GameCard card={burst.card} width={260} eager live /></div>
           )}
+        </div>
+      )}
+
+      {awaiting && !hintSeen && !calm && (
+        <div className={styles.hint} role="status">
+          <span className={styles.hintRing}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>
+          </span>
+          <strong className={styles.hintText}>Cliquez pour révéler</strong>
+          <span className={styles.hintSub}>Un clic n’importe où fait passer la vignette suivante.</span>
+          <span className={styles.hintKey}>ou Espace · Entrée · →</span>
         </div>
       )}
 

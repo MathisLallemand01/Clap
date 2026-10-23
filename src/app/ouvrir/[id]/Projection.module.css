@@ -127,26 +127,29 @@
 /* Un clic n'importe où sur la scène fait avancer la bande. */
 .advance { position: absolute; inset: 0; z-index: 1; border: 0; background: transparent; cursor: pointer; }
 .hint {
-  position: absolute; width: 280px; margin-left: -140px; pointer-events: none;
-  display: flex; flex-direction: column; align-items: center;
+  position: fixed; inset: 0; z-index: 4; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px;
+  background: radial-gradient(ellipse at center, rgba(5, 5, 6, 0.55) 0, rgba(5, 5, 6, 0.82) 70%);
+  animation: hint-in 400ms ease both;
 }
-.hint > * { flex: none; }
 .hintRing {
-  margin-top: 196px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent);
-  display: flex; align-items: center; justify-content: center; background: rgba(11, 11, 13, 0.8);
+  width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; background: rgba(11, 11, 13, 0.9);
   animation: hint-pulse 1.4s ease-out infinite;
 }
-.hintText { margin-top: 12px; font-stretch: 62%; font-weight: 900; font-size: 26px; text-transform: uppercase; white-space: nowrap; animation: hint-blink 1.4s ease-in-out infinite; }
-.hintKey { margin-top: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+.hintText { margin-top: 18px; font-stretch: 62%; font-weight: 900; font-size: clamp(34px, 5vw, 56px); line-height: 1; text-transform: uppercase; }
+.hintSub { margin-top: 10px; color: var(--text-2); font-size: 16px; max-width: 360px; }
+.hintKey { margin-top: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
+@keyframes hint-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes hint-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 74, 28, 0.6); } 100% { box-shadow: 0 0 0 22px rgba(255, 74, 28, 0); } }
-@keyframes hint-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 
 /* Animations de rareté : du cran 2 (discret) au cran 5 (plein écran). */
 .burst { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.burstBack { z-index: 0; }
 .burst > span, .sparks { position: absolute; left: var(--bx); top: var(--by); }
 .dim { display: none; }
 .flash { display: none; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rc) 70%, white) 0, color-mix(in srgb, var(--rc) 35%, transparent) 25%, transparent 60%); }
-.burstRays { display: none; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: repeating-conic-gradient(color-mix(in srgb, var(--rc) 55%, transparent) 0 5deg, transparent 5deg 15deg); -webkit-mask-image: radial-gradient(circle, #000 6%, transparent 55%); mask-image: radial-gradient(circle, #000 6%, transparent 55%); }
+.burstRays { display: none; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: repeating-conic-gradient(color-mix(in srgb, var(--rc) 36%, transparent) 0 5deg, transparent 5deg 15deg); -webkit-mask-image: radial-gradient(circle, #000 6%, transparent 55%); mask-image: radial-gradient(circle, #000 6%, transparent 55%); }
 .ring { width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; border: 3px solid var(--rc); opacity: 0; animation: burst-ring 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .ring2 { display: none; animation-delay: 160ms; }
 .sparks { width: 0; height: 0; }

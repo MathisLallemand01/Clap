@@ -3,7 +3,7 @@
 .flying .dim { animation: dim-out 600ms ease both; }
 .rays {
   position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px;
-  background: repeating-conic-gradient(rgba(255, 74, 28, 0.22) 0 6deg, transparent 6deg 18deg);
+  background: repeating-conic-gradient(rgba(255, 74, 28, 0.14) 0 6deg, transparent 6deg 18deg);
   -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 50%); mask-image: radial-gradient(circle, #000 8%, transparent 50%);
   animation: rays-spin 6s linear infinite, dim-in 400ms ease both;
 }
@@ -17,16 +17,21 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 74, 28, 0.35);
   -webkit-mask-image: radial-gradient(circle at 100% 50%, transparent 14px, #000 14.5px); mask-image: radial-gradient(circle at 100% 50%, transparent 14px, #000 14.5px);
   animation: ticket-pop 600ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
-  transition: left 650ms cubic-bezier(0.6, 0, 0.3, 1), top 650ms cubic-bezier(0.6, 0, 0.3, 1), scale 650ms cubic-bezier(0.6, 0, 0.3, 1), opacity 650ms ease;
 }
 .ticket::after { content: ''; position: absolute; right: 30px; top: 10px; bottom: 10px; border-left: 2px dashed rgba(11, 11, 13, 0.45); }
-.flying .ticket { left: var(--tx); top: var(--ty); scale: 0.12; opacity: 0.2; }
+.flying .ticket { animation: ticket-fly 650ms cubic-bezier(0.6, 0, 0.3, 1) both; }
 .label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
 .ticket strong { font-size: clamp(72px, 9vw, 112px); line-height: 0.85; }
 .unit { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-weight: 600; font-size: 14px; letter-spacing: 0.12em; }
 
 @keyframes ticket-pop { 0% { scale: 0.3; rotate: -12deg; opacity: 0; } 100% { scale: 1; rotate: 0deg; opacity: 1; } }
+/* Une animation (et non une transition) : celle d'apparition, figée sur sa fin, écrasait la réduction. */
+@keyframes ticket-fly {
+  0% { left: 50%; top: 50%; scale: 1; opacity: 1; }
+  85% { opacity: 0.9; }
+  100% { left: var(--tx); top: var(--ty); scale: 0.1; opacity: 0; }
+}
 @keyframes dim-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes dim-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes rays-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .ticket { transition: none; } }
+
