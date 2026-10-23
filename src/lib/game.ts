@@ -10,16 +10,25 @@ export const STARTING_TICKETS = 600;
 
 export type Player = {
   id: string;
+  /** Pseudo et e-mail d'un compte ; null pour un joueur invité. */
+  name: string | null;
+  email: string | null;
+  /** Dernier jour (AAAA-MM-JJ, heure de Paris) où la prime quotidienne a été prise. */
+  lastDaily: string | null;
   tickets: number;
   freeStock: number;
   /** Instant où la prochaine bobine offerte arrive, ou null si la réserve est pleine. */
   nextFreeAt: number | null;
 };
 
-type PlayerRow = { id: string; tickets: number; free_stock: number; free_updated_at: number };
+type PlayerRow = {
+  id: string; tickets: number; free_stock: number; free_updated_at: number;
+  name: string | null; email: string | null; last_daily: string | null;
+};
+const PLAYER_COLUMNS = 'id, tickets, free_stock, free_updated_at, name, email, last_daily';
 
 export class GameError extends Error {
-  readonly code: 'unknown-booster' | 'not-enough-tickets' | 'unknown-player';
+  readonly code: 'unknown-booster' | 'not-enough-tickets' | 'unknown-player' | 'daily-taken' | 'nothing-to-recycle';
   constructor(code: GameError['code'], message: string) {
     super(message);
     this.code = code;
@@ -38,6 +47,9 @@ function regenerate(row: PlayerRow, now: number): { stock: number; updatedAt: nu
 function toPlayer(row: PlayerRow, stock: number, updatedAt: number): Player {
   return {
     id: row.id,
+    name: row.name,
+    email: row.email,
+    lastDaily: row.last_daily,
     tickets: row.tickets,
     freeStock: stock,
     nextFreeAt: stock >= FREE_BOOSTER_CAP ? null : updatedAt + FREE_BOOSTER_EVERY_MS,
@@ -48,11 +60,11 @@ export function createPlayer(db: DatabaseSync, now = Date.now()): Player {
   const id = randomUUID();
   db.prepare('INSERT INTO players (id, created_at, tickets, free_stock, free_updated_at) VALUES (?, ?, ?, ?, ?)')
     .run(id, now, STARTING_TICKETS, FREE_BOOSTER_CAP, now);
-  return { id, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null };
+  return { id, name: null, email: null, lastDaily: null, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null };
 }
 
 export function getPlayer(db: DatabaseSync, id: string, now = Date.now()): Player | null {
-  const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at FROM players WHERE id = ?').get(id) as
+  const row = db.prepare(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`).get(id) as
     | PlayerRow
     | undefined;
   if (!row) return null;
@@ -88,7 +100,7 @@ export function openBoosterFor(
   if (!def) throw new GameError('unknown-booster', `Bobine inconnue : ${boosterId}`);
 
   return transaction(db, () => {
-    const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at FROM players WHERE id = ?').get(playerId) as
+    const row = db.prepare(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`).get(playerId) as
       | PlayerRow
       | undefined;
     if (!row) throw new GameError('unknown-player', 'Joueur inconnu');
@@ -113,13 +125,18 @@ export function openBoosterFor(
     const { lastInsertRowid } = db.prepare('INSERT INTO pulls (player_id, booster_id, paid_with, created_at) VALUES (?, ?, ?, ?)')
       .run(playerId, boosterId, paidWith, now);
     const pullId = Number(lastInsertRowid);
+    if (paidWith === 'tickets') {
+      db.prepare('INSERT INTO ledger (player_id, amount, reason, detail, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run(playerId, -def.price, 'booster', def.name, now);
+    }
 
-    const countCopies = db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ?');
+    // Le numéro suit le plus grand déjà attribué : il reste unique même après un recyclage.
+    const lastSerial = db.prepare('SELECT COALESCE(MAX(serial), 0) AS n FROM owned WHERE card_id = ?');
     const countMine = db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ? AND player_id = ?');
     const insertOwned = db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, ?, ?, ?)');
 
     const cards = openBooster(def, getCatalog(db), rng).map((card): PulledCard => {
-      const serial = (countCopies.get(card.id) as { n: number }).n + 1;
+      const serial = (lastSerial.get(card.id) as { n: number }).n + 1;
       const isNew = (countMine.get(card.id, playerId) as { n: number }).n === 0;
       insertOwned.run(playerId, card.id, serial, pullId, now);
       return { ...card, serial, isNew };

@@ -7,9 +7,10 @@ import { Wordmark } from './Mark';
 const LINKS = [
   { href: '/bobines', label: 'Bobines' },
   { href: '/collection', label: 'Collection' },
+  { href: '/catalogue', label: 'Catalogue' },
 ] as const;
 
-export function Nav({ wallet, current }: { wallet: Wallet; current?: (typeof LINKS)[number]['href'] }) {
+export function Nav({ wallet, current }: { wallet: Wallet; current?: (typeof LINKS)[number]['href'] | '/compte' }) {
   return (
     <nav className="nav" aria-label="Navigation principale">
       <div className="container nav-inner">
@@ -34,6 +35,15 @@ export function Nav({ wallet, current }: { wallet: Wallet; current?: (typeof LIN
             {formatNumber(wallet.tickets)}
             <span className="visually-hidden"> tickets</span>
           </span>
+          <Link
+            href="/compte"
+            className={`pill nav-account ${wallet.name ? '' : 'nav-login'}`}
+            aria-current={current === '/compte' ? 'page' : undefined}
+            title={wallet.dailyAvailable ? 'Prime du jour disponible' : undefined}
+          >
+            {wallet.name ?? 'Compte'}
+            {wallet.dailyAvailable && <span className="nav-dot" aria-label="prime du jour disponible" />}
+          </Link>
         </div>
       </div>
     </nav>

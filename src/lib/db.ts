@@ -49,7 +49,69 @@ CREATE TABLE IF NOT EXISTS owned (
 );
 CREATE INDEX IF NOT EXISTS owned_player ON owned (player_id);
 CREATE INDEX IF NOT EXISTS owned_card ON owned (card_id);
+
+CREATE TABLE IF NOT EXISTS people (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  biography TEXT,
+  birthday TEXT,
+  deathday TEXT,
+  place_of_birth TEXT,
+  image TEXT,
+  notoriety INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS movies (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  original_title TEXT,
+  year INTEGER,
+  overview TEXT,
+  poster TEXT,
+  backdrop TEXT,
+  runtime INTEGER,
+  genres TEXT NOT NULL DEFAULT '[]',
+  countries TEXT NOT NULL DEFAULT '[]',
+  director TEXT,
+  trailer TEXT,
+  vote_average REAL,
+  vote_count INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  player_id TEXT NOT NULL REFERENCES players (id),
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_player ON sessions (player_id);
+
+CREATE TABLE IF NOT EXISTS ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id TEXT NOT NULL REFERENCES players (id),
+  amount INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  detail TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ledger_player ON ledger (player_id, id);
 `;
+
+/** Colonnes ajoutées après la première version : ajoutées à la volée sur une base existante. */
+const PLAYER_COLUMNS: [string, string][] = [
+  ['email', 'TEXT'],
+  ['password_hash', 'TEXT'],
+  ['name', 'TEXT'],
+  ['last_daily', 'TEXT'],
+];
+
+function migrate(db: DatabaseSync): void {
+  const have = new Set((db.prepare('PRAGMA table_info(players)').all() as { name: string }[]).map((c) => c.name));
+  for (const [name, type] of PLAYER_COLUMNS) {
+    if (!have.has(name)) db.exec(`ALTER TABLE players ADD COLUMN ${name} ${type}`);
+  }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS players_email ON players (email) WHERE email IS NOT NULL');
+}
 
 type CardRow = {
   id: string; kind: Card['kind']; person_id: number; first: string; last: string; rarity: Card['rarity'];
@@ -99,6 +161,7 @@ export function openDb(path: string): DatabaseSync {
   const db = new DatabaseSync(path);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
+  migrate(db);
   const { n } = db.prepare('SELECT COUNT(*) AS n FROM cards').get() as { n: number };
   if (n === 0) upsertCards(db, seedCatalog());
   return db;

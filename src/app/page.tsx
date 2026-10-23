@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { BoosterTile } from '@/components/BoosterTile';
 import { Countdown } from '@/components/Countdown';
-import { GameCard } from '@/components/GameCard';
+import { claimDailyAction } from '@/app/actions';
+import { CardLink } from '@/components/CardLink';
+import { ActionButton } from '@/components/Forms';
 import { ArrowIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
 import { ACTOR_ODDS, getBooster, ROLE_ODDS } from '@/lib/boosters';
+import { DAILY_BONUS } from '@/lib/economy';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { getRecentCards } from '@/lib/game';
@@ -13,7 +16,7 @@ import { currentWallet } from '@/lib/session';
 import styles from './home.module.css';
 
 const RULES: Record<Rarity, string> = {
-  legende: 'Top 100 de popularité', tete: 'Top 1 000', premier: 'Top 5 000', second: 'Top 20 000', figurant: 'Tous les autres',
+  legende: 'Les 3 % les plus connus', tete: 'Top 12 % de notoriété', premier: 'Top 35 %', second: 'Top 65 %', figurant: 'Tous les autres',
   icone: 'Une légende dans le rôle d’une vie', chef: 'Classique majeur', culte: 'Film culte, très noté', succes: 'Succès public', serieb: 'Film peu vu ou oublié',
 };
 
@@ -26,7 +29,7 @@ export default async function HomePage() {
   const recent = player ? getRecentCards(getDb(), player.id, 10) : [];
   const featured = [getBooster('casting')!, getBooster('avant-premiere')!];
   const ladders = [
-    { title: 'Acteurs', basis: 'POPULARITÉ TMDB', rows: [...ACTOR_LADDER].reverse().map((r) => ({ r, odds: odds(ACTOR_ODDS[r as keyof typeof ACTOR_ODDS]) })) },
+    { title: 'Acteurs', basis: 'NOTORIÉTÉ TMDB', rows: [...ACTOR_LADDER].reverse().map((r) => ({ r, odds: odds(ACTOR_ODDS[r as keyof typeof ACTOR_ODDS]) })) },
     { title: 'Rôles', basis: 'NOTORIÉTÉ DU FILM', rows: [...ROLE_LADDER].reverse().map((r) => ({ r, odds: odds(ROLE_ODDS[r as keyof typeof ROLE_ODDS]) })) },
   ];
 
@@ -61,6 +64,9 @@ export default async function HomePage() {
                 </>
               ) : null}
             </span>
+            {player && wallet.dailyAvailable && (
+              <ActionButton action={claimDailyAction} label={`Prime du jour · +${formatNumber(DAILY_BONUS)} tickets`} />
+            )}
           </div>
           <div className={styles.featured}>
             {featured.map((b) => <BoosterTile key={b.id} booster={b} free={wallet.freeStock > 0} />)}
@@ -77,7 +83,7 @@ export default async function HomePage() {
             <div className={styles.strip}>
               <div className={styles.sprockets} />
               <div className={styles.stripCards}>
-                {recent.map((c, i) => <GameCard key={`${c.id}-${i}`} card={c} width={176} />)}
+                {recent.map((c, i) => <CardLink key={`${c.id}-${i}`} card={c} width={176} />)}
               </div>
               <div className={styles.sprockets} />
             </div>

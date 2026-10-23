@@ -1,0 +1,27 @@
+.hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 56px; align-items: start; padding-top: 48px; }
+.cardCol { display: flex; flex-direction: column; align-items: center; gap: 16px; position: sticky; top: 24px; }
+.owned { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); text-align: center; }
+.owned strong { color: var(--text); font-weight: 600; }
+.info { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.info h1 { font-size: clamp(56px, 7vw, 104px); }
+.crumbs { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.crumbs a { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
+.badge { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--rc); color: var(--rc); font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; align-self: flex-start; }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin: 0; }
+.facts div { display: flex; flex-direction: column; gap: 4px; }
+.facts dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+.facts dd { margin: 0; font-size: 16px; color: var(--text); }
+.bio { margin: 0; font-size: 17px; line-height: 1.65; color: var(--text-2); max-width: 760px; white-space: pre-line; }
+.bioMore summary { cursor: pointer; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--accent); margin-top: 8px; }
+.section { margin-top: 72px; display: flex; flex-direction: column; gap: 24px; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 28px 20px; justify-items: center; }
+.film { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; align-items: start; }
+.film img { width: 160px; border-radius: 12px; border: 1px solid var(--line); }
+.muted { color: var(--muted); font-size: 15px; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 32px; }
+  .cardCol { position: static; }
+  .film { grid-template-columns: 96px minmax(0, 1fr); }
+  .film img { width: 96px; }
+}

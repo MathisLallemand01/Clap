@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { GameCard } from '@/components/GameCard';
+import { recycleAction } from '@/app/actions';
+import { CardLink } from '@/components/CardLink';
+import { ActionButton } from '@/components/Forms';
 import { Footer, Nav } from '@/components/Nav';
 import { getDb } from '@/lib/db';
+import { getDuplicates } from '@/lib/economy';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { getCatalog, getCollection } from '@/lib/game';
 import { RARITIES, RARITIES_BY_VALUE, type CardKind } from '@/lib/rarity';
@@ -25,6 +28,9 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
   const owned = player ? getCollection(db, player.id) : [];
   const catalog = getCatalog(db);
   const visible = owned.filter((c) => filter === 'all' || c.kind === filter);
+  const duplicates = player ? getDuplicates(db, player.id) : [];
+  const dupCopies = duplicates.reduce((s, d) => s + d.extra, 0);
+  const dupValue = duplicates.reduce((s, d) => s + d.value, 0);
 
   const progress = RARITIES_BY_VALUE.map((r) => ({
     rarity: RARITIES[r],
@@ -68,6 +74,18 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               {f.label}
             </Link>
           ))}
+          {owned.length > 0 && (
+            // Toujours affiché quand on a des cartes : le message de confirmation survit au recyclage.
+            <div style={{ marginLeft: 'auto' }}>
+              <ActionButton
+                action={recycleAction}
+                disabled={dupCopies === 0}
+                label={dupCopies > 0
+                  ? `Recycler ${formatNumber(dupCopies)} doublon${dupCopies > 1 ? 's' : ''} · +${formatNumber(dupValue)} tickets`
+                  : 'Aucun doublon à recycler'}
+              />
+            </div>
+          )}
         </div>
 
         {visible.length === 0 ? (
@@ -80,8 +98,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
           <ul className={styles.grid}>
             {visible.map((c) => (
               <li key={c.id}>
-                <GameCard card={c} width={190} serial={c.serial} />
-                {c.copies > 1 && <span className={styles.copies}>×{c.copies}</span>}
+                <CardLink card={c} serial={c.serial} copies={c.copies} />
               </li>
             ))}
           </ul>
