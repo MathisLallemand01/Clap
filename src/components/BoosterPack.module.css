@@ -5,7 +5,7 @@
   flex: none;
   color: var(--text);
   font-family: var(--display);
-  filter: drop-shadow(0 1.6em 2.2em rgba(0, 0, 0, 0.6)) drop-shadow(0 0 2em color-mix(in srgb, var(--hue) 14%, transparent));
+  filter: drop-shadow(0 1.6em 2.2em rgba(0, 0, 0, 0.6));
   transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .float { animation: float 6s ease-in-out infinite; }
@@ -37,9 +37,7 @@
     linear-gradient(76deg, transparent 62%, rgba(255, 255, 255, 0.07) 63%, transparent 65%),
     linear-gradient(140deg, transparent 24%, rgba(255, 255, 255, 0.06) 25%, transparent 27%),
     linear-gradient(118deg, transparent 14%, color-mix(in srgb, var(--hue) 22%, transparent) 28%, transparent 40%, transparent 62%, color-mix(in srgb, var(--hue) 16%, transparent) 74%, transparent 86%);
-  animation: crinkle 10s ease-in-out infinite;
 }
-@keyframes crinkle { 0%, 100% { background-position: 0 0; } 50% { background-position: 24% 8%; } }
 
 /* Perforations de pellicule le long des bords. */
 .perf {
@@ -91,8 +89,8 @@
   background: linear-gradient(90deg, color-mix(in srgb, var(--hue) 25%, transparent) 0, rgba(255, 255, 255, 0.08) 2.5%, transparent 12%, transparent 88%, rgba(255, 255, 255, 0.06) 97.5%, color-mix(in srgb, var(--hue) 25%, transparent) 100%);
 }
 .sheen {
-  position: absolute; top: 0; bottom: 0; left: 0; width: 35%; pointer-events: none; mix-blend-mode: screen;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  position: absolute; top: 0; bottom: 0; left: 0; width: 35%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   animation: pack-sheen 5.5s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
 .interactive:hover .sheen { animation-duration: 1.8s; }
@@ -116,3 +114,6 @@
   100% { transform: translate(6em, -9em) rotate(28deg); opacity: 0; }
 }
 @keyframes pack-shrink { to { transform: translateY(3em) scale(0.6); opacity: 0; } }
+
+/* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }

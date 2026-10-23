@@ -90,9 +90,9 @@ export default async function LandingPage() {
               <CropMarks timecode="00:00:12:07" className={styles.crop} />
               <Rays className={styles.rays} />
               <Reel size={260} className={styles.reel} />
-              {fanLeft && <div className={styles.fanL}><div className={styles.float} style={{ animationDelay: '-2s' }}><Tilt><GameCard card={fanLeft} width={230} eager /></Tilt></div></div>}
-              {fanRight && <div className={styles.fanR}><div className={styles.float} style={{ animationDelay: '-4s' }}><Tilt><GameCard card={fanRight} width={230} eager /></Tilt></div></div>}
-              {fanCenter && <div className={styles.fanC}><div className={styles.float}><Tilt><GameCard card={fanCenter} width={300} eager /></Tilt></div></div>}
+              {fanLeft && <div className={styles.fanL}><div className={styles.float} style={{ animationDelay: '-2s' }}><Tilt><GameCard card={fanLeft} width={230} eager live /></Tilt></div></div>}
+              {fanRight && <div className={styles.fanR}><div className={styles.float} style={{ animationDelay: '-4s' }}><Tilt><GameCard card={fanRight} width={230} eager live /></Tilt></div></div>}
+              {fanCenter && <div className={styles.fanC}><div className={styles.float}><Tilt><GameCard card={fanCenter} width={300} eager live /></Tilt></div></div>}
               {fanCenter && (
                 <TicketStub
                   className={styles.ticket}

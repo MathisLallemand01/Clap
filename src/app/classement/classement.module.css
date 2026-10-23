@@ -63,3 +63,6 @@
 .rewards li span { font-size: 15px; font-weight: 600; text-align: right; }
 .rewards small { font-size: 13px; opacity: 0.8; padding-right: 76px; }
 .perf { position: absolute; right: 64px; top: -14px; bottom: -14px; border-left: 3px dashed rgba(11, 11, 13, 0.45); }
+
+/* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }

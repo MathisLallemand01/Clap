@@ -144,9 +144,10 @@ const specs: Spec[] = [
 
 export const BOOSTERS: BoosterDef[] = specs.map((s, i) => ({ ...s, code: String(i + 1).padStart(2, '0'), slots: s.slots ?? mixed() }));
 
+/** L'ordre des catégories à l'écran : les événements d'abord. */
 export const GROUP_LABELS: Record<BoosterGroup, string> = {
-  permanent: 'Permanentes',
   event: 'Événements',
+  permanent: 'Permanentes',
   country: 'Pays',
   genre: 'Genres',
   era: 'Époques',

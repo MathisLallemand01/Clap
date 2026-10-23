@@ -11,6 +11,8 @@ type Props = {
   serial?: number;
   /** Charger la photo tout de suite (ouverture de bobine, haut de page). */
   eager?: boolean;
+  /** Carte en vitrine : l'éclat holographique balaie la photo en continu. */
+  live?: boolean;
 };
 
 /**
@@ -31,7 +33,7 @@ const FOILS: Record<string, string> = {
 };
 
 /** Une carte Acteur (portrait) ou Rôle (photogramme), dessinée comme dans la maquette. */
-export function GameCard({ card, width = 240, serial, eager = false }: Props) {
+export function GameCard({ card, width = 240, serial, eager = false, live = false }: Props) {
   const rarity = RARITIES[card.rarity];
   const ladder = ladderOf(card.kind);
   const style = {
@@ -43,6 +45,7 @@ export function GameCard({ card, width = 240, serial, eager = false }: Props) {
   const initials = `${card.first[0] ?? ''}${card.last[0] ?? ''}`;
   const number = serial ? `№ ${formatSerial(serial)}` : null;
   const top = rarity.tier === ladder.length;
+  const liveClass = live ? styles.live : '';
   const image = card.image
     ? <img src={sized(card.image, card.kind, width)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
     : null;
@@ -58,7 +61,7 @@ export function GameCard({ card, width = 240, serial, eager = false }: Props) {
 
   if (card.kind === 'actor') {
     return (
-      <div className={`${styles.card} ${styles.actor} ${top ? styles.top5 : ''}`} style={style} role="img" aria-label={label}>
+      <div className={`${styles.card} ${styles.actor} ${top ? styles.top5 : ''} ${liveClass}`} style={style} role="img" aria-label={label}>
         <div className={styles.head}>
           <span className={styles.rarity}><span className={styles.dot} />{rarity.label}</span>
           {number && <span className={styles.num}>{number}</span>}
@@ -87,7 +90,7 @@ export function GameCard({ card, width = 240, serial, eager = false }: Props) {
   }
 
   return (
-    <div className={`${styles.card} ${styles.role} ${top ? styles.top5 : ''} ${card.rarity === 'icone' ? styles.icon : ''}`} style={style} role="img" aria-label={label}>
+    <div className={`${styles.card} ${styles.role} ${top ? styles.top5 : ''} ${card.rarity === 'icone' ? styles.icon : ''} ${liveClass}`} style={style} role="img" aria-label={label}>
       <div className={styles.rail}><span /></div>
       <div className={styles.roleBody}>
         <div className={styles.head}>

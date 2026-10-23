@@ -107,3 +107,6 @@
 .sceneLabel { flex: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
 @keyframes film-line { to { background-position: 48px 0; } }
 @media (max-width: 520px) { .sceneLabel { display: none; } }
+
+/* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
+@keyframes spin { to { transform: rotate(360deg); } }

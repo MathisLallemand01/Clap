@@ -1,12 +1,13 @@
 .rails { display: none; }
-@media (min-width: 1180px) { .rails { display: block; } }
+@media (min-width: 1280px) { .rails { display: block; } }
+/* Posés sur la page (ils défilent avec elle), tout au bord de l'écran, loin du contenu. */
 .rail {
-  position: fixed; top: 140px; bottom: 32px; width: 24px; z-index: 1; pointer-events: none;
+  position: absolute; top: 150px; height: max(560px, calc(100vh - 200px)); width: 20px; z-index: 1; pointer-events: none;
   display: flex; flex-direction: column; align-items: center; gap: 16px;
-  font-family: var(--mono); font-size: 10px; color: #4a4a52;
+  font-family: var(--mono); font-size: 9px; color: #3e3e46;
 }
-.left { left: calc((100vw - min(100vw, 1360px + 2 * var(--gutter))) / 2 + 14px); }
-.right { right: calc((100vw - min(100vw, 1360px + 2 * var(--gutter))) / 2 + 14px); }
+.left { left: 10px; }
+.right { right: 10px; }
 .rec { color: var(--accent); letter-spacing: 0.1em; white-space: nowrap; }
 .text { writing-mode: vertical-rl; letter-spacing: 0.32em; white-space: nowrap; text-transform: uppercase; }
 .up { transform: rotate(180deg); }

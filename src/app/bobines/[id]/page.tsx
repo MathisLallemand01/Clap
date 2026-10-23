@@ -36,7 +36,9 @@ export default async function BoosterContentPage({ params, searchParams }: Props
   const have = pool.reduce((n, c) => n + (owned.has(c.id) ? 1 : 0), 0);
   const odds: Partial<Record<Rarity, number>> = {};
   for (const slot of booster.slots) for (const [r, w] of Object.entries(slot.odds)) odds[r as Rarity] = Math.max(odds[r as Rarity] ?? 0, w);
-  const tiers = RARITIES_BY_VALUE.filter((r) => counts[r] > 0);
+  // Ordre des chances : la rareté la moins probable d'abord, la plus courante à la fin.
+  const tiers = RARITIES_BY_VALUE.filter((r) => counts[r] > 0 && (odds[r] ?? 0) > 0)
+    .sort((a, b) => (odds[a] ?? 0) - (odds[b] ?? 0) || RARITIES[b].entries - RARITIES[a].entries);
   const focus = (sp.rarete && sp.rarete in RARITIES ? sp.rarete : null) as Rarity | null;
   const missingOnly = sp.voir === 'manquantes';
   const free = ctx.wallet.freeStock > 0;
@@ -70,7 +72,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
               <div className={styles.meterBar} aria-hidden="true">
                 {tiers.map((r) => <span key={r} style={{ flex: Math.max(counts[r], pool.length / 120), background: RARITIES[r].color }} />)}
               </div>
-              <span className={styles.meterNote}>Répartition des cartes possibles, de la plus rare à la plus commune.</span>
+              <span className={styles.meterNote}>Répartition des cartes possibles, de la moins probable à la plus probable.</span>
             </div>
             <div className={styles.ctas}>
               <Link href={`/ouvrir/${booster.id}`} className="btn btn-primary btn-lg">{free ? 'Ouvrir · offerte' : `Ouvrir · ${formatNumber(booster.price)} TK`}</Link>

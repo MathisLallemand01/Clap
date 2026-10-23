@@ -41,7 +41,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const fmt = (n: number) => (view === 'box-office' ? formatEntries(n) : formatNumber(n));
   const me = rows.find((r) => r.playerId === ctx.player.id);
   const podium = [rows[1], rows[0], rows[2]];
-  const list = rows.slice(3, 50);
+  const list = rows.slice(0, 50);
   const meOutside = me && me.rank > 50;
 
   return (

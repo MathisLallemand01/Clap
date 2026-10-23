@@ -349,7 +349,7 @@ export function Projection({ booster, cover }: { booster: BoosterDef; cover: Car
                   </div>
                 ) : (
                   <>
-                    <div className={styles.cardWrap}><GameCard card={f.card} width={150} serial={f.card.serial} eager /></div>
+                    <div className={styles.cardWrap}><GameCard card={f.card} width={150} serial={f.card.serial} eager live /></div>
                     <div className={styles.shutter}><span>VIGN. {String(f.slot + 1).padStart(2, '0')}</span></div>
                   </>
                 )}

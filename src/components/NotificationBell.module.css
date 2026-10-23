@@ -25,3 +25,6 @@
 .text { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4; }
 .text small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--faint); }
 .empty { padding: 28px 20px; margin: 0; color: var(--muted); font-size: 15px; }
+
+/* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
+@keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }

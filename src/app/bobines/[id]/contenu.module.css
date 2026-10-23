@@ -12,7 +12,7 @@
 .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
 
 .jump {
-  position: sticky; top: 72px; z-index: 5; background: rgba(11, 11, 13, 0.92); backdrop-filter: blur(10px);
+  position: sticky; top: 72px; z-index: 5; background: rgba(11, 11, 13, 0.97);
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0; margin: -12px 0; border-bottom: 1px solid #1c1c21;
 }
 .jump .eyebrow { margin-right: 6px; }

@@ -1,5 +1,5 @@
 /* Le bandeau tient dans la largeur du site, sans fond : juste deux filets et le texte qui glisse. */
-.ticker { display: flex; align-items: stretch; height: 48px; }
+.ticker { display: flex; align-items: stretch; height: 48px; margin-top: 20px; }
 .ticker > * { border-top: 1px solid #1c1c21; border-bottom: 1px solid #1c1c21; }
 .label {
   flex: none; display: flex; align-items: center; gap: 10px; padding-right: 18px;
@@ -33,3 +33,7 @@ a.item:hover .text { color: var(--accent); }
   .item { font-size: 13px; padding: 0 16px; }
   .label { font-size: 11px; padding-right: 12px; }
 }
+
+/* Les noms d'animation sont locaux à ce fichier : copies des animations partagées. */
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 74, 28, 0.45); } 100% { box-shadow: 0 0 0 14px rgba(255, 74, 28, 0); } }
