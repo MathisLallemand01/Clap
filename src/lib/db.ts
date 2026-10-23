@@ -77,6 +77,23 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Ce que fait un joueur (pour les missions) : open, rare, trade, trailer, recycle, sell, buy
+-- Extraits des musiques cultes (iTunes / Deezer), mis en cache : url vide = rien trouvé.
+CREATE TABLE IF NOT EXISTS theme_previews (
+  key TEXT PRIMARY KEY,
+  url TEXT NOT NULL,
+  link TEXT,
+  fetched_at INTEGER NOT NULL
+);
+-- Popups à montrer au joueur à sa prochaine visite : vente conclue, échange accepté, cadeau reçu.
+CREATE TABLE IF NOT EXISTS celebrations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id TEXT NOT NULL REFERENCES players (id),
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  seen_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS celebrations_player ON celebrations (player_id, seen_at);
 CREATE TABLE IF NOT EXISTS season_rewards (
   player_id TEXT NOT NULL REFERENCES players (id),
   season TEXT NOT NULL,
@@ -212,6 +229,9 @@ function migrate(db: DatabaseSync): void {
     db.exec('ALTER TABLE users ADD COLUMN discord_id TEXT; ALTER TABLE users ADD COLUMN discord_name TEXT; ALTER TABLE users ADD COLUMN discord_avatar TEXT;');
     db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_discord ON users (discord_id)');
   }
+  const tradeColumns = new Set((db.prepare('PRAGMA table_info(trades)').all() as { name: string }[]).map((c) => c.name));
+  // Cadeau : un échange à sens unique, conclu aussitôt.
+  if (!tradeColumns.has('gift')) db.exec('ALTER TABLE trades ADD COLUMN gift INTEGER NOT NULL DEFAULT 0');
 }
 
 /** Ouvre (ou crée) une base ; le catalogue de démarrage est inséré si la table est vide. */

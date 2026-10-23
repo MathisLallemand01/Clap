@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { getCard } from './catalog.ts';
+import { queueCelebration } from './celebrations.ts';
 import { transaction } from './db.ts';
 import { addTickets, GameError } from './game.ts';
 import { logEvent, notifyPlayer } from './notify.ts';
@@ -132,6 +133,9 @@ export function buyListing(db: DatabaseSync, buyerId: string, listingId: number,
     logEvent(db, row.seller_id, 'sell', 1, now);
     logEvent(db, buyerId, 'buy', 1, now);
     const card = getCard(db, row.card_id)!;
+    const buyer = (db.prepare('SELECT name FROM users WHERE player_id = ?').get(buyerId) as { name: string } | undefined)?.name ?? 'Un joueur';
+    const serial = (db.prepare('SELECT serial FROM owned WHERE id = ?').get(row.owned_id) as { serial: number }).serial;
+    queueCelebration(db, row.seller_id, { kind: 'sale', cardId: row.card_id, serial, price: row.price, received: sellerReceives(row.price), buyer }, now);
     notifyPlayer(db, row.seller_id, 'sale', `Vendu au Guichet : ${card.first} ${card.last}${card.character ? ` (${card.character})` : ''} pour ${row.price} tickets.`, '/guichet?vue=mes-annonces', now);
     return getListing(db, row.id)!;
   });

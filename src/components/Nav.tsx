@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { formatEntries, formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
 import { logout } from '@/app/actions';
+import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
 import { SeatIcon, TicketIcon } from './Icons';
 import { Wordmark } from './Mark';
@@ -71,6 +72,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
           </div>
         )}
       </div>
+      {ctx?.celebration && <CelebrationHost celebration={ctx.celebration} />}
     </header>
   );
 }

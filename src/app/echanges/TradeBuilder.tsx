@@ -5,11 +5,15 @@ import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
 import { formatNumber } from '@/lib/format';
 import type { Card } from '@/lib/types';
-import { proposeAction } from './actions';
+import { giftAction, proposeAction } from './actions';
 import styles from './echanges.module.css';
 
 type Item = Card & { value: number; copies: number };
-type Props = { friendId: string; friendName: string; mine: Item[]; theirs: Item[]; myTickets: number };
+type Props = {
+  friendId: string; friendName: string; mine: Item[]; theirs: Item[]; myTickets: number;
+  /** Date (lisible) à partir de laquelle le compte pourra offrir ; null s'il le peut déjà. */
+  giftLockedUntil: string | null;
+};
 
 function Picker({ title, who, items, name, picked, toggle, query, setQuery }: {
   title: string; who: string; items: Item[]; name: string; picked: Set<string>; toggle: (id: string) => void; query: string; setQuery: (q: string) => void;
@@ -42,7 +46,9 @@ function Picker({ title, who, items, name, picked, toggle, query, setQuery }: {
   );
 }
 
-export function TradeBuilder({ friendId, friendName, mine, theirs, myTickets }: Props) {
+export function TradeBuilder({ friendId, friendName, mine, theirs, myTickets, giftLockedUntil }: Props) {
+  const [mode, setMode] = useState<'trade' | 'gift'>('trade');
+  const gift = mode === 'gift';
   const [give, setGive] = useState<Set<string>>(new Set());
   const [take, setTake] = useState<Set<string>>(new Set());
   const [giveTickets, setGiveTickets] = useState(0);
@@ -64,12 +70,32 @@ export function TradeBuilder({ friendId, friendName, mine, theirs, myTickets }: 
   const verdict = !total ? 'CHOISISSEZ DES CARTES' : gap <= 0.15 ? `ÉQUILIBRÉ · ÉCART ${Math.round(gap * 100)} %` : values.give > values.take ? `À SON AVANTAGE · +${formatNumber(values.give - values.take)}` : `À VOTRE AVANTAGE · +${formatNumber(values.take - values.give)}`;
 
   return (
-    <form action={proposeAction} className={styles.builder}>
+    <form action={gift ? giftAction : proposeAction} className={styles.builder}>
       <input type="hidden" name="to" value={friendId} />
-      <div className={styles.sides}>
-        <Picker title="Vous donnez" who="VOTRE COLLECTION" items={mine} name="give" picked={give} toggle={toggle(give, setGive)} query={q1} setQuery={setQ1} />
-        <Picker title="Vous recevez" who={`COLLECTION DE ${friendName.toUpperCase()}`} items={theirs} name="take" picked={take} toggle={toggle(take, setTake)} query={q2} setQuery={setQ2} />
+      <div className={styles.modeRow}>
+        <div className="segmented" role="tablist" aria-label="Type d’envoi">
+          <button type="button" role="tab" aria-selected={!gift} aria-current={!gift ? 'true' : undefined} onClick={() => setMode('trade')}>⇄ Échanger</button>
+          <button type="button" role="tab" aria-selected={gift} aria-current={gift ? 'true' : undefined} onClick={() => setMode('gift')}>🎁 Offrir</button>
+        </div>
+        {gift && <span className={styles.modeHint}>{giftLockedUntil ? `Les cadeaux s’ouvrent après 7 jours d’ancienneté : le ${giftLockedUntil}.` : `${friendName} reçoit tout de suite, sans rien vous donner en retour.`}</span>}
       </div>
+      <div className={`${styles.sides} ${gift ? styles.single : ''}`}>
+        <Picker title={gift ? 'Vous offrez' : 'Vous donnez'} who="VOTRE COLLECTION" items={mine} name="give" picked={give} toggle={toggle(give, setGive)} query={q1} setQuery={setQ1} />
+        {!gift && <Picker title="Vous recevez" who={`COLLECTION DE ${friendName.toUpperCase()}`} items={theirs} name="take" picked={take} toggle={toggle(take, setTake)} query={q2} setQuery={setQ2} />}
+      </div>
+      {gift ? (
+        <div className={styles.balance}>
+          <div className={styles.tickets}>
+            <label className="field">Tickets offerts
+              <input className="input" type="number" name="giveTickets" min={0} max={myTickets} value={giveTickets} onChange={(e) => setGiveTickets(Math.max(0, Number(e.target.value)))} />
+            </label>
+          </div>
+          <div className={styles.meter}>
+            <div className={styles.meterHead}><span>VALEUR DU CADEAU {formatNumber(values.give)} TK</span></div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={!!giftLockedUntil || (give.size === 0 && !giveTickets)}>Offrir à {friendName}</button>
+        </div>
+      ) : (
       <div className={styles.balance}>
         <div className={styles.tickets}>
           <label className="field">Tickets que vous ajoutez
@@ -92,6 +118,7 @@ export function TradeBuilder({ friendId, friendName, mine, theirs, myTickets }: 
         </div>
         <button type="submit" className="btn btn-primary btn-lg" disabled={give.size + take.size === 0}>Proposer à {friendName}</button>
       </div>
+      )}
     </form>
   );
 }

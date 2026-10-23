@@ -1,8 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { getUser, getUserByName, type User } from './auth.ts';
 import { getCard } from './catalog.ts';
+import { queueCelebration } from './celebrations.ts';
 import { transaction } from './db.ts';
-import { addTickets, GameError, getStats } from './game.ts';
+import { addTickets, GameError, getPlayer, getStats } from './game.ts';
 import { logEvent, notify } from './notify.ts';
 import { suggestedTickets } from './rarity.ts';
 import type { Card } from './types.ts';
@@ -87,7 +88,7 @@ function pendingTradeOwnedIds(db: DatabaseSync): Set<number> {
 export type TradeSide = { cards: (Card & { ownedId: number; serial: number })[]; tickets: number; value: number };
 export type Trade = {
   id: number; from: { id: string; name: string }; to: { id: string; name: string };
-  give: TradeSide; take: TradeSide; status: string; createdAt: number;
+  give: TradeSide; take: TradeSide; status: string; createdAt: number; gift: boolean;
 };
 
 function side(db: DatabaseSync, ownedIds: number[], tickets: number): TradeSide {
@@ -131,14 +132,14 @@ export function proposeTrade(
   });
 }
 
-type TradeRow = { id: number; from_user: string; to_user: string; give: string; take: string; give_tickets: number; take_tickets: number; status: string; created_at: number };
+type TradeRow = { id: number; from_user: string; to_user: string; give: string; take: string; give_tickets: number; take_tickets: number; status: string; created_at: number; gift: number };
 
 function toTrade(db: DatabaseSync, r: TradeRow): Trade {
   const name = (id: string) => getUser(db, id)?.name ?? 'Joueur';
   return {
     id: r.id, from: { id: r.from_user, name: name(r.from_user) }, to: { id: r.to_user, name: name(r.to_user) },
     give: side(db, JSON.parse(r.give) as number[], r.give_tickets), take: side(db, JSON.parse(r.take) as number[], r.take_tickets),
-    status: r.status, createdAt: r.created_at,
+    status: r.status, createdAt: r.created_at, gift: r.gift === 1,
   };
 }
 
@@ -184,6 +185,10 @@ export function respondTrade(db: DatabaseSync, userId: string, tradeId: number, 
         addTickets(db, from.playerId, row.take_tickets);
       }
       db.prepare("UPDATE trades SET status = 'accepted', closed_at = ? WHERE id = ?").run(now, tradeId);
+      // Les deux joueurs voient l'échange conclu en grand : l'un tout de suite, l'autre à sa prochaine visite.
+      const serials = (ids: number[]) => ids.map((id) => db.prepare('SELECT card_id AS cardId, serial FROM owned WHERE id = ?').get(id) as { cardId: string; serial: number });
+      queueCelebration(db, from.playerId, { kind: 'trade', partner: to.name, received: serials(take), tickets: row.take_tickets, gave: give.length, gaveTickets: row.give_tickets }, now);
+      queueCelebration(db, to.playerId, { kind: 'trade', partner: from.name, received: serials(give), tickets: row.give_tickets, gave: take.length, gaveTickets: row.take_tickets }, now);
       logEvent(db, from.playerId, 'trade', 1, now);
       logEvent(db, to.playerId, 'trade', 1, now);
     });
@@ -195,6 +200,49 @@ export function respondTrade(db: DatabaseSync, userId: string, tradeId: number, 
     throw err;
   }
   notify(db, from.id, 'trade', `${to.name} a accepté votre échange.`, '/echanges', now);
+}
+
+/** Ancienneté minimale pour offrir des cartes ou des tickets (contre les comptes jetables). */
+export const GIFT_MIN_AGE_DAYS = 7;
+
+/** Le jour où un compte pourra offrir, ou null s'il le peut déjà (les comptes de test illimités le peuvent toujours). */
+export function giftUnlockAt(db: DatabaseSync, userId: string, now = Date.now()): number | null {
+  const user = getUser(db, userId);
+  if (!user) return null;
+  if (getPlayer(db, user.playerId)?.unlimited) return null;
+  const at = user.createdAt + GIFT_MIN_AGE_DAYS * 86_400_000;
+  return at > now ? at : null;
+}
+
+/** Offre des cartes et/ou des tickets à un ami : rien à accepter, c'est conclu tout de suite. */
+export function sendGift(db: DatabaseSync, fromId: string, toId: string, gift: { cards: string[]; tickets: number }, now = Date.now()): number {
+  if (!areFriends(db, fromId, toId)) throw new GameError('not-friends', 'Vous ne pouvez faire de cadeau qu’à vos amis.');
+  if (giftUnlockAt(db, fromId, now)) throw new GameError('too-young', `Les cadeaux s’ouvrent après ${GIFT_MIN_AGE_DAYS} jours d’ancienneté.`);
+  if (!Number.isInteger(gift.tickets) || gift.tickets < 0) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
+  if (!gift.cards.length && !gift.tickets) throw new GameError('empty', 'Choisissez au moins une carte ou des tickets à offrir.');
+  const from = getUser(db, fromId)!;
+  const to = getUser(db, toId)!;
+  return transaction(db, () => {
+    const used = pendingTradeOwnedIds(db);
+    const ids = gift.cards.map((cardId) => {
+      const id = freeCopies(db, from.playerId, cardId, used)[0];
+      if (!id) throw new GameError('not-owned', `Vous n’avez plus d’exemplaire libre de ${getCard(db, cardId)?.last ?? 'cette carte'}.`);
+      used.add(id);
+      return id;
+    });
+    const move = db.prepare('UPDATE owned SET player_id = ?, obtained_at = ? WHERE id = ?');
+    for (const id of ids) move.run(to.playerId, now, id);
+    if (gift.tickets) {
+      addTickets(db, from.playerId, -gift.tickets);
+      addTickets(db, to.playerId, gift.tickets);
+    }
+    const { lastInsertRowid } = db.prepare("INSERT INTO trades (from_user, to_user, give, take, give_tickets, take_tickets, status, created_at, closed_at, gift) VALUES (?, ?, ?, '[]', ?, 0, 'accepted', ?, ?, 1)")
+      .run(fromId, toId, JSON.stringify(ids), gift.tickets, now, now);
+    const received = ids.map((id) => db.prepare('SELECT card_id AS cardId, serial FROM owned WHERE id = ?').get(id) as { cardId: string; serial: number });
+    queueCelebration(db, to.playerId, { kind: 'gift', from: from.name, received, tickets: gift.tickets }, now);
+    notify(db, toId, 'trade', `${from.name} vous a fait un cadeau.`, '/collection', now);
+    return Number(lastInsertRowid);
+  });
 }
 
 export function cancelTrade(db: DatabaseSync, userId: string, tradeId: number, now = Date.now()): void {

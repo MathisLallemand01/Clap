@@ -10,7 +10,7 @@ import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { suggestedTickets } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
-import { areFriends, listFriends, listTrades, tradableCollection, type Trade } from '@/lib/social';
+import { areFriends, giftUnlockAt, listFriends, listTrades, tradableCollection, type Trade } from '@/lib/social';
 import { acceptFriendAction, addFriendAction, cancelTradeAction, removeFriendAction, respondAction } from './actions';
 import { TradeBuilder } from './TradeBuilder';
 import styles from './echanges.module.css';
@@ -56,6 +56,7 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   const me = ctx.user.id;
   const { friends, incoming, outgoing } = listFriends(db, me);
   const { pending, history } = listTrades(db, me);
+  const giftLocked = giftUnlockAt(db, me);
   const friend = sp.ami && areFriends(db, me, sp.ami) ? getUser(db, sp.ami) : null;
   const toItems = (playerId: string) => tradableCollection(db, playerId)
     .map((c) => ({ ...c, value: suggestedTickets(c.rarity) }))
@@ -126,7 +127,11 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
 
           <section className={styles.main}>
             {friend ? (
-              <TradeBuilder friendId={friend.id} friendName={friend.name} mine={toItems(ctx.player.id)} theirs={toItems(friend.playerId)} myTickets={ctx.wallet.tickets} />
+              <TradeBuilder
+                friendId={friend.id} friendName={friend.name} mine={toItems(ctx.player.id)} theirs={toItems(friend.playerId)}
+                myTickets={ctx.player.unlimited ? 999_999 : ctx.wallet.tickets}
+                giftLockedUntil={giftLocked ? new Date(giftLocked).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : null}
+              />
             ) : (
               <div className={styles.placeholder}>
                 <CropMarks className={styles.crop} />
@@ -179,8 +184,10 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
                   <article key={t.id} className={`${styles.trade} ${styles.past}`}>
                     <div className={styles.tradeHead}>
                       <Avatar name={t.from.id === me ? t.to.name : t.from.name} />
-                      <strong>{t.from.id === me ? `Avec ${t.to.name}` : `Avec ${t.from.name}`}</strong>
-                      <span className="mono" style={{ fontSize: 12, color: STATUS[t.status]?.[1] }}>{STATUS[t.status]?.[0] ?? t.status}</span>
+                      <strong>{t.gift ? (t.from.id === me ? `Cadeau pour ${t.to.name}` : `Cadeau de ${t.from.name}`) : t.from.id === me ? `Avec ${t.to.name}` : `Avec ${t.from.name}`}</strong>
+                      {t.gift
+                        ? <span className={`mono ${styles.giftTag}`} style={{ fontSize: 12 }}>🎁 CADEAU</span>
+                        : <span className="mono" style={{ fontSize: 12, color: STATUS[t.status]?.[1] }}>{STATUS[t.status]?.[0] ?? t.status}</span>}
                     </div>
                     <TradeSummary t={t} me={me} />
                   </article>

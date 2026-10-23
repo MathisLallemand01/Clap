@@ -5,6 +5,7 @@ import { openDb } from '../src/lib/db.ts';
 import { createPlayer, GameError, getCatalog, getCollection, getPlayer, getStats, openBoosterFor, STARTING_TICKETS } from '../src/lib/game.ts';
 import { boosterPool, openBooster, rollRarity } from '../src/lib/pull.ts';
 import { RARITIES } from '../src/lib/rarity.ts';
+import { themeFor } from '../src/lib/themes.ts';
 
 /** Générateur pseudo-aléatoire reproductible (mulberry32). */
 function seeded(seed: number) {
@@ -115,4 +116,24 @@ test('collection, numéros de série et box-office', () => {
   for (let i = 1; i < collection.length; i++) {
     assert.ok(RARITIES[collection[i - 1].rarity].entries >= RARITIES[collection[i].rarity].entries);
   }
+});
+
+test('musiques cultes : l’acteur principal du bon film, pas les suites ni les seconds rôles', () => {
+  const role = (first: string, last: string, film: string, year: number) =>
+    ({ kind: 'role' as const, first, last, film, year });
+  assert.equal(themeFor(role('Tom', 'Cruise', 'Top Gun : Maverick', 2022))?.song, 'Hold My Hand');
+  assert.equal(themeFor(role('Tom', 'Cruise', 'Top Gun', 1986))?.song, 'Danger Zone');
+  assert.equal(themeFor(role('Sylvester', 'Stallone', "Rocky III : L'Œil du tigre", 1982))?.song, 'Eye of the Tiger');
+  assert.equal(themeFor(role('Sylvester', 'Stallone', 'Rocky', 1976))?.song, 'Gonna Fly Now');
+  assert.equal(themeFor(role('Daniel', 'Radcliffe', 'Harry Potter et la Chambre des secrets', 2002)), null);
+  assert.equal(themeFor(role('Miles', 'Teller', 'Top Gun : Maverick', 2022)), null);
+  assert.equal(themeFor({ kind: 'actor', first: 'Tom', last: 'Cruise', film: null, year: null }), null);
+});
+
+test('Bande originale : uniquement des Rôles à musique culte ; Tout Clap : tout le catalogue', () => {
+  const db = openDb(':memory:');
+  const catalog = getCatalog(db);
+  const soundtrack = getBooster('bande-originale')!;
+  assert.ok(boosterPool(soundtrack, catalog).every((c) => themeFor(c)));
+  assert.equal(boosterPool(getBooster('tout-clap')!, catalog).length, catalog.length);
 });

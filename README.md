@@ -46,6 +46,15 @@ le secret dans `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET`. Les joueurs lient
 (portée `identify` : pseudo et photo seulement) ; leur nom et leur photo Discord (en GIF animé avec Nitro)
 s’affichent alors dans le menu et le classement, et « Continuer avec Discord » les connecte ensuite.
 
+## Musiques cultes
+
+Quand on obtient le Rôle de l’acteur principal d’un film à musique culte (Tom Cruise dans *Top Gun : Maverick*
+→ « Hold My Hand »), la musique se lance : un extrait officiel de 30 secondes, trouvé dans le catalogue public
+d’Apple (iTunes Search, repli sur Deezer), avec un lien « Écouter en entier ». La liste des films est dans
+`src/lib/themes.ts` ; ils sont reconnus dans le catalogue par année, acteur et titre. Aucune clé n’est
+nécessaire, mais le serveur doit pouvoir joindre `itunes.apple.com`. La bobine « Bande originale » ne contient
+que ces cartes.
+
 ## Scripts
 
 | Commande | Rôle |

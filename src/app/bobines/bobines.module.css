@@ -1,4 +1,4 @@
-.main { display: flex; flex-direction: column; gap: clamp(64px, 8vw, 110px); padding-bottom: 96px; }
+.main { display: flex; flex-direction: column; gap: clamp(64px, 8vw, 110px); padding-bottom: clamp(40px, 5vw, 56px); }
 
 /* En-tête : le choix de la bobine, trois paquets en éventail sous le projecteur. */
 .hero { position: relative; overflow: hidden; padding-top: clamp(32px, 5vw, 72px); }

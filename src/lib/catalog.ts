@@ -86,7 +86,10 @@ export function boosterCover(db: DatabaseSync, def: BoosterDef): Card | null {
     // Calculées une fois pour toutes les bobines, dans l'ordre, pour que chacune ait sa propre vedette.
     const used = new Set<number>();
     for (const b of BOOSTERS) {
-      const actors = boosterPool(b, cards).filter((c) => c.kind === 'actor' && c.image);
+      const pool = boosterPool(b, cards);
+      // Une bobine sans carte Acteur (Bande originale) prend la vedette parmi les interprètes de ses Rôles.
+      const people = new Set(pool.map((c) => c.personId));
+      const actors = (pool.some((c) => c.kind === 'actor') ? pool : cards.filter((c) => people.has(c.personId))).filter((c) => c.kind === 'actor' && c.image);
       // Pour une bobine Pays, la vedette doit être un acteur de ce pays, pas un invité d'une coproduction.
       const native = actors.filter((c) => c.tags.some((t) => b.tags?.includes(t)));
       const best = (native.length ? native : actors).sort((x, y) => (x.rank ?? 1e9) - (y.rank ?? 1e9));

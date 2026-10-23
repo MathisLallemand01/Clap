@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
-import { acceptFriend, cancelTrade, proposeTrade, removeFriend, respondTrade, sendFriendRequest } from '@/lib/social';
+import { acceptFriend, cancelTrade, proposeTrade, removeFriend, respondTrade, sendFriendRequest, sendGift } from '@/lib/social';
 import { currentUser } from '@/lib/session';
 
 async function userId(): Promise<string> {
@@ -53,6 +53,15 @@ export async function proposeAction(form: FormData): Promise<void> {
       takeTickets: Number(form.get('takeTickets') || 0),
     });
     return 'Proposition envoyée.';
+  }, { ami: to });
+}
+
+export async function giftAction(form: FormData): Promise<void> {
+  const me = await userId();
+  const to = String(form.get('to'));
+  await attempt(() => {
+    sendGift(getDb(), me, to, { cards: form.getAll('give').map(String), tickets: Number(form.get('giveTickets') || 0) });
+    return 'Cadeau envoyé ! Votre ami le découvrira à sa prochaine visite.';
   }, { ami: to });
 }
 

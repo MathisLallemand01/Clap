@@ -43,7 +43,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 ::selection { background: var(--accent); color: var(--ink); }
 
 .container { width: 100%; max-width: calc(1360px + 2 * var(--gutter)); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
-.page { padding-top: clamp(32px, 5vw, 64px); padding-bottom: 96px; display: flex; flex-direction: column; gap: clamp(40px, 6vw, 72px); }
+.page { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(40px, 5vw, 56px); display: flex; flex-direction: column; gap: clamp(40px, 6vw, 72px); }
 
 /* Typographie */
 .display {
@@ -170,7 +170,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   background-size: 24px 8px; background-repeat: repeat-x; background-position: 0 50%;
 }
 
-.footer { border-top: 1px solid #1c1c21; margin-top: 40px; }
+.footer { border-top: 1px solid #1c1c21; }
+/* Une page dans une page (le Guichet) : une seule marge basse, pas deux. */
+.page .page { padding-bottom: 0; }
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-top: 32px; padding-bottom: 48px; font-size: 14px; color: var(--muted); }
 .footer-inner nav { display: flex; gap: 20px; flex-wrap: wrap; }
 .footer-inner a:hover { color: var(--text); }

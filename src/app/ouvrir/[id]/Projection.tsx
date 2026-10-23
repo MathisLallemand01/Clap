@@ -14,6 +14,8 @@ import { RARITIES } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import { calmPreference, speedPreference } from '@/lib/prefs';
 import { createProjector, saveSoundPreference, soundPreference, type Projector } from '@/lib/sound';
+import { createThemePlayer, loadTheme, type ThemeInfo } from '@/lib/themePlayer';
+import { themeFor } from '@/lib/themes';
 import styles from './Projection.module.css';
 
 // La bande avance d'une vignette (SPACING px) à chaque pas, puis marque une pause :
@@ -126,6 +128,8 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const [error, setError] = useState<string | null>(null);
   const [fast, setFast] = useState(false);
   const [sound, setSound] = useState(true);
+  // La musique culte en cours (Rôle d'un acteur principal d'un film qui en a une).
+  const [nowPlaying, setNowPlaying] = useState<ThemeInfo | null>(null);
   const [calm, setCalm] = useState(false);
   // Le paquet s'affiche, se déchire, puis la bande démarre.
   const [intro, setIntro] = useState<'pack' | 'tearing' | 'done'>('pack');
@@ -143,6 +147,9 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const pathRef = useRef<SVGPathElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const projector = useRef<Projector | null>(null);
+  const themes = useRef<ReturnType<typeof createThemePlayer> | null>(null);
+  const soundRef = useRef(true);
+  const wantedTheme = useRef<string | null>(null);
   const motion = useRef({ offset: layout.gate - SPACING, step: null as null | { from: number; start: number }, holdUntil: 0, moving: false, queued: 0, blockUntil: 0, awaiting: false });
   const scaleRef = useRef(1);
   const gatePos = useRef<{ x: number; y: number } | null>(null);
@@ -181,8 +188,13 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     speedRef.current = SPEEDS[speedPreference()];
     const on = soundPreference();
     setSound(on);
+    soundRef.current = on;
     projector.current = createProjector(on);
-    return () => projector.current?.dispose();
+    themes.current = createThemePlayer(setNowPlaying);
+    return () => {
+      projector.current?.dispose();
+      themes.current?.dispose();
+    };
   }, []);
 
   const open = useCallback(async () => {
@@ -218,6 +230,8 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
         ...data.cards.map((card, slot): Frame => ({ key: `${data.pullId}-${slot}`, type: 'card', batch: index, slot, card })),
       ]);
       setBatches((prev) => [...prev, { index, size: data.cards.length, paidWith: data.paidWith }]);
+      // Les extraits des musiques cultes sont cherchés dès maintenant, pour démarrer pile à la révélation.
+      for (const card of data.cards) if (themeFor(card)) void loadTheme(card.id);
     } catch {
       setError('Connexion perdue. Réessayez.');
     } finally {
@@ -239,6 +253,14 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     p?.click();
     const level = stingLevel(frame.card);
     if (level && !fastRef.current) p?.sting(level as 1 | 2 | 3);
+    // Le Rôle principal d'un film à musique culte : sa musique se lance (la dernière révélée l'emporte).
+    if (themeFor(frame.card) && soundRef.current) {
+      const id = frame.card.id;
+      wantedTheme.current = id;
+      void loadTheme(id).then((t) => {
+        if (t && wantedTheme.current === id && soundRef.current) window.setTimeout(() => wantedTheme.current === id && themes.current?.play(t), fastRef.current ? 0 : 450);
+      });
+    }
     // Animation de rareté : plus la carte est rare, plus elle est grandiose (crans 2 à 5).
     const tier = RARITIES[frame.card.rarity].tier;
     if (tier >= 2 && !fastRef.current) {
@@ -364,8 +386,10 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const toggleSound = () => {
     const next = !sound;
     setSound(next);
+    soundRef.current = next;
     saveSoundPreference(next);
     projector.current?.setEnabled(next);
+    if (!next) themes.current?.stop();
   };
 
   const current = batches[batches.length - 1];
@@ -552,6 +576,19 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
           <Link href={guest ? '/' : '/collection'} className={styles.round} aria-label="Fermer la projection"><CloseIcon /></Link>
         </div>
       </header>
+
+      {nowPlaying && (
+        <div className={styles.nowPlaying} role="status">
+          <span className={styles.eq} aria-hidden="true"><i /><i /><i /><i /></span>
+          <span className={styles.npText}>
+            <em>♪ Musique culte</em>
+            <b>{nowPlaying.song}</b>
+            <span>{nowPlaying.artist}</span>
+          </span>
+          {nowPlaying.link && <a href={nowPlaying.link} target="_blank" rel="noreferrer" className={styles.npLink}>Écouter en entier ↗</a>}
+          <button type="button" className={styles.npStop} onClick={() => themes.current?.stop()} aria-label="Arrêter la musique">■</button>
+        </div>
+      )}
 
       <div className={styles.tray} aria-live="polite">
         <div className={styles.trayHead}>

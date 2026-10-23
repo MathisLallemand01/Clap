@@ -1,5 +1,6 @@
 import type { BoosterDef, Slot } from './boosters.ts';
 import { ladderOf, type Rarity } from './rarity.ts';
+import { themeFor } from './themes.ts';
 import type { Card } from './types.ts';
 
 export type Rng = () => number;
@@ -21,6 +22,7 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
  * l'un des tags ou s'il a au moins un Rôle qui en porte un (ex. un acteur d'un film des années 80).
  */
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
+  if (def.pool === 'themes') return catalog.filter((c) => themeFor(c));
   const tags = def.tags;
   if (!tags?.length) return catalog;
   const matches = (c: Card) => c.tags.some((t) => tags.includes(t));

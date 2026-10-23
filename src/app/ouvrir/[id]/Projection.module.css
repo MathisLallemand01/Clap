@@ -208,3 +208,27 @@
 .keep p { margin: 0; color: var(--text-2); line-height: 1.55; }
 .keep b { color: var(--text); }
 .keepCards { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+/* Musique culte en cours : une petite platine en haut, au centre. */
+.nowPlaying {
+  position: fixed; right: clamp(12px, 3vw, 40px); bottom: clamp(12px, 3vw, 36px); z-index: 6; max-width: min(560px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 14px; padding: 10px 12px 10px 16px; border-radius: 999px;
+  background: rgba(11, 11, 13, 0.88); border: 1px solid #F2C14E66; box-shadow: 0 0 40px rgba(242, 193, 78, 0.18);
+  animation: np-in 500ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+.eq { display: flex; align-items: flex-end; gap: 3px; height: 18px; flex: none; }
+.eq i { width: 3px; background: #F2C14E; border-radius: 2px; animation: eq 900ms ease-in-out infinite; }
+.eq i:nth-child(2) { animation-delay: -300ms; }
+.eq i:nth-child(3) { animation-delay: -600ms; }
+.eq i:nth-child(4) { animation-delay: -150ms; }
+.npText { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.npText em { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: #F2C14E; text-transform: uppercase; }
+.npText b { font-size: 15px; flex: none; max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+.npText span { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.npLink { font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.npLink:hover { color: var(--text); }
+.npStop { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-2); background: transparent; color: var(--text); font-size: 10px; cursor: pointer; flex: none; }
+@keyframes eq { 0%, 100% { height: 4px; } 50% { height: 18px; } }
+@keyframes np-in { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+@media (max-width: 1100px) { .nowPlaying { bottom: auto; top: 76px; left: 50%; right: auto; translate: -50% 0; animation: none; } }
+@media (max-width: 719px) { .npText span, .npLink { display: none; } }

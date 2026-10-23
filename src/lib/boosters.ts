@@ -37,6 +37,8 @@ export type BoosterDef = {
   price: number;
   /** Les cartes doivent porter au moins un de ces tags (pays, genre, époque…). */
   tags?: string[];
+  /** Réserve spéciale : `themes` = uniquement les Rôles principaux des films à musique culte. */
+  pool?: 'themes';
   slots: Slot[];
   theme: PackTheme;
 };
@@ -52,6 +54,8 @@ const roles = (n: number, odds: Odds<RoleRarity> = ROLE_ODDS): Slot[] =>
   Array.from({ length: n }, () => ({ kind: 'role', odds }));
 const mixed = (): Slot[] => [...actors(2), ...roles(3, THEME_ODDS)];
 
+/** La réserve « Bande originale » est petite et déjà prestigieuse : les crans du bas y sont rares. */
+const SOUNDTRACK_ODDS: Odds<RoleRarity> = { serieb: 4, succes: 36, culte: 42, chef: 14, icone: 4 };
 const CINEMATHEQUE_ODDS: Odds<RoleRarity> = { chef: 94, icone: 6 };
 
 type Spec = Omit<BoosterDef, 'code' | 'slots' | 'theme'> & { slots?: Slot[]; theme: PackTheme };
@@ -140,6 +144,12 @@ const specs: Spec[] = [
   { id: 'nouveautes', name: 'Nouveautés', group: 'era', price: 800, tags: ['decade:2020'],
     description: 'Les films sortis depuis 2020.',
     theme: { hue: '#8C9BFF', base: '#141A3E', metal: '#222A60', label: 'DEPUIS 2020' } },
+  { id: 'tout-clap', name: 'Tout Clap', group: 'permanent', price: 500,
+    description: 'Tout le cinéma répertorié, sans thème : n’importe quel acteur, n’importe quel rôle.', slots: [...actors(2), ...roles(3)],
+    theme: { hue: '#FF4A1C', base: '#2A0F08', metal: '#46190E', label: 'PERMANENTE', title: 'Tout\nClap', chance: ['TOUT LE', 'CINÉMA'] } },
+  { id: 'bande-originale', name: 'Bande originale', group: 'event', price: 1000, pool: 'themes',
+    description: 'Uniquement les acteurs principaux des films à musique culte : chaque carte lance sa musique.', slots: roles(5, SOUNDTRACK_ODDS),
+    theme: { hue: '#F2C14E', base: '#2A2008', metal: '#463812', label: 'ÉVÉNEMENT', title: 'Bande\noriginale', chance: ['♪', 'MUSIQUE'] } },
 ];
 
 export const BOOSTERS: BoosterDef[] = specs.map((s, i) => ({ ...s, code: String(i + 1).padStart(2, '0'), slots: s.slots ?? mixed() }));
@@ -169,7 +179,7 @@ export const FREE_BOOSTER_EVERY_MS = 4 * 60 * 60 * 1000;
 export const FREE_BOOSTER_CAP = 3;
 
 /** Bobines arrivées avec la refonte : marquées « Nouveau » sur la page des bobines. */
-export const NEW_BOOSTERS = new Set(['cinematheque', 'coree', 'bollywood', 'italie', 'espagne', 'drames', 'annees-70', 'annees-2010', 'nouveautes']);
+export const NEW_BOOSTERS = new Set(['tout-clap', 'bande-originale', 'cinematheque', 'coree', 'bollywood', 'italie', 'espagne', 'drames', 'annees-70', 'annees-2010', 'nouveautes']);
 
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;

@@ -2,6 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createSession, deleteSession, getUser, SESSION_DAYS, userForSession, type User } from './auth';
+import { nextCelebration, type Celebration } from './celebrations';
 import { getDb } from './db';
 import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from './game';
 import { claimSeasonReward } from './ranking';
@@ -57,6 +58,8 @@ export type Context = {
   wallet: Wallet;
   notifications: Notification[];
   unread: number;
+  /** Une bonne nouvelle arrivée pendant l'absence du joueur, à lui montrer en grand. */
+  celebration: Celebration | null;
 };
 
 function contextFor(user: User): Context | null {
@@ -73,6 +76,7 @@ function contextFor(user: User): Context | null {
     wallet: { tickets: player.tickets, entries: stats.entries, freeStock: player.freeStock, nextFreeAt: player.nextFreeAt },
     notifications: listNotifications(db, user.id, 10),
     unread: unreadCount(db, user.id),
+    celebration: nextCelebration(db, player.id),
   };
 }
 

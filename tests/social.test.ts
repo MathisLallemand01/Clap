@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertGoogleUser } from '../src/lib/auth.ts';
+import { markCelebrationSeen, nextCelebration } from '../src/lib/celebrations.ts';
 import { openDb } from '../src/lib/db.ts';
 import { GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
 import { buyListing, createListing, openListings, priceRange, sellerReceives } from '../src/lib/market.ts';
 import { claimMission, missionStates, periodStart, recordVisit } from '../src/lib/missions.ts';
 import { listNotifications } from '../src/lib/notify.ts';
-import { acceptFriend, listTrades, proposeTrade, respondTrade, sendFriendRequest } from '../src/lib/social.ts';
+import { acceptFriend, giftUnlockAt, listTrades, proposeTrade, respondTrade, sendFriendRequest, sendGift } from '../src/lib/social.ts';
 
 const isCode = (code: string) => (e: unknown) => e instanceof GameError && e.code === code;
 
@@ -111,6 +112,13 @@ test('Guichet : fourchette de prix, commission, transfert de la carte', async ()
   assert.ok(getCollection(db, buyer.playerId).some((c) => c.id === pulled.id));
   assert.throws(() => buyListing(db, buyer.playerId, id), isCode('not-found'));
   assert.ok(listNotifications(db, seller.id).some((n) => n.kind === 'sale'));
+  const sale = nextCelebration(db, seller.playerId)!;
+  assert.equal(sale.kind, 'sale');
+  assert.equal(sale.tickets, sellerReceives(price));
+  assert.equal(sale.cards[0].id, pulled.id);
+  markCelebrationSeen(db, seller.playerId, sale.id);
+  assert.equal(nextCelebration(db, seller.playerId), null);
+  assert.equal(nextCelebration(db, buyer.playerId), null);
 });
 
 test('échanges entre amis : cartes et tickets changent de main', async () => {
@@ -130,4 +138,33 @@ test('échanges entre amis : cartes et tickets changent de main', async () => {
   assert.ok(getCollection(db, a.playerId).some((c) => c.id === cardB.id));
   assert.equal(getPlayer(db, a.playerId)!.tickets, STARTING_TICKETS - 40);
   assert.equal(getPlayer(db, b.playerId)!.tickets, STARTING_TICKETS + 40);
+  // Les deux côtés voient l'échange conclu.
+  const forA = nextCelebration(db, a.playerId)!;
+  const forB = nextCelebration(db, b.playerId)!;
+  assert.deepEqual([forA.kind, forA.cards[0].id, forA.tickets], ['trade', cardB.id, 0]);
+  assert.deepEqual([forB.kind, forB.cards[0].id, forB.tickets], ['trade', cardA.id, 40]);
+});
+
+test('cadeaux : 7 jours d’ancienneté (sauf compte illimité), transfert immédiat, popup chez l’ami', async () => {
+  const db = openDb(':memory:');
+  const a = await signUp(db, { name: 'Agathe', email: 'ag@exemple.fr', password: 'motdepasse' });
+  const b = await signUp(db, { name: 'Basile', email: 'ba@exemple.fr', password: 'motdepasse' });
+  sendFriendRequest(db, a.id, 'basile');
+  acceptFriend(db, b.id, a.id);
+  const card = openBoosterFor(db, a.playerId, 'casting').cards[0];
+  assert.ok(giftUnlockAt(db, a.id));
+  assert.throws(() => sendGift(db, a.id, b.id, { cards: [card.id], tickets: 0 }), isCode('too-young'));
+  db.prepare('UPDATE users SET created_at = ? WHERE id = ?').run(Date.now() - 8 * 86_400_000, a.id);
+  assert.equal(giftUnlockAt(db, a.id), null);
+  assert.throws(() => sendGift(db, a.id, b.id, { cards: [], tickets: 0 }), isCode('empty'));
+  sendGift(db, a.id, b.id, { cards: [card.id], tickets: 50 });
+  assert.ok(getCollection(db, b.playerId).some((c) => c.id === card.id));
+  assert.equal(getPlayer(db, b.playerId)!.tickets, STARTING_TICKETS + 50);
+  const gift = nextCelebration(db, b.playerId)!;
+  assert.deepEqual([gift.kind, gift.cards[0].id, gift.tickets], ['gift', card.id, 50]);
+  assert.equal(listTrades(db, a.id).history[0].gift, true);
+  // Un compte de test illimité n'attend pas.
+  const c = await signUp(db, { name: 'Testeuse', email: 'te@exemple.fr', password: 'motdepasse' });
+  db.prepare('UPDATE players SET unlimited = 1 WHERE id = ?').run(c.playerId);
+  assert.equal(giftUnlockAt(db, c.id), null);
 });
