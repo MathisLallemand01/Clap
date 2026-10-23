@@ -63,18 +63,18 @@ export function Clapper({ scene = '06', take = '01', who = 'VOUS', className = '
   );
 }
 
-/** Cadre d'ampoules qui clignotent en chenillard, comme une marquise de cinéma. */
-export function MarqueeFrame({ children, className = '', bulbs = 24 }: { children: ReactNode; className?: string; bulbs?: number }) {
-  const row = (off: number) => (
-    <div className={styles.bulbRow} aria-hidden="true">
-      {Array.from({ length: bulbs }, (_, i) => <span key={i} style={{ animationDelay: (i + off) % 2 ? '-0.6s' : '0s' }} />)}
-    </div>
-  );
+/**
+ * Le cadre des événements : un trait de lumière fait lentement le tour du bord, et un faisceau de
+ * projecteur traverse le bloc. En édition limitée (`holo`), la lumière est multicolore.
+ */
+export function EventFrame({ children, className = '', holo = false, style }: { children: ReactNode; className?: string; holo?: boolean; style?: CSSProperties }) {
   return (
-    <div className={`${styles.marquee} ${className}`}>
-      <div className={styles.bulbsTop}>{row(0)}</div>
-      {children}
-      <div className={styles.bulbsBottom}>{row(1)}</div>
+    <div className={`${styles.eframe} ${holo ? styles.eholo : ''} ${className}`} style={style}>
+      <span className={styles.ering} aria-hidden="true" />
+      <div className={styles.einner}>
+        <span className={styles.ebeam} aria-hidden="true" />
+        <div className={styles.econtent}>{children}</div>
+      </div>
     </div>
   );
 }

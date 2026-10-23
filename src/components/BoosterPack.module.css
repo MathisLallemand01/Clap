@@ -16,18 +16,23 @@
   background: linear-gradient(170deg, var(--base), #09090b 72%);
 }
 
-/* La vedette, en couleur atténuée, qui se fond dans le noir vers le bas. */
-.photo {
-  position: absolute; left: 0; top: 2em; width: 100%; height: 70%;
-  object-fit: cover; object-position: center 15%;
-  filter: saturate(0.7) contrast(1.06) brightness(0.86);
-  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%); mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+/* La vedette sérigraphiée : le portrait tramé en points, imprimé dans la teinte du thème. */
+.art { position: absolute; left: 0; right: 0; top: 4.6em; height: 17em; overflow: hidden; }
+.art img, .ink { position: absolute; inset: 0; width: 100%; height: 100%; }
+.art img { object-fit: cover; object-position: center 12%; }
+.dots {
+  filter: grayscale(1) contrast(1.6) brightness(1.05);
+  -webkit-mask-image: radial-gradient(circle, #000 0.13em, transparent 0.15em), radial-gradient(ellipse 48% 62% at 50% 36%, #000 60%, transparent 100%);
+  -webkit-mask-size: 0.42em 0.42em, 100% 100%; -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(circle, #000 0.13em, transparent 0.15em), radial-gradient(ellipse 48% 62% at 50% 36%, #000 60%, transparent 100%);
+  mask-size: 0.42em 0.42em, 100% 100%; mask-composite: intersect;
 }
-.tint { position: absolute; inset: 0; background: var(--hue); mix-blend-mode: soft-light; opacity: 0.7; }
-.fade {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 40%, #09090b 74%), radial-gradient(ellipse 80% 60% at 50% 35%, transparent 45%, rgba(0, 0, 0, 0.5) 100%);
+.ink { background: var(--hue); mix-blend-mode: multiply; }
+.ghost {
+  filter: grayscale(1) contrast(1.3); opacity: 0.35; mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse 45% 58% at 50% 34%, #000 50%, transparent 100%); mask-image: radial-gradient(ellipse 45% 58% at 50% 34%, #000 50%, transparent 100%);
 }
+.fade { position: absolute; inset: 0; background: radial-gradient(ellipse 85% 65% at 50% 38%, transparent 50%, rgba(0, 0, 0, 0.45) 100%); }
 
 /* Aluminium froissé : des plis de lumière qui bougent à peine. */
 .crinkle {
@@ -72,10 +77,30 @@
 }
 .rule { width: 2.4em; height: 0.18em; background: var(--hue); }
 .foot {
-  position: absolute; left: 1.4em; right: 1.4em; bottom: 2.9em;
+  position: absolute; left: 1.4em; right: 4.2em; bottom: 3.3em;
   display: flex; justify-content: space-between; align-items: center;
 }
 .foot span { font-family: var(--mono); font-size: 0.52em; letter-spacing: 0.12em; color: rgba(242, 239, 232, 0.7); }
+
+/* Sceau holographique « 2026 », comme sur un produit de collection. */
+.seal2026 {
+  position: absolute; right: 1.4em; bottom: 2.75em; width: 2.1em; height: 2.1em; border-radius: 50%; overflow: hidden;
+  box-shadow: 0 0 0 0.08em rgba(255, 255, 255, 0.35);
+}
+.seal2026 i { position: absolute; inset: -30%; background: conic-gradient(#ff9ad5, #9ad9ff, #b9ffcf, #fff1a8, #ff9ad5); animation: seal-spin 6s linear infinite; }
+.seal2026 b {
+  position: absolute; inset: 0.32em; border-radius: 50%; background: rgba(9, 9, 11, 0.6);
+  display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; font-size: 0.55em; color: #fff;
+}
+@keyframes seal-spin { to { transform: rotate(360deg); } }
+
+/* Édition limitée : les bobines Événement prennent des reflets multicolores. */
+.holo { --holo: linear-gradient(120deg, #ff9ad5, #b59bff 30%, #8fd3ff 55%, #9cf0c8 75%, #ffe38f); }
+.holo .ink { background: linear-gradient(150deg, #ff9ad5, #b59bff 30%, #8fd3ff 55%, #9cf0c8 75%, #ffe38f); }
+.holo .bars i, .holo .rule { background: var(--holo); }
+.holo .label { background: var(--holo); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.holo .chance { border-color: rgba(255, 255, 255, 0.55); color: #fff; }
+.holo .edges { background: linear-gradient(90deg, rgba(255, 154, 213, 0.3) 0, rgba(255, 255, 255, 0.08) 2.5%, transparent 12%, transparent 88%, rgba(255, 255, 255, 0.06) 97.5%, rgba(143, 211, 255, 0.3) 100%); }
 
 /* Soudures métalliques cannelées. */
 .seal {

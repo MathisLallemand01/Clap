@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BoosterPack } from '@/components/BoosterPack';
 import { CardLink } from '@/components/CardLink';
-import { Beam, Clapper, CropMarks, Dust, Leader, MarqueeFrame, Rays, Reel, Scene, Searchlights, TicketStub } from '@/components/Decor';
+import { Beam, Clapper, CropMarks, Dust, Leader, EventFrame, Rays, Reel, Scene, Searchlights, TicketStub } from '@/components/Decor';
 import { GameCard } from '@/components/GameCard';
 import { ArrowIcon, SeatIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
@@ -183,7 +183,7 @@ export default async function LandingPage() {
             <h2 id="affiche" className={`display h2 ${styles.h2}`}>À l’affiche</h2>
             <Link href={play} className={styles.more}>Toutes les bobines ▸</Link>
           </div>
-          <MarqueeFrame className={styles.marquee}>
+          <EventFrame holo className={styles.marquee}>
             <div className={styles.packs}>
               {packs.map((b, i) => (
                 <div key={b.id} className={styles.pack}>
@@ -195,7 +195,7 @@ export default async function LandingPage() {
                 </div>
               ))}
             </div>
-          </MarqueeFrame>
+          </EventFrame>
         </section>
 
         {/* Monnaies */}

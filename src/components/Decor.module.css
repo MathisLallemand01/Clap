@@ -41,14 +41,33 @@
 .slate b.hot { color: var(--accent); }
 @keyframes clap { 0%, 62%, 100% { transform: rotate(-22deg); } 72% { transform: rotate(0); } 76% { transform: rotate(-4deg); } 80% { transform: rotate(0); } }
 
-/* Marquise à ampoules */
-.marquee { position: relative; border-radius: 28px; border: 2px solid #3a2f18; padding: clamp(36px, 4vw, 56px) clamp(16px, 3vw, 40px); background: radial-gradient(ellipse 70% 80% at 50% 100%, #1c1410, var(--ink) 70%); }
-.bulbsTop, .bulbsBottom { position: absolute; left: 12px; right: 12px; }
-.bulbsTop { top: 12px; }
-.bulbsBottom { bottom: 12px; }
-.bulbRow { display: flex; justify-content: space-between; }
-.bulbRow span { width: 8px; height: 8px; border-radius: 50%; animation: bulb 1.2s steps(1, end) infinite; }
-@keyframes bulb { 0%, 100% { background: var(--gold); box-shadow: 0 0 10px 2px rgba(255, 200, 61, 0.7); } 50% { background: #4a3d1c; box-shadow: none; } }
+/* Cadre des événements : contour lumineux qui tourne + faisceau qui traverse. */
+.eframe {
+  --hue: var(--accent);
+  position: relative; isolation: isolate; overflow: hidden; border-radius: 28px; padding: 2px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 35%, transparent), color-mix(in srgb, var(--hue) 6%, transparent) 40%, color-mix(in srgb, var(--hue) 6%, transparent) 60%, color-mix(in srgb, var(--hue) 30%, transparent));
+}
+.ering {
+  position: absolute; left: 50%; top: 50%; width: 2400px; height: 2400px; margin: -1200px 0 0 -1200px; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 250deg, color-mix(in srgb, var(--hue) 90%, transparent) 330deg, #fff 350deg, transparent 360deg);
+  animation: ering-spin 7s linear infinite;
+}
+.eholo { background: linear-gradient(135deg, rgba(255, 154, 213, 0.35), rgba(181, 155, 255, 0.08) 40%, rgba(143, 211, 255, 0.08) 60%, rgba(156, 240, 200, 0.3)); }
+.eholo .ering { background: conic-gradient(from 0deg, transparent 0deg, transparent 230deg, #ff9ad5 280deg, #b59bff 305deg, #8fd3ff 325deg, #fff 345deg, transparent 360deg); }
+.einner {
+  position: relative; z-index: 1; overflow: hidden; border-radius: 26px;
+  background: radial-gradient(ellipse 80% 100% at 50% 100%, #15120f, var(--ink) 75%);
+  padding: clamp(28px, 4vw, 52px) clamp(20px, 4vw, 52px);
+}
+.ebeam {
+  position: absolute; top: -40%; bottom: -40%; left: 0; width: 38%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--hue) 10%, transparent) 45%, rgba(255, 255, 255, 0.14) 50%, color-mix(in srgb, var(--hue) 10%, transparent) 55%, transparent);
+  animation: ebeam 5s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+.eholo .ebeam { background: linear-gradient(90deg, transparent, rgba(255, 154, 213, 0.09) 44%, rgba(255, 255, 255, 0.14) 50%, rgba(143, 211, 255, 0.09) 56%, transparent); }
+.econtent { position: relative; z-index: 1; }
+@keyframes ering-spin { to { transform: rotate(360deg); } }
+@keyframes ebeam { 0% { transform: translateX(-60%) rotate(18deg); opacity: 0; } 15% { opacity: 1; } 55% { transform: translateX(300%) rotate(18deg); opacity: 1; } 70%, 100% { transform: translateX(300%) rotate(18deg); opacity: 0; } }
 
 /* Ticket */
 .ticket { display: flex; filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.5)); animation: wobble 5s ease-in-out infinite; }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BoosterPack } from '@/components/BoosterPack';
 import { Countdown } from '@/components/Countdown';
-import { Beam, MarqueeFrame, Rays, Scene } from '@/components/Decor';
+import { Beam, EventFrame, Rays, Scene } from '@/components/Decor';
 import { FlipClock } from '@/components/FlipClock';
 import { ArrowIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
@@ -88,7 +88,7 @@ export default async function BoostersPage() {
         </section>
 
         <section className="container" aria-labelledby="evenement" style={{ ['--hue' as string]: event.theme.hue }}>
-          <MarqueeFrame className={styles.event} bulbs={30}>
+          <EventFrame holo className={styles.event}>
             <div className={styles.eventGrid}>
               <div className={styles.eventArt}>
                 <BoosterPack booster={event} cover={boosterCover(db, event)} width={290} float interactive />
@@ -110,7 +110,7 @@ export default async function BoostersPage() {
                 </div>
               </div>
             </div>
-          </MarqueeFrame>
+          </EventFrame>
         </section>
 
         <nav className={`container ${styles.groups}`} aria-label="Catégories">

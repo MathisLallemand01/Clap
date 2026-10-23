@@ -39,19 +39,20 @@
 }
 
 /* L'événement de la semaine, encadré d'ampoules. */
-.event { border-color: color-mix(in srgb, var(--hue) 30%, transparent); background: radial-gradient(ellipse 60% 90% at 25% 60%, color-mix(in srgb, var(--hue) 14%, transparent), transparent 70%), radial-gradient(ellipse 80% 90% at 50% 100%, #15120f, var(--ink) 75%); }
 .eventGrid { display: flex; flex-wrap: wrap; gap: 48px; align-items: center; }
 .eventArt { flex: 0 1 320px; display: flex; justify-content: center; margin: 0 auto; }
 .eventText { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
-.eventText h2 { font-size: clamp(56px, 7vw, 112px); color: var(--hue); }
+.eventText h2 { font-size: clamp(56px, 7vw, 112px); }
+/* Édition limitée : titre, pastille et bouton aux reflets multicolores. */
+.eventText h2, .badge { background: linear-gradient(120deg, #ff9ad5, #b59bff 30%, #8fd3ff 55%, #9cf0c8 75%, #ffe38f); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .badge {
-  align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hue); color: var(--hue);
+  align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.35);
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
 }
-.badge span { width: 8px; height: 8px; transform: rotate(45deg); background: var(--hue); }
+.badge span { width: 8px; height: 8px; transform: rotate(45deg); background: #ff9ad5; }
 .eventStats { display: flex; flex-wrap: wrap; gap: 10px 24px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--muted); }
 .eventStats b { color: var(--text); font-weight: 600; }
-.eventBtn { background: var(--hue); border-color: var(--hue); color: var(--ink); font-weight: 700; }
+.eventBtn { background: linear-gradient(120deg, #ffb3df, #c6b3ff 35%, #a8ddff 65%, #b5f3d6); border-color: transparent; color: var(--ink); font-weight: 700; }
 .eventBtn:hover { filter: brightness(1.1); }
 
 .groups { display: flex; flex-wrap: wrap; gap: 8px; position: sticky; top: 72px; z-index: 5; background: rgba(11, 11, 13, 0.97); padding-top: 12px; padding-bottom: 12px; margin-top: -12px; margin-bottom: -12px; }

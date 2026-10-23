@@ -43,7 +43,7 @@ function contents(booster: BoosterDef): string {
   return `${actor} ACTEUR${actor > 1 ? 'S' : ''} + ${role} RÔLE${role > 1 ? 'S' : ''}`;
 }
 
-/** Un sachet de cartes en aluminium sombre, teinté de la couleur du thème. */
+/** Un sachet de cartes en aluminium sombre : la vedette sérigraphiée en points, dans la teinte du thème. */
 export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, className, style }: Props) {
   const t = booster.theme;
   const vars = {
@@ -54,14 +54,21 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
     '--metal': t.metal,
     ...style,
   } as CSSProperties;
-  const classes = [styles.pack, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, className].filter(Boolean).join(' ');
+  // Les bobines Événement sont des éditions limitées : leurs accents sont holographiques (multicolores).
+  const holo = booster.group === 'event';
+  const classes = [styles.pack, holo && styles.holo, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, className].filter(Boolean).join(' ');
   const image = cover?.image?.replace(/\/t\/p\/\w+\//, width * 2 > 500 ? '/t/p/h632/' : '/t/p/w500/');
 
   return (
     <div className={classes} style={vars} role="img" aria-label={`Bobine ${booster.name}`}>
       <div className={styles.body} style={{ clipPath: CLIP }}>
-        {image && <img className={styles.photo} src={image} alt="" loading="lazy" decoding="async" />}
-        <span className={styles.tint} />
+        {image && (
+          <div className={styles.art}>
+            <img className={styles.dots} src={image} alt="" loading="lazy" decoding="async" />
+            <span className={styles.ink} />
+            <img className={styles.ghost} src={image} alt="" loading="lazy" decoding="async" />
+          </div>
+        )}
         <span className={styles.fade} />
         <span className={styles.crinkle} />
         <span className={`${styles.perf} ${styles.perfL}`} />
@@ -79,7 +86,8 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
           <span className={styles.name}>{t.title ?? booster.name}</span>
           <span className={styles.rule} />
         </div>
-        <div className={styles.foot}><span>{contents(booster)}</span><span>35 MM</span></div>
+        <div className={styles.foot}><span>{contents(booster)}</span></div>
+        <span className={styles.seal2026} aria-hidden="true"><i /><b>2026</b></span>
 
         <span className={`${styles.seal} ${styles.sealBottom}`} />
         <span className={styles.edges} />
