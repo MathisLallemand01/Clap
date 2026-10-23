@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 // avec pour URI de redirection autorisée : <adresse du site>/api/auth/google/callback.
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const origin = process.env.APP_URL ?? request.nextUrl.origin;
+  const origin = (process.env.APP_URL ?? request.nextUrl.origin).replace(/\/+$/, '');
   if (!clientId || !process.env.GOOGLE_CLIENT_SECRET) {
     return NextResponse.redirect(new URL('/connexion?erreur=google-config', origin));
   }
