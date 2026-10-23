@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { Ticker } from '@/components/Ticker';
 import { countByRarity, getCatalog, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { getCollection, recyclePlan } from '@/lib/game';
 import { RARITIES, RARITIES_BY_VALUE, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
+import { tickerDrops } from '@/lib/ticker';
 import { recycleAction } from './actions';
 import styles from './collection.module.css';
 
@@ -46,6 +48,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
   return (
     <>
       <Nav ctx={ctx} current="/collection" />
+      <Ticker items={tickerDrops(db)} variant="live" />
       <main className="container page">
         <header className={styles.header}>
           <div className={styles.titleBlock}>

@@ -1,7 +1,6 @@
 .layout { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; }
 .menu { flex: 1 1 220px; max-width: 260px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 96px; }
 @media (max-width: 760px) { .menu { position: static; max-width: none; } }
-.menu h1 { font-size: 72px; }
 .menu nav { display: flex; flex-direction: column; gap: 2px; }
 .menu nav a { padding: 12px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-2); }
 .menu nav a:hover { background: var(--panel); color: var(--text); }

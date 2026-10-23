@@ -4,13 +4,15 @@ import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { Ticker } from '@/components/Ticker';
 import { getCard, ownedCardIds, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { getCollection, ownedCopies } from '@/lib/game';
-import { byDeal, getListing, LISTING_DAYS, MARKET_FEE, openListings, playerListings, priceRange, recentSales, type Listing } from '@/lib/market';
+import { byDeal, getListing, LISTING_DAYS, MARKET_FEE, openListings, playerListings, priceRange, type Listing } from '@/lib/market';
 import { RARITIES, RARITIES_BY_VALUE, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
+import { tickerSales } from '@/lib/ticker';
 import { buyAction, cancelAction } from './actions';
 import { SellForm } from './SellForm';
 import styles from './guichet.module.css';
@@ -35,7 +37,6 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   const db = getDb();
   const view = sp.vue === 'vendre' || sp.vue === 'mes-annonces' ? sp.vue : 'acheter';
   const owned = ownedCardIds(db, ctx.player.id);
-  const sales = recentSales(db, 10);
 
   const rarity = (sp.rarete && sp.rarete in RARITIES ? sp.rarete : null) as Rarity | null;
   let listings = openListings(db).filter((l) => !rarity || l.card.rarity === rarity);
@@ -57,6 +58,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <Nav ctx={ctx} current="/guichet" />
+      <Ticker items={tickerSales(db)} variant="market" />
       <main className="page" style={{ paddingTop: 0 }}>
         <div className="container page" style={{ paddingBottom: 0 }}>
           <header className="page-head">
@@ -72,17 +74,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
           </header>
         </div>
 
-        {sales.length > 0 && (
-          <div className={styles.ticker} aria-label="Dernières ventes">
-            <div className={styles.tickerRow}>
-              {[...sales, ...sales].map((s, i) => (
-                <span key={i}><b style={{ color: 'var(--accent)' }}>{i === 0 ? 'DERNIÈRES VENTES ▸' : '◆'}</b> <span style={{ color: RARITIES[s.card.rarity].color }}>{s.card.first} {s.card.last}{s.card.character ? ` · ${s.card.character}` : ''}</span> {formatNumber(s.price)} TK</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="container page" style={{ paddingTop: 0 }}>
+        <div className="container page no-glow" style={{ paddingTop: 0 }}>
           {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
           {bought && <p className="alert alert-ok" role="status">Achat réussi : {bought.card.first} {bought.card.last}{bought.card.character ? ` (${bought.card.character})` : ''} rejoint votre collection.</p>}
           {sp.vente && <p className="alert alert-ok" role="status">Votre annonce est en ligne.</p>}

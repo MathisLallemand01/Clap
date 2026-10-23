@@ -21,9 +21,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <>
       <Nav ctx={ctx} />
       <main className="container page">
+        <header className="page-head">
+          <h1 className="display h1">Paramètres</h1>
+          <div className="meta"><span>CONNECTÉ EN TANT QUE <b>{ctx.user.name}</b></span></div>
+        </header>
         <div className={styles.layout}>
           <aside className={styles.menu}>
-            <h1 className="display">Para&shy;mètres</h1>
             <nav aria-label="Sections">
               <a href="#jeu">Son &amp; animations</a>
               <a href="#notifications">Notifications</a>

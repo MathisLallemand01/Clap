@@ -1,0 +1,109 @@
+/* Bobine */
+.reel { display: block; animation: spin 14s linear infinite; }
+.reverse { animation-direction: reverse; animation-duration: 22s; }
+
+/* Amorce 3 · 2 · 1 */
+.leader { position: relative; border-radius: 50%; border: 3px solid var(--text); overflow: hidden; background: radial-gradient(circle, #26262b, #111114 70%); }
+.sweep { position: absolute; inset: 0; background: conic-gradient(rgba(242, 239, 232, 0.28) 0 25%, transparent 25% 100%); animation: spin 1.2s linear infinite; }
+.crossV, .crossH { position: absolute; background: rgba(242, 239, 232, 0.5); }
+.crossV { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; }
+.crossH { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; }
+.ring { position: absolute; inset: 12%; border-radius: 50%; border: 2px solid rgba(242, 239, 232, 0.6); }
+.n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; line-height: 1; opacity: 0; animation: 3.6s steps(1, end) infinite; }
+.n3 { animation-name: n3; }
+.n2 { animation-name: n2; }
+.n1 { animation-name: n1; color: var(--accent); }
+@keyframes n3 { 0%, 32% { opacity: 1; } 33%, 100% { opacity: 0; } }
+@keyframes n2 { 0%, 32% { opacity: 0; } 33%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+@keyframes n1 { 0%, 65% { opacity: 0; } 66%, 99% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Faisceau de projecteur */
+.beam {
+  position: absolute; pointer-events: none; right: -10%; top: -80px; width: 90%; height: calc(100% + 80px);
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 96%); mask-image: linear-gradient(180deg, #000 35%, transparent 96%);
+  background: conic-gradient(from 200deg at 100% 0%, transparent 0deg, rgba(242, 239, 232, 0.06) 10deg, rgba(255, 230, 190, 0.11) 22deg, rgba(242, 239, 232, 0.05) 36deg, transparent 46deg);
+  animation: beam-flicker 2.6s linear infinite;
+}
+.beamLeft { right: auto; left: -10%; background: conic-gradient(from 114deg at 0% 0%, transparent 0deg, rgba(242, 239, 232, 0.05) 10deg, rgba(255, 230, 190, 0.1) 22deg, rgba(242, 239, 232, 0.04) 36deg, transparent 46deg); }
+@keyframes beam-flicker { 0%, 100% { opacity: 0.9; } 8% { opacity: 0.65; } 10% { opacity: 0.95; } 40% { opacity: 0.8; } 42% { opacity: 1; } 70% { opacity: 0.85; } }
+.dust { position: absolute; inset: 0; pointer-events: none; }
+.dust span { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: var(--text); animation: dust 6s ease-out infinite; opacity: 0; }
+@keyframes dust { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 0.6; } 100% { transform: translate(60px, -140px); opacity: 0; } }
+
+/* Clap */
+.clapper { width: clamp(180px, 18vw, 260px); display: flex; flex-direction: column; }
+.arm, .stick { height: clamp(28px, 2.6vw, 38px); border: 3px solid var(--text); background: repeating-linear-gradient(-55deg, var(--text) 0 22px, var(--ink) 22px 44px); }
+.arm { border-radius: 5px 5px 0 0; transform-origin: 8px 100%; animation: clap 3s cubic-bezier(0.6, 0, 0.3, 1) infinite; }
+.stick { margin-top: 5px; background: repeating-linear-gradient(55deg, var(--text) 0 22px, var(--ink) 22px 44px); }
+.slate { background: #16161a; border: 3px solid var(--text); border-top: 0; padding: 14px 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-align: left; }
+.slate span { display: flex; flex-direction: column; gap: 2px; }
+.slate b { font-size: 20px; color: var(--text); }
+.slate b.hot { color: var(--accent); }
+@keyframes clap { 0%, 62%, 100% { transform: rotate(-22deg); } 72% { transform: rotate(0); } 76% { transform: rotate(-4deg); } 80% { transform: rotate(0); } }
+
+/* Marquise à ampoules */
+.marquee { position: relative; border-radius: 28px; border: 2px solid #3a2f18; padding: clamp(36px, 4vw, 56px) clamp(16px, 3vw, 40px); background: radial-gradient(ellipse 70% 80% at 50% 100%, #1c1410, var(--ink) 70%); }
+.bulbsTop, .bulbsBottom { position: absolute; left: 12px; right: 12px; }
+.bulbsTop { top: 12px; }
+.bulbsBottom { bottom: 12px; }
+.bulbRow { display: flex; justify-content: space-between; }
+.bulbRow span { width: 8px; height: 8px; border-radius: 50%; animation: bulb 1.2s steps(1, end) infinite; }
+@keyframes bulb { 0%, 100% { background: var(--gold); box-shadow: 0 0 10px 2px rgba(255, 200, 61, 0.7); } 50% { background: #4a3d1c; box-shadow: none; } }
+
+/* Ticket */
+.ticket { display: flex; filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.5)); animation: wobble 5s ease-in-out infinite; }
+.ticketMain {
+  padding: 12px 16px; background: var(--accent); color: var(--ink); border-radius: 8px 0 0 8px; display: flex; flex-direction: column; gap: 2px;
+  -webkit-mask-image: radial-gradient(circle at 100% 50%, transparent 8px, #000 8.5px); mask-image: radial-gradient(circle at 100% 50%, transparent 8px, #000 8.5px);
+}
+.ticketMain span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; }
+.ticketMain b { font-stretch: 62%; font-weight: 900; font-size: 28px; line-height: 0.85; }
+.ticketStub {
+  width: 26px; background: var(--accent); border-radius: 0 8px 8px 0; border-left: 2px dashed var(--ink);
+  -webkit-mask-image: radial-gradient(circle at 0 50%, transparent 8px, #000 8.5px); mask-image: radial-gradient(circle at 0 50%, transparent 8px, #000 8.5px);
+}
+@keyframes wobble { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(-3deg) translateY(-8px); } }
+
+/* Repères de cadrage */
+.crop { position: absolute; inset: 0; pointer-events: none; }
+.crop > span { position: absolute; }
+.tl, .tr, .bl, .br { width: 34px; height: 34px; border: 0 solid #3a3a42; }
+.tl { left: 0; top: 0; border-left-width: 2px; border-top-width: 2px; }
+.tr { right: 0; top: 0; border-right-width: 2px; border-top-width: 2px; }
+.bl { left: 0; bottom: 0; border-left-width: 2px; border-bottom-width: 2px; }
+.br { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
+.rec { left: 48px; top: 8px; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+.rec i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: rec 1.4s steps(1, end) infinite; }
+.tc { right: 48px; bottom: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+@keyframes rec { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
+
+/* Rayons */
+.rays {
+  position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none;
+  background: repeating-conic-gradient(var(--ray) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 52%); mask-image: radial-gradient(circle, #000 8%, transparent 52%);
+  animation: spin 30s linear infinite;
+}
+
+/* Projecteurs croisés */
+.search {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  -webkit-mask-image: linear-gradient(0deg, #000 30%, transparent 92%); mask-image: linear-gradient(0deg, #000 30%, transparent 92%);
+}
+.searchL, .searchR { position: absolute; bottom: 0; width: 160px; height: 120%; margin-left: -80px; transform-origin: 50% 100%; clip-path: polygon(46% 100%, 54% 100%, 100% 0, 0 0); }
+.searchL { left: 18%; background: linear-gradient(0deg, rgba(242, 239, 232, 0.16), transparent); animation: search-l 7s ease-in-out infinite; }
+.searchR { left: 82%; background: linear-gradient(0deg, rgba(255, 74, 28, 0.22), transparent); animation: search-r 8s ease-in-out infinite; }
+@keyframes search-l { 0%, 100% { transform: rotate(-26deg); } 50% { transform: rotate(10deg); } }
+@keyframes search-r { 0%, 100% { transform: rotate(24deg); } 50% { transform: rotate(-12deg); } }
+
+/* En-tête de scène */
+.scene { display: flex; align-items: center; gap: 14px; }
+.sceneTag { flex: none; padding: 7px 11px; background: var(--text); color: var(--ink); font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: 0.1em; }
+.sceneLine {
+  flex: 1; min-width: 24px; height: 12px;
+  background-image: repeating-linear-gradient(90deg, #2e2e35 0 10px, transparent 10px 24px); background-size: 48px 12px;
+  animation: film-line 1.6s linear infinite;
+}
+.sceneLabel { flex: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+@keyframes film-line { to { background-position: 48px 0; } }
+@media (max-width: 520px) { .sceneLabel { display: none; } }

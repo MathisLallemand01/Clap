@@ -4,11 +4,13 @@ import { BoosterPack } from '@/components/BoosterPack';
 import { Countdown } from '@/components/Countdown';
 import { Footer, Nav } from '@/components/Nav';
 import { PackTile } from '@/components/PackTile';
+import { Ticker } from '@/components/Ticker';
 import { BOOSTERS, getBooster, GROUP_LABELS, type BoosterGroup } from '@/lib/boosters';
 import { boosterCover, ownedCardIds, poolOf } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { requireContext } from '@/lib/session';
+import { tickerNews } from '@/lib/ticker';
 import styles from './bobines.module.css';
 
 export const metadata: Metadata = { title: 'Bobines' };
@@ -30,6 +32,7 @@ export default async function BoostersPage() {
   return (
     <>
       <Nav ctx={ctx} current="/bobines" />
+      <Ticker items={tickerNews(db)} variant="news" />
       <main className="container page">
         <header className="page-head">
           <h1 className="display h1">Bobines</h1>

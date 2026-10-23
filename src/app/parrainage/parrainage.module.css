@@ -2,7 +2,7 @@
 .heroText { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .codeCard { flex: 1 1 380px; background: var(--panel); border: 1px solid #1f1f24; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
 .ticket { display: flex; align-items: stretch; border-radius: 18px; overflow: hidden; background: var(--accent); color: var(--ink); position: relative; }
-.ticket .display { flex: 1; padding: 22px 26px; font-size: clamp(44px, 5vw, 64px); line-height: 0.9; letter-spacing: 0.04em; }
+.ticket :global(.display) { flex: 1; padding: 22px 26px; font-size: clamp(44px, 5vw, 64px); line-height: 0.9; letter-spacing: 0.04em; }
 .cut { width: 0; border-left: 2px dashed rgba(11, 11, 13, 0.45); margin: 12px 0; }
 .ticket::before, .ticket::after { content: ''; position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); transform: translateY(-50%); }
 .ticket::before { left: -11px; }

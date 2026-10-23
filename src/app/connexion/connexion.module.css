@@ -34,7 +34,7 @@
 .tagline { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
 .tagline h2 { font-size: clamp(56px, 6vw, 88px); }
 
-.panel { background: var(--panel); border-left: 1px solid #1f1f24; display: flex; align-items: center; justify-content: center; padding: 40px var(--gutter); min-height: 100vh; }
+.panel { background: linear-gradient(90deg, rgba(20, 20, 23, 0) 0, var(--panel) 160px); position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 40px var(--gutter); min-height: 100vh; }
 .formWrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 24px; }
 .title { display: flex; flex-direction: column; gap: 10px; }
 .title h1 { font-size: clamp(48px, 5vw, 60px); line-height: 0.9; }
@@ -48,3 +48,4 @@
 .labelRow small { font-weight: 500; color: var(--faint); font-size: 13px; }
 .switch { margin: 0; text-align: center; font-size: 15px; color: var(--text-2); }
 .switch a { color: var(--accent); font-weight: 700; }
+@media (max-width: 979px) { .panel { background: linear-gradient(180deg, rgba(20, 20, 23, 0) 0, var(--panel) 120px); } }
