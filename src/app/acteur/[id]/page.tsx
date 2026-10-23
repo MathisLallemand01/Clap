@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { cardsOfPerson, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
@@ -44,6 +45,7 @@ export default async function ActorPage({ params }: Props) {
   return (
     <>
       <Nav ctx={ctx} current="/collection" />
+      <SideRails left="CLAP · FICHE ACTEUR · ARCHIVES" right="FILMOGRAPHIE · TMDB" />
       <main className="container page">
         <div className={styles.crumbs}>
           <Link href="/collection">COLLECTION</Link><span>/</span><span>ACTEURS</span><span>/</span><span style={{ color: rarity.color }}>{actor.first.toUpperCase()} {actor.last.toUpperCase()}</span>

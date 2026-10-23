@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { cardsOfMovie, cardsOfPerson, getCard, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
@@ -43,6 +44,7 @@ export default async function RolePage({ params }: Props) {
   return (
     <>
       <Nav ctx={ctx} current="/collection" />
+      <SideRails left="CLAP · FICHE RÔLE · PHOTOGRAMME" right="BANDE-ANNONCE · VERSION ORIGINALE" />
       <main className="container page">
         <div className={styles.crumbs}>
           <Link href="/collection?type=role">COLLECTION</Link><span>/</span><span>RÔLES</span><span>/</span><span style={{ color: rarity.color }}>{(card.character ?? '').toUpperCase()}</span>

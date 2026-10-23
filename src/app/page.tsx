@@ -5,6 +5,7 @@ import { Beam, Clapper, CropMarks, Dust, Leader, EventFrame, Rays, Reel, Scene, 
 import { GameCard } from '@/components/GameCard';
 import { ArrowIcon, SeatIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { Reveal } from '@/components/Reveal';
 import { Ticker } from '@/components/Ticker';
 import { Tilt } from '@/components/Tilt';
@@ -58,6 +59,7 @@ export default async function LandingPage() {
     <>
       <Nav ctx={ctx} />
       <Ticker items={tickerDrops(db)} variant="live" />
+      <SideRails left="CLAP · LE CINÉMA, CARTE PAR CARTE · 35 MM" right="EN SALLE · SÉANCE PERMANENTE" />
       <main className={styles.main}>
         {/* Hero */}
         <section className={styles.hero}>
@@ -77,7 +79,7 @@ export default async function LandingPage() {
                 Du figurant oublié à la légende d’Hollywood. Ouvrez des bobines, collectionnez les acteurs, puis traquez-les dans leurs plus grands rôles.
               </p>
               <div className={styles.ctas}>
-                <Link href={play} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Ouvrir ma première bobine'} <ArrowIcon /></Link>
+                <Link href={ctx ? '/bobines' : '/ouvrir/avant-premiere'} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Ouvrir ma bobine offerte'} <ArrowIcon /></Link>
                 <Link href="#comment-jouer" className="btn btn-lg">Comment jouer</Link>
               </div>
               <dl className={styles.proof}>
@@ -88,7 +90,9 @@ export default async function LandingPage() {
             </div>
             <div className={styles.stage}>
               <CropMarks timecode="00:00:12:07" className={styles.crop} />
-              <Rays className={styles.rays} />
+              <span className={styles.halo} aria-hidden="true" />
+              <Rays color="rgba(255, 46, 147, 0.3)" className={styles.rays} />
+              <Rays color="rgba(255, 200, 61, 0.16)" className={`${styles.rays} ${styles.raysB}`} />
               <Reel size={260} className={styles.reel} />
               {fanLeft && <div className={styles.fanL}><div className={styles.float} style={{ animationDelay: '-2s' }}><Tilt><GameCard card={fanLeft} width={230} eager live /></Tilt></div></div>}
               {fanRight && <div className={styles.fanR}><div className={styles.float} style={{ animationDelay: '-4s' }}><Tilt><GameCard card={fanRight} width={230} eager live /></Tilt></div></div>}
@@ -157,7 +161,12 @@ export default async function LandingPage() {
           <div className={styles.ladders}>
             {ladders.map((l, li) => (
               <Reveal key={l.title} className={styles.ladder} delay={li * 120}>
-                {l.top && <div className={styles.ladderCard}><CardLink card={l.top}><GameCard card={l.top} width={180} /></CardLink></div>}
+                {l.top && (
+                  <div className={styles.ladderCard}>
+                    <Rays color={`color-mix(in srgb, ${RARITIES[l.top.rarity].color} 30%, transparent)`} className={styles.ladderRays} />
+                    <CardLink card={l.top}><GameCard card={l.top} width={180} live /></CardLink>
+                  </div>
+                )}
                 <div className={styles.ladderRows}>
                   <div className={styles.ladderHead}>
                     <h3 className="display h3">{l.title}</h3>
@@ -187,11 +196,11 @@ export default async function LandingPage() {
             <div className={styles.packs}>
               {packs.map((b, i) => (
                 <div key={b.id} className={styles.pack}>
-                  <Link href={ctx ? `/bobines/${b.id}` : play} aria-label={`Bobine ${b.name}`}>
+                  <Link href={ctx ? `/bobines/${b.id}` : `/ouvrir/${b.id}`} aria-label={ctx ? `Bobine ${b.name}` : `Ouvrir la bobine ${b.name}, offerte sans compte`}>
                     <BoosterPack booster={b} cover={boosterCover(db, b)} width={i === 1 ? 260 : 210} float interactive style={{ animationDelay: `${-i * 1.3}s` }} />
                   </Link>
                   <span className={styles.packName}>{b.name}</span>
-                  <span className="eyebrow">{b.price} tickets · ou offerte</span>
+                  <span className="eyebrow">{ctx ? `${b.price} tickets · ou offerte` : 'Première bobine offerte, sans compte'}</span>
                 </div>
               ))}
             </div>

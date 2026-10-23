@@ -20,7 +20,14 @@
 
 .stage { position: relative; height: 660px; }
 .crop { inset: 2% 4%; }
-.rays { top: 46%; width: 640px; height: 640px; margin: -320px 0 0 -320px; -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 45%); mask-image: radial-gradient(circle, #000 8%, transparent 45%); }
+.rays { top: 44%; width: 980px; height: 980px; margin: -490px 0 0 -490px; -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 48%); mask-image: radial-gradient(circle, #000 10%, transparent 48%); }
+/* Deuxième couronne dorée qui tourne dans l'autre sens : les rayons de rareté se croisent derrière les cartes. */
+.raysB { animation-direction: reverse; animation-duration: 46s; rotate: 7deg; }
+.halo { position: absolute; left: 50%; top: 44%; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 46, 147, 0.22), rgba(255, 46, 147, 0) 62%); animation: halo 4s ease-in-out infinite; pointer-events: none; }
+@keyframes halo { 0%, 100% { opacity: 0.7; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+.ladderCard { position: relative; }
+.ladderCard > a { position: relative; z-index: 1; }
+.ladderRays { width: 520px; height: 520px; margin: -260px 0 0 -260px; -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 46%); mask-image: radial-gradient(circle, #000 12%, transparent 46%); }
 .reel { position: absolute; left: 0; bottom: 4%; opacity: 0.5; }
 .fanL, .fanC, .fanR { position: absolute; left: 50%; filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.6)); animation: card-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .fanL { top: 150px; margin-left: -330px; rotate: -11deg; animation-delay: 150ms; }
@@ -66,8 +73,8 @@
 
 /* Raretés */
 .ladders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap: 20px; }
-.ladder { border: 1px solid #222227; border-radius: 24px; padding: clamp(20px, 2.4vw, 32px); display: flex; flex-wrap: wrap; gap: 28px; align-items: center; background: linear-gradient(180deg, #121215, var(--ink)); }
-.ladderCard { flex: none; margin: 0 auto; }
+.ladder { overflow: hidden; border: 1px solid #222227; border-radius: 24px; padding: clamp(20px, 2.4vw, 32px); display: flex; flex-wrap: wrap; gap: 28px; align-items: center; background: linear-gradient(180deg, #121215, var(--ink)); }
+.ladderCard { flex: none; margin: 0 auto; isolation: isolate; }
 .ladderRows { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; }
 .ladderHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 12px; }
 .ladderRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 120px) 60px; align-items: center; gap: 14px; padding: 13px 0; border-top: 1px solid #1f1f24; }

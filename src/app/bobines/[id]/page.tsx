@@ -5,6 +5,7 @@ import { BoosterPack } from '@/components/BoosterPack';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { SideRails } from '@/components/SideRails';
 import { getBooster, GROUP_LABELS } from '@/lib/boosters';
 import { boosterCover, byValue, countByRarity, ownedCardIds, poolOf, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -54,6 +55,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
   return (
     <>
       <Nav ctx={ctx} current="/bobines" />
+      <SideRails left="CLAP · CONTENU DE LA BOBINE" right="INVENTAIRE · DE LA PLUS RARE À LA PLUS COURANTE" />
       <main className="container page">
         <div className={styles.crumbs}>
           <Link href="/bobines">BOBINES</Link><span>/</span><span>{GROUP_LABELS[booster.group].toUpperCase()}</span><span>/</span><span style={{ color: 'var(--text)' }}>{booster.name.toUpperCase()}</span>

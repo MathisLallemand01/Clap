@@ -109,12 +109,15 @@ export function Rays({ color = 'rgba(255, 46, 147, 0.1)', className = '' }: { co
   return <div className={`${styles.rays} ${className}`} style={{ ['--ray' as string]: color }} aria-hidden="true" />;
 }
 
-/** Deux projecteurs qui balaient le ciel (avant-première). */
+/** Deux projecteurs posés au sol, sur leur socle, qui balaient le ciel (avant-première). */
 export function Searchlights({ className = '' }: { className?: string }) {
   return (
     <div className={`${styles.search} ${className}`} aria-hidden="true">
       <span className={styles.searchL} />
       <span className={styles.searchR} />
+      <span className={styles.floor} />
+      <span className={`${styles.lamp} ${styles.lampL}`}><i /></span>
+      <span className={`${styles.lamp} ${styles.lampR}`}><i /></span>
     </div>
   );
 }
