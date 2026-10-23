@@ -30,7 +30,7 @@ test('les tirages de rareté suivent les probabilités annoncées', () => {
   assert.ok(Math.abs(counts.legende / n - 0.01) < 0.003);
 });
 
-test('chaque bobine donne une carte par slot, du bon type', () => {
+test('chaque bobine donne une carte par slot, du bon type, de la moins rare à la plus rare', () => {
   const catalog = getCatalog(openDb(':memory:'));
   const rng = seeded(2);
   for (const def of BOOSTERS) {
@@ -40,7 +40,10 @@ test('chaque bobine donne une carte par slot, du bon type', () => {
     for (let i = 0; i < 50; i++) {
       const cards = openBooster(def, catalog, rng);
       assert.equal(cards.length, def.slots.length, def.id);
-      cards.forEach((c, k) => assert.equal(c.kind, def.slots[k].kind, def.id));
+      const kinds = (list: { kind: string }[]) => list.map((x) => x.kind).sort().join();
+      assert.equal(kinds(cards), kinds(def.slots), def.id);
+      // La meilleure carte est toujours révélée en dernier.
+      cards.slice(1).forEach((c, k) => assert.ok(RARITIES[c.rarity].tier >= RARITIES[cards[k].rarity].tier, def.id));
     }
   }
 });

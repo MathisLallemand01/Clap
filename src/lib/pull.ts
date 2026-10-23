@@ -57,8 +57,10 @@ export function topRarity(slot: Slot): Rarity {
 }
 
 /**
- * Ouvre une bobine : une carte par slot, dans l'ordre des slots.
- * `topFirst` : la première carte est de la rareté la plus haute du slot (cadeau de la toute première bobine).
+ * Ouvre une bobine : une carte par slot, puis rangées de la moins rare à la plus rare, comme dans un vrai
+ * paquet de cartes : on révèle d'abord le commun, la meilleure carte arrive toujours en dernier.
+ * `topFirst` : le premier slot donne la rareté la plus haute qu'il permet (cadeau de la toute première bobine) ;
+ * cette carte-là est donc révélée en dernier.
  */
 export function openBooster(def: BoosterDef, catalog: Card[], rng: Rng = Math.random, { topFirst = false } = {}): Card[] {
   const pool = boosterPool(def, catalog);
@@ -67,5 +69,15 @@ export function openBooster(def: BoosterDef, catalog: Card[], rng: Rng = Math.ra
     const card = pickCard(slot.kind, topFirst && i === 0 ? topRarity(slot) : rollRarity(slot, rng), pool, rng);
     if (card) cards.push(card);
   }
-  return cards;
+  return sortForReveal(cards);
+}
+
+/** Du moins rare au plus rare ; à cran égal, la carte qui rapporte le plus d'entrées passe après. Tri stable. */
+export function sortForReveal<T extends Pick<Card, 'rarity'>>(cards: T[]): T[] {
+  return cards
+    .map((card, i) => ({ card, i }))
+    .sort((a, b) => RARITIES[a.card.rarity].tier - RARITIES[b.card.rarity].tier
+      || RARITIES[a.card.rarity].entries - RARITIES[b.card.rarity].entries
+      || a.i - b.i)
+    .map(({ card }) => card);
 }
