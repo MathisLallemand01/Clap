@@ -24,7 +24,7 @@ export default async function ReferralPage() {
   const referrals = listReferrals(getDb(), ctx.user.id);
   const validated = referrals.filter((r) => r.rewarded).length;
   const h = await headers();
-  const origin = process.env.APP_URL ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
   const link = `${origin}/i/${ctx.user.referralCode}`;
   const nextTier = TIERS.find((t) => t.n > validated);
 

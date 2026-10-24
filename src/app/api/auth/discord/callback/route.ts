@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
+import { publicOrigin } from '@/lib/origin';
 import { linkDiscord, upsertDiscordUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
@@ -9,7 +10,7 @@ type Pending = { state: string; next: string; referral?: string };
 type DiscordUser = { id: string; username: string; global_name?: string | null; avatar?: string | null; email?: string | null; verified?: boolean };
 
 export async function GET(request: NextRequest) {
-  const origin = (process.env.APP_URL ?? request.nextUrl.origin).replace(/\/+$/, '');
+  const origin = publicOrigin(request);
   const user = await currentUser();
   // Une erreur ramène là d'où l'on vient : les paramètres (liaison) ou la page de connexion.
   const fail = (code: string, message?: string) => NextResponse.redirect(new URL(

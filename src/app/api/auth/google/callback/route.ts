@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
+import { publicOrigin } from '@/lib/origin';
 import { upsertGoogleUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { startSession } from '@/lib/session';
@@ -7,7 +8,7 @@ import { startSession } from '@/lib/session';
 type Pending = { state: string; next: string; referral: string };
 
 export async function GET(request: NextRequest) {
-  const origin = (process.env.APP_URL ?? request.nextUrl.origin).replace(/\/+$/, '');
+  const origin = publicOrigin(request);
   const fail = () => NextResponse.redirect(new URL('/connexion?erreur=google', origin));
   const jar = await cookies();
   const raw = jar.get('clap_oauth')?.value;
