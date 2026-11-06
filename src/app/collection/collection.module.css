@@ -59,3 +59,9 @@
 .missing:hover { filter: grayscale(0.4) brightness(0.8); opacity: 1; }
 .more { font-family: var(--mono); font-size: 13px; color: var(--muted); padding: 0 8px; }
 .headActions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Onglet « Tout » : les deux échelles côte à côte (Acteurs, Rôles). */
+.progressBoth { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; align-items: start; }
+@media (max-width: 1100px) { .progressBoth { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 1000px) { .headerAll { grid-template-columns: minmax(0, 1fr); align-items: start; } }
+@media (min-width: 760px) and (max-width: 1100px) { .headerAll .progressBoth { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

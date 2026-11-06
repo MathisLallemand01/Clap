@@ -21,7 +21,7 @@ import styles from './collection.module.css';
 export const metadata: Metadata = { title: 'Collection' };
 
 type Search = { vue?: string; type?: string; rarete?: string; q?: string; tri?: string; page?: string; recycler?: string; recycle?: string; saga?: string; erreur?: string };
-type View = 'acteurs' | 'roles' | 'duos' | 'sagas';
+type View = 'tout' | 'acteurs' | 'roles' | 'duos' | 'sagas';
 const PAGE = 120;
 
 export default async function CollectionPage({ searchParams }: { searchParams: Promise<Search> }) {
@@ -32,11 +32,12 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
   const totals = countByRarity(getCatalog(db));
   const mine = countByRarity(owned);
 
-  // Quatre onglets : les deux familles de cartes, puis ce qui les relie (duos, sagas).
-  const view: View = sp.vue === 'roles' || sp.type === 'role' ? 'roles' : sp.vue === 'duos' ? 'duos' : sp.vue === 'sagas' ? 'sagas' : 'acteurs';
-  const type: CardKind = view === 'roles' ? 'role' : 'actor';
-  const rarity = (sp.rarete && sp.rarete in RARITIES && RARITIES[sp.rarete as Rarity].kind === type ? sp.rarete : null) as Rarity | null;
-  let visible = searchCards(owned.filter((c) => c.kind === type && (!rarity || c.rarity === rarity)), sp.q ?? '');
+  // Par défaut, toute la collection ; puis les deux familles de cartes et ce qui les relie (duos, sagas).
+  const view: View = sp.vue === 'roles' || sp.type === 'role' ? 'roles' : sp.vue === 'acteurs' || sp.type === 'actor' ? 'acteurs' : sp.vue === 'duos' ? 'duos' : sp.vue === 'sagas' ? 'sagas' : 'tout';
+  const type: CardKind | null = view === 'roles' ? 'role' : view === 'acteurs' ? 'actor' : null;
+  const cardsView = view === 'tout' || view === 'acteurs' || view === 'roles';
+  const rarity = (sp.rarete && sp.rarete in RARITIES && (!type || RARITIES[sp.rarete as Rarity].kind === type) ? sp.rarete : null) as Rarity | null;
+  let visible = searchCards(owned.filter((c) => (!type || c.kind === type) && (!rarity || c.rarity === rarity)), sp.q ?? '');
   const ownedOf = (k: CardKind) => owned.filter((c) => c.kind === k).length;
   const catalogOf = (k: CardKind) => getCatalog(db).filter((c) => c.kind === k).length;
   const duos = view === 'duos' ? playerDuos(db, ctx.player.id) : [];
@@ -49,7 +50,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
 
   const href = (patch: Partial<Search>) => {
     const p = new URLSearchParams();
-    const merged = { vue: view === 'acteurs' ? undefined : view, rarete: rarity ?? undefined, q: sp.q, tri: sp.tri, ...patch };
+    const merged = { vue: view === 'tout' ? undefined : view, rarete: rarity ?? undefined, q: sp.q, tri: sp.tri, ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
     const s = p.toString();
     return s ? `/collection?${s}` : '/collection';
@@ -64,7 +65,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
       <SideRails left="CLAP · COLLECTION · INVENTAIRE DES BOBINES" right="RÉSERVE · RAYON A · ÉTAGÈRE 3" />
       <main className="container page">
         <p className="slug">INT. LA RÉSERVE DES BOBINES — NUIT <span>PLAN 02 / PRISE 01</span></p>
-        <header className={styles.header}>
+        <header className={`${styles.header} ${view === 'tout' ? styles.headerAll : ''}`}>
           <div className={styles.titleBlock}>
             <h1 className="display h1">Collection</h1>
             <div className={styles.kpis}>
@@ -80,31 +81,36 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               )}
             </div>
           </div>
-          {(view === 'acteurs' || view === 'roles') && <ul className={styles.progress} aria-label={`Complétion des cartes ${FAMILY[type].label} par rareté`}>
-            <li className={styles.progressHead}>{FAMILY[type].mark} CARTES {FAMILY[type].label.toUpperCase()} · DE LA PLUS RARE À LA PLUS COMMUNE</li>
-            {[...ladderOf(type)].reverse().map((r) => (
-              <li key={r}>
-                <Link href={href({ rarete: rarity === r ? undefined : r, page: undefined })} aria-current={rarity === r ? 'true' : undefined}>
-                  <span className={styles.rarityLabel}><i className={type === 'actor' ? styles.round : styles.diamond} style={{ background: RARITIES[r].color }} />{RARITIES[r].label}</span>
-                  <span className={styles.bar}><span style={{ width: `${totals[r] ? Math.max(mine[r] ? 2 : 0, (mine[r] / totals[r]) * 100) : 0}%`, background: RARITIES[r].color }} /></span>
-                  <span className="mono" style={{ color: RARITIES[r].color }}>{formatNumber(mine[r])}<small> / {formatNumber(totals[r])}</small></span>
-                </Link>
-              </li>
+          {cardsView && <div className={type ? undefined : styles.progressBoth}>
+            {(type ? [type] : (['actor', 'role'] as CardKind[])).map((k) => (
+              <ul key={k} className={styles.progress} aria-label={`Complétion des cartes ${FAMILY[k].label} par rareté`}>
+                <li className={styles.progressHead}>{FAMILY[k].mark} CARTES {FAMILY[k].label.toUpperCase()} · DE LA PLUS RARE À LA PLUS COMMUNE</li>
+                {[...ladderOf(k)].reverse().map((r) => (
+                  <li key={r}>
+                    <Link href={href({ rarete: rarity === r ? undefined : r, page: undefined })} aria-current={rarity === r ? 'true' : undefined}>
+                      <span className={styles.rarityLabel}><i className={k === 'actor' ? styles.round : styles.diamond} style={{ background: RARITIES[r].color }} />{RARITIES[r].label}</span>
+                      <span className={styles.bar}><span style={{ width: `${totals[r] ? Math.max(mine[r] ? 2 : 0, (mine[r] / totals[r]) * 100) : 0}%`, background: RARITIES[r].color }} /></span>
+                      <span className="mono" style={{ color: RARITIES[r].color }}>{formatNumber(mine[r])}<small> / {formatNumber(totals[r])}</small></span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             ))}
-          </ul>}
+          </div>}
         </header>
 
         {recycledCards > 0 && <p className="alert alert-ok" role="status">{recycledCards} doublon{recycledCards > 1 ? 's' : ''} recyclé{recycledCards > 1 ? 's' : ''} : +{formatNumber(recycledTickets)} tickets.</p>}
 
         <div className={styles.toolbar}>
           <nav className="segmented" aria-label="Onglets de la collection">
-            <Link href="/collection" aria-current={view === 'acteurs' ? 'true' : undefined}><i className={styles.round} />Acteurs · {formatNumber(ownedOf('actor'))}<small> / {formatNumber(catalogOf('actor'))}</small><PendingBar /></Link>
+            <Link href="/collection" aria-current={view === 'tout' ? 'true' : undefined}>Tout · {formatNumber(owned.length)}<small> / {formatNumber(getCatalog(db).length)}</small><PendingBar /></Link>
+            <Link href="/collection?vue=acteurs" aria-current={view === 'acteurs' ? 'true' : undefined}><i className={styles.round} />Acteurs · {formatNumber(ownedOf('actor'))}<small> / {formatNumber(catalogOf('actor'))}</small><PendingBar /></Link>
             <Link href="/collection?vue=roles" aria-current={view === 'roles' ? 'true' : undefined}><i className={styles.diamond} />Rôles · {formatNumber(ownedOf('role'))}<small> / {formatNumber(catalogOf('role'))}</small><PendingBar /></Link>
             <Link href="/collection?vue=duos" aria-current={view === 'duos' ? 'true' : undefined} className={styles.tabDuo}>Duos · {formatNumber(ctx.stats.duos)}<PendingBar /></Link>
             <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)} commencée{sagaCount > 1 ? 's' : ''}<PendingBar /></Link>
           </nav>
-          {(view === 'acteurs' || view === 'roles') && <form className={styles.search} role="search" action="/collection">
-            {view === 'roles' && <input type="hidden" name="vue" value="roles" />}
+          {cardsView && <form className={styles.search} role="search" action="/collection">
+            {view !== 'tout' && <input type="hidden" name="vue" value={view} />}
             {rarity && <input type="hidden" name="rarete" value={rarity} />}
             <label className={styles.searchBox}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -189,7 +195,9 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
           </div>
         ) : visible.length === 0 ? (
           <p className="alert alert-info">
-            {view === 'acteurs'
+            {view === 'tout'
+              ? <>Aucune carte ne correspond. <Link href="/collection" className="accent">Tout afficher</Link></>
+              : view === 'acteurs'
               ? <>Aucune carte Acteur ici. Elles viennent des <Link href="/bobines?rayon=castings#rayons" className="accent">bobines Casting</Link>.</>
               : <>Aucune carte Rôle ici. Elles viennent des <Link href="/bobines?rayon=films#rayons" className="accent">bobines Film</Link>.</>}
           </p>
