@@ -282,6 +282,8 @@ body::after {
 
 /* Transitions entre les pages (React ViewTransition, voir app/template.tsx). */
 ::view-transition { pointer-events: none; }
+/* Rideau de connexion levé : pas de transition de page (elle se dessinerait par-dessus le rideau). */
+html[data-curtain]::view-transition { display: none; }
 ::view-transition-group(site-header) { animation: none; z-index: 100; }
 ::view-transition-old(site-header) { display: none; }
 ::view-transition-new(site-header) { animation: none; }
@@ -340,3 +342,6 @@ form[data-pending] input[type='search'] { background-image: linear-gradient(90de
 .stagger-in > :nth-child(n + 8) { animation-delay: 210ms; }
 @keyframes stagger-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .stagger-in > * { animation: none; } }
+
+/* Masque posé avant le premier affichage pendant une connexion (voir layout) ; le rideau prend le relais. */
+html.curtain-pending body::before { content: ''; position: fixed; inset: 0; z-index: 999; background: #0b0b0d; }

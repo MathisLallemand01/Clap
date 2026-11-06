@@ -32,6 +32,7 @@ export function raiseCurtain(kind: CurtainKind): void {
   } catch {
     // Stockage indisponible : le rideau ne survivra pas à un rechargement complet, tant pis.
   }
+  document.documentElement.setAttribute('data-curtain', '');
   window.dispatchEvent(new CustomEvent('clap:curtain', { detail: shown }));
 }
 
@@ -85,7 +86,10 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
       const raw = sessionStorage.getItem(KEY);
       const s = raw ? (JSON.parse(raw) as Shown) : null;
       if (s && Date.now() - s.at < MAX_MS) show(s, true);
-      else if (raw) sessionStorage.removeItem(KEY);
+      else {
+        if (raw) sessionStorage.removeItem(KEY);
+        document.documentElement.classList.remove('curtain-pending');
+      }
     } catch {
       // Voir raiseCurtain.
     }
@@ -98,6 +102,16 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
     return () => { window.removeEventListener('clap:curtain', onEvent); clear(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Le rideau est peint : le masque d'attente (posé avant React) peut partir sans laisser voir la page.
+  // Tant qu'il est levé, les transitions de page sont coupées (voir globals.css).
+  useEffect(() => {
+    const html = document.documentElement;
+    if (shown) {
+      html.classList.remove('curtain-pending');
+      html.setAttribute('data-curtain', '');
+    } else html.removeAttribute('data-curtain');
+  }, [shown]);
 
   // Navigation côté client (server action qui redirige) : la page ou la session a changé, on lève le rideau.
   useEffect(() => {

@@ -17,8 +17,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Le rideau de connexion se lève quand la session change (connexion, déconnexion).
   const signedIn = (await cookies()).has(SESSION_COOKIE);
   return (
-    <html lang="fr" data-scroll-behavior="smooth">
+    <html lang="fr" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        {/* Retour de Google ou Discord : le rideau masque la page dès la première image, avant que React ne le reprenne. */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var c=JSON.parse(sessionStorage.getItem('clap:curtain')||'null');if(c&&Date.now()-c.at<9000){document.documentElement.classList.add('curtain-pending');document.documentElement.setAttribute('data-curtain','')}}catch(e){}" }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
