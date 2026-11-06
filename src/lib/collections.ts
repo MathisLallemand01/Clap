@@ -88,6 +88,17 @@ export function playerSagas(db: DatabaseSync, playerId: string, { started = fals
   return list.sort((a, b) => b.owned - a.owned || b.owned / b.total - a.owned / a.total || b.total - a.total);
 }
 
+/** Nombre de sagas (5 cartes et plus) entièrement possédées, pour le palmarès et le box-office « Intégrales ». */
+export function completedSagaCount(db: DatabaseSync, owned: Set<string>): number {
+  let n = 0;
+  for (const members of sagaMembers(db).values()) {
+    if (members.length < 5) continue;
+    if (new Set(members.filter((m) => m.kind === 'role').map((m) => m.movieId)).size < 2) continue;
+    if (members.every((m) => owned.has(m.id))) n++;
+  }
+  return n;
+}
+
 /** Verse la récompense d'une saga complétée (une seule fois). */
 export function claimSaga(db: DatabaseSync, playerId: string, sagaId: number, now = Date.now()): number {
   const saga = playerSagas(db, playerId).find((s) => s.id === sagaId);

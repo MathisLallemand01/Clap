@@ -185,6 +185,74 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS notifications_user ON notifications (user_id, created_at);
 
+-- La Salle des ventes : une carte, un lot, un marteau. Les sièges du meneur (son plafond) sont mis de côté.
+CREATE TABLE IF NOT EXISTS auctions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  seller_id TEXT NOT NULL REFERENCES players (id),
+  owned_id INTEGER NOT NULL,
+  card_id TEXT NOT NULL REFERENCES cards (id),
+  start_price INTEGER NOT NULL,
+  buyout INTEGER,
+  current_bid INTEGER,
+  leader_id TEXT REFERENCES players (id),
+  leader_max INTEGER,
+  bids INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'sold', 'unsold', 'cancelled')),
+  created_at INTEGER NOT NULL,
+  ends_at INTEGER NOT NULL,
+  closed_at INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS auctions_open_owned ON auctions (owned_id) WHERE status = 'open';
+CREATE INDEX IF NOT EXISTS auctions_status ON auctions (status, ends_at);
+CREATE TABLE IF NOT EXISTS auction_bids (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  auction_id INTEGER NOT NULL REFERENCES auctions (id),
+  bidder_id TEXT NOT NULL REFERENCES players (id),
+  amount INTEGER NOT NULL,
+  auto INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS auction_bids_auction ON auction_bids (auction_id, id);
+CREATE INDEX IF NOT EXISTS auction_bids_bidder ON auction_bids (bidder_id, auction_id);
+
+-- La vitrine : 6 cases choisies par le joueur (case 0 = tête d'affiche).
+CREATE TABLE IF NOT EXISTS showcase (
+  player_id TEXT NOT NULL REFERENCES players (id),
+  slot INTEGER NOT NULL CHECK (slot BETWEEN 0 AND 5),
+  card_id TEXT NOT NULL REFERENCES cards (id),
+  PRIMARY KEY (player_id, slot)
+);
+
+-- Le palmarès : le niveau le plus haut atteint pour chaque distinction (1 bronze, 2 argent, 3 or).
+CREATE TABLE IF NOT EXISTS badges (
+  player_id TEXT NOT NULL REFERENCES players (id),
+  badge_id TEXT NOT NULL,
+  level INTEGER NOT NULL,
+  awarded_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, badge_id)
+);
+
+-- Cartes guettées : la régie prévient quand elles arrivent au Guichet.
+CREATE TABLE IF NOT EXISTS watches (
+  user_id TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  card_id TEXT NOT NULL REFERENCES cards (id),
+  cond TEXT NOT NULL CHECK (cond IN ('any', 'below', 'cote', 'auction')),
+  max_price INTEGER,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, card_id)
+);
+CREATE INDEX IF NOT EXISTS watches_card ON watches (card_id, active);
+
+-- Places au box-office en début de semaine, pour afficher les montées et descentes.
+CREATE TABLE IF NOT EXISTS rank_snapshots (
+  week TEXT NOT NULL,
+  board TEXT NOT NULL,
+  player_id TEXT NOT NULL,
+  rank INTEGER NOT NULL,
+  PRIMARY KEY (week, board, player_id)
+);
+
 -- Cache des fiches TMDB (biographies, films, bandes-annonces)
 CREATE TABLE IF NOT EXISTS tmdb_cache (
   key TEXT PRIMARY KEY,
@@ -192,6 +260,9 @@ CREATE TABLE IF NOT EXISTS tmdb_cache (
   fetched_at INTEGER NOT NULL
 );
 `;
+
+/** Exemplaires bloqués au Guichet : en vente à prix fixe ou mis aux enchères. */
+export const BUSY_OWNED_SQL = "SELECT owned_id FROM listings WHERE status = 'open' UNION SELECT owned_id FROM auctions WHERE status = 'open'";
 
 export type CardRow = {
   id: string; kind: Card['kind']; person_id: number; first: string; last: string; rarity: Card['rarity'];
@@ -310,6 +381,11 @@ function migrate(db: DatabaseSync): void {
   }
   const tradeColumns = new Set((db.prepare('PRAGMA table_info(trades)').all() as { name: string }[]).map((c) => c.name));
   // Cadeau : un échange à sens unique, conclu aussitôt.
+  // Vitrine : distinctions épinglées (jusqu'à 5).
+  if (!playerColumns.has('pinned_badges')) db.exec("ALTER TABLE players ADD COLUMN pinned_badges TEXT NOT NULL DEFAULT '[]'");
+  // Notifications urgentes (télégramme) : cartes guettées, enchères dépassées.
+  const notifColumns = new Set((db.prepare('PRAGMA table_info(notifications)').all() as { name: string }[]).map((c) => c.name));
+  if (!notifColumns.has('urgent')) db.exec('ALTER TABLE notifications ADD COLUMN urgent INTEGER NOT NULL DEFAULT 0');
   if (!tradeColumns.has('gift')) db.exec('ALTER TABLE trades ADD COLUMN gift INTEGER NOT NULL DEFAULT 0');
 }
 

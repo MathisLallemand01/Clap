@@ -107,6 +107,12 @@ export function addTickets(db: DatabaseSync, playerId: string, amount: number): 
   if (res.changes === 0) throw new GameError('not-enough-tickets', 'Pas assez de tickets.');
 }
 
+/** L'heure qu'il est à Paris (0 à 23). */
+export function parisHour(t: number): number {
+  const part = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Europe/Paris' }).formatToParts(t).find((p) => p.type === 'hour');
+  return Number(part?.value ?? -1);
+}
+
 export type PulledCard = Card & { serial: number; isNew: boolean };
 
 export type OpenResult = {
@@ -231,6 +237,8 @@ export function openBoosterFor(
 
     logEvent(db, playerId, 'open', 1, now);
     logEvent(db, playerId, `open:${def.group}`, 1, now);
+    // La séance de minuit (heure de Paris) : une distinction secrète du palmarès.
+    if (parisHour(now) === 0) logEvent(db, playerId, 'midnight', 1, now);
     const rare = cards.filter((c) => RARITIES[c.rarity].tier >= 3).length;
     if (rare) logEvent(db, playerId, 'rare', rare, now);
     for (const c of cards.filter((c) => c.rarity === 'icone' || c.rarity === 'legende')) {
@@ -275,9 +283,9 @@ export function openBoostersFor(
 }
 
 
-/** Exemplaires d'un joueur actuellement en vente au Guichet. */
+/** Exemplaires d'un joueur actuellement en vente au Guichet (prix fixe ou enchères). */
 function listedOwnedIds(db: DatabaseSync, playerId: string): Set<number> {
-  return new Set((db.prepare("SELECT owned_id FROM listings WHERE seller_id = ? AND status = 'open'").all(playerId) as { owned_id: number }[]).map((r) => r.owned_id));
+  return new Set((db.prepare("SELECT owned_id FROM listings WHERE seller_id = ? AND status = 'open' UNION SELECT owned_id FROM auctions WHERE seller_id = ? AND status = 'open'").all(playerId, playerId) as { owned_id: number }[]).map((r) => r.owned_id));
 }
 
 /** La collection d'un joueur : une entrée par carte, avec son meilleur numéro de série. */

@@ -1,9 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { getCard } from './catalog.ts';
 import { queueCelebration } from './celebrations.ts';
-import { transaction } from './db.ts';
+import { BUSY_OWNED_SQL, transaction } from './db.ts';
 import { addSeats, GameError } from './game.ts';
+import { cotes } from './cote.ts';
 import { logEvent, notifyPlayer } from './notify.ts';
+import { triggerWatches } from './watch.ts';
 import { RARITIES, suggestedSeats, type Rarity } from './rarity.ts';
 import type { Card } from './types.ts';
 
@@ -100,17 +102,19 @@ export function createListing(
   if (n < MIN_SELLER_PULLS) {
     throw new GameError('too-new', `Ouvrez au moins ${MIN_SELLER_PULLS} bobines avant de vendre au Guichet.`);
   }
-  return transaction(db, () => {
+  const id = transaction(db, () => {
     expireListings(db, now);
     const copy = db.prepare(`
       SELECT o.id FROM owned o
-      WHERE o.player_id = ? AND o.card_id = ? AND o.id NOT IN (SELECT owned_id FROM listings WHERE status = 'open')
+      WHERE o.player_id = ? AND o.card_id = ? AND o.id NOT IN (${BUSY_OWNED_SQL})
       ORDER BY o.serial DESC LIMIT 1`).get(playerId, card.id) as { id: number } | undefined;
     if (!copy) throw new GameError('not-owned', 'Vous n’avez plus d’exemplaire libre de cette carte.');
     const { lastInsertRowid } = db.prepare('INSERT INTO listings (seller_id, owned_id, card_id, price, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)')
       .run(playerId, copy.id, card.id, input.price, now, now + input.days * 24 * 3600 * 1000);
     return Number(lastInsertRowid);
   });
+  triggerWatches(db, { cardId: card.id, price: input.price, kind: 'fixe', href: `/guichet?annonce=${id}`, sellerId: playerId }, now);
+  return id;
 }
 
 export function cancelListing(db: DatabaseSync, playerId: string, listingId: number, now = Date.now()): void {
@@ -126,7 +130,10 @@ export function buyListing(db: DatabaseSync, buyerId: string, listingId: number,
       | undefined;
     if (!row) throw new GameError('not-found', 'Cette annonce n’est plus disponible.');
     if (row.seller_id === buyerId) throw new GameError('own-listing', 'Vous ne pouvez pas acheter votre propre annonce.');
+    // Revendre au moins deux fois sa cote : de quoi décrocher « Producteur » au palmarès.
+    const cote = cotes(db, now).get(row.card_id);
     addSeats(db, buyerId, -row.price);
+    if (cote && row.price >= cote * 2) logEvent(db, row.seller_id, 'flip2x', 1, now);
     addSeats(db, row.seller_id, sellerReceives(row.price));
     db.prepare('UPDATE owned SET player_id = ?, obtained_at = ? WHERE id = ?').run(buyerId, now, row.owned_id);
     db.prepare("UPDATE listings SET status = 'sold', buyer_id = ?, closed_at = ? WHERE id = ?").run(buyerId, now, row.id);

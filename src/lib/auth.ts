@@ -318,6 +318,11 @@ export function deleteAccount(db: DatabaseSync, userId: string): void {
   transaction(db, () => {
     const p = user.playerId;
     db.prepare("UPDATE listings SET status = 'cancelled' WHERE seller_id = ? AND status = 'open'").run(p);
+    // Enchères : les sièges mis de côté par les meneurs leur reviennent ; ses propres offres s'effacent.
+    db.prepare("UPDATE players SET seats = seats + COALESCE((SELECT SUM(a.leader_max) FROM auctions a WHERE a.seller_id = ? AND a.status = 'open' AND a.leader_id = players.id), 0) WHERE id IN (SELECT leader_id FROM auctions WHERE seller_id = ? AND status = 'open' AND leader_id IS NOT NULL)").run(p, p);
+    db.prepare("UPDATE auctions SET status = 'cancelled', closed_at = ? WHERE seller_id = ? AND status = 'open'").run(Date.now(), p);
+    db.prepare("UPDATE auctions SET leader_id = NULL, leader_max = NULL, current_bid = NULL WHERE leader_id = ? AND status = 'open'").run(p);
+    db.prepare('DELETE FROM showcase WHERE player_id = ?').run(p);
     db.prepare("UPDATE trades SET status = 'cancelled' WHERE (from_user = ? OR to_user = ?) AND status = 'pending'").run(userId, userId);
     db.prepare('UPDATE users SET referred_by = NULL WHERE referred_by = ?').run(userId);
     db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
@@ -330,6 +335,12 @@ export function deleteAccount(db: DatabaseSync, userId: string): void {
     db.prepare('DELETE FROM events WHERE player_id = ?').run(p);
     db.prepare('DELETE FROM mission_claims WHERE player_id = ?').run(p);
     db.prepare('DELETE FROM pulls WHERE player_id = ?').run(p);
+    db.prepare('DELETE FROM auction_bids WHERE bidder_id = ? OR auction_id IN (SELECT id FROM auctions WHERE seller_id = ?)').run(p, p);
+    db.prepare('DELETE FROM auctions WHERE seller_id = ?').run(p);
+    db.prepare('DELETE FROM badges WHERE player_id = ?').run(p);
+    db.prepare('DELETE FROM celebrations WHERE player_id = ?').run(p);
+    db.prepare('DELETE FROM saga_rewards WHERE player_id = ?').run(p);
+    db.prepare('DELETE FROM season_rewards WHERE player_id = ?').run(p);
     db.prepare('DELETE FROM players WHERE id = ?').run(p);
   });
 }

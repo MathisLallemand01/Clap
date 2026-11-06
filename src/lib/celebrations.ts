@@ -9,7 +9,9 @@ import type { Card } from './types.ts';
 export type CelebrationPayload =
   | { kind: 'sale'; cardId: string; serial: number; price: number; received: number; buyer: string }
   | { kind: 'trade'; partner: string; received: { cardId: string; serial: number }[]; tickets: number; gave: number; gaveTickets: number }
-  | { kind: 'gift'; from: string; received: { cardId: string; serial: number }[]; tickets: number };
+  | { kind: 'gift'; from: string; received: { cardId: string; serial: number }[]; tickets: number }
+  | { kind: 'auction'; cardId: string; serial: number; price: number; lot: string }
+  | { kind: 'badge'; badgeId: string; level: number; name: string; levelLabel: string; color: string; icon: string; tickets: number; desc: string };
 
 /** Ce que la popup affiche, prêt à l'emploi. */
 export type Celebration = {
@@ -27,6 +29,8 @@ export type Celebration = {
   lines: string[];
   href: string;
   hrefLabel: string;
+  /** Distinction du palmarès : les lauriers remplacent les cartes. */
+  badge?: { color: string; icon: string; level: number };
 };
 
 export function queueCelebration(db: DatabaseSync, playerId: string, payload: CelebrationPayload, now = Date.now()): void {
@@ -61,6 +65,26 @@ function view(db: DatabaseSync, id: number, p: CelebrationPayload): Celebration 
         href: '/collection', hrefLabel: 'Voir ma collection',
       };
     }
+    case 'auction': {
+      const card = getCard(db, p.cardId);
+      if (!card) return null;
+      return {
+        id, kind: p.kind, eyebrow: `${p.lot} · fin de l’enchère`, stamp: 'Adjugé !',
+        title: 'Adjugé, vendu !',
+        sub: `${card.character ?? `${card.first} ${card.last}`} rejoint votre collection.`,
+        cards: [{ ...card, serial: p.serial }], tickets: -p.price, unit: 'seats',
+        lines: ['Les sièges mis de côté au-delà du prix vous sont rendus.'],
+        href: '/guichet?vue=activite', hrefLabel: 'Mon activité',
+      };
+    }
+    case 'badge':
+      return {
+        id, kind: p.kind, eyebrow: 'Et la distinction est attribuée à…', stamp: null,
+        title: p.name, sub: `${p.levelLabel} · ${p.desc}`,
+        cards: [], tickets: p.tickets, lines: [],
+        href: '/palmares', hrefLabel: 'Voir le palmarès',
+        badge: { color: p.color, icon: p.icon, level: p.level },
+      };
     case 'gift': {
       const got = cards(p.received);
       return {

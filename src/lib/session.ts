@@ -7,7 +7,8 @@ import { nextCelebration, type Celebration } from './celebrations';
 import { getDb } from './db';
 import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from './game';
 import { missionStates, recordVisit } from './missions';
-import { listNotifications, notify, unreadCount, type Notification } from './notify';
+import { checkBadges } from './badges';
+import { listNotifications, notify, pendingTelegram, unreadCount, type Notification } from './notify';
 import { isHttpsHeaders } from './origin';
 
 export const SESSION_COOKIE = 'clap_session';
@@ -87,13 +88,17 @@ export type Context = {
   celebration: Celebration | null;
   /** Missions accomplies dont la récompense attend d'être récupérée (pastille sur « Missions »). */
   missionsReady: number;
+  /** Le télégramme : une urgence non lue (carte guettée en vente, enchère dépassée). */
+  telegram: Notification | null;
 };
 
 function contextFor(user: User): Context | null {
   const db = getDb();
-  const player = getPlayer(db, user.playerId);
+  let player = getPlayer(db, user.playerId);
   if (!player) return null;
   recordVisit(db, player.id);
+  // Les distinctions nouvellement atteintes sont décernées au passage : tickets et pop-up tout de suite.
+  if (checkBadges(db, player.id) > 0) player = getPlayer(db, user.playerId)!;
   const stats = getStats(db, player.id);
   return {
     user,
@@ -104,6 +109,7 @@ function contextFor(user: User): Context | null {
     unread: unreadCount(db, user.id),
     celebration: nextCelebration(db, player.id),
     missionsReady: missionStates(db, player.id).filter((m) => m.done && !m.claimed).length,
+    telegram: pendingTelegram(db, user.id),
   };
 }
 

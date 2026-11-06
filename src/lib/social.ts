@@ -2,7 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { getUser, getUserByName, type User } from './auth.ts';
 import { getCard } from './catalog.ts';
 import { queueCelebration } from './celebrations.ts';
-import { transaction } from './db.ts';
+import { BUSY_OWNED_SQL, transaction } from './db.ts';
 import { addTickets, GameError, getPlayer, getStats } from './game.ts';
 import { logEvent, notify } from './notify.ts';
 import { suggestedSeats } from './rarity.ts';
@@ -72,7 +72,7 @@ export function removeFriend(db: DatabaseSync, userId: string, otherId: string):
 /** Exemplaires libres (ni en vente, ni promis dans un échange en attente) d'un joueur pour une carte, du moins précieux au plus précieux. */
 function freeCopies(db: DatabaseSync, playerId: string, cardId: string, exclude: Set<number>): number[] {
   const busy = new Set([
-    ...(db.prepare("SELECT owned_id FROM listings WHERE status = 'open'").all() as { owned_id: number }[]).map((r) => r.owned_id),
+    ...(db.prepare(BUSY_OWNED_SQL).all() as { owned_id: number }[]).map((r) => r.owned_id),
     ...exclude,
   ]);
   return (db.prepare('SELECT id FROM owned WHERE player_id = ? AND card_id = ? ORDER BY serial DESC').all(playerId, cardId) as { id: number }[])
@@ -193,7 +193,7 @@ export function respondTrade(db: DatabaseSync, userId: string, tradeId: number, 
   requireTradeUnlocked(db, from.id, from.name);
   try {
     transaction(db, () => {
-      const listed = new Set((db.prepare("SELECT owned_id FROM listings WHERE status = 'open'").all() as { owned_id: number }[]).map((r) => r.owned_id));
+      const listed = new Set((db.prepare(BUSY_OWNED_SQL).all() as { owned_id: number }[]).map((r) => r.owned_id));
       const check = (ids: number[], playerId: string) => {
         for (const id of ids) {
           const o = db.prepare('SELECT player_id FROM owned WHERE id = ?').get(id) as { player_id: string } | undefined;
@@ -299,7 +299,7 @@ export function listReferrals(db: DatabaseSync, userId: string): Referral[] {
 /** Collection échangeable : seuls les exemplaires ni en vente ni promis dans un échange en attente comptent. */
 export function tradableCollection(db: DatabaseSync, playerId: string): (Card & { copies: number })[] {
   const busy = pendingTradeOwnedIds(db);
-  for (const r of db.prepare("SELECT owned_id FROM listings WHERE status = 'open'").all() as { owned_id: number }[]) busy.add(r.owned_id);
+  for (const r of db.prepare(BUSY_OWNED_SQL).all() as { owned_id: number }[]) busy.add(r.owned_id);
   const counts = new Map<string, number>();
   for (const r of db.prepare('SELECT id, card_id FROM owned WHERE player_id = ?').all(playerId) as { id: number; card_id: string }[]) {
     if (!busy.has(r.id)) counts.set(r.card_id, (counts.get(r.card_id) ?? 0) + 1);

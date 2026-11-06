@@ -104,7 +104,7 @@ export function pointsBoard(db: DatabaseSync): RankRow[] {
   return rank(db, rows);
 }
 
-function rank(db: DatabaseSync, rows: Omit<RankRow, 'rank' | 'name'>[]): RankRow[] {
+export function rank(db: DatabaseSync, rows: Omit<RankRow, 'rank' | 'name'>[]): RankRow[] {
   type U = { player_id: string; name: string; public_profile: number; avatar: string | null; discord_name: string | null; discord_avatar: string | null };
   const users = new Map((db.prepare('SELECT player_id, name, public_profile, avatar, discord_name, discord_avatar FROM users').all() as U[])
     .map((u) => [u.player_id, u.public_profile
