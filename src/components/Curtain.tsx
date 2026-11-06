@@ -7,8 +7,10 @@ import styles from './Curtain.module.css';
 export type CurtainKind = 'connexion' | 'inscription' | 'deconnexion';
 
 const KEY = 'clap:curtain';
-/** Durée minimale d'affichage : assez pour voir l'amorce, pas assez pour attendre. */
-const MIN_MS = 1100;
+/** Le décompte 3, 2, 1 (0,6 s par chiffre) : la page n'apparaît qu'une fois le « 1 » terminé. */
+const COUNT_MS = 1800;
+/** Au retour de Google ou Discord (rechargement complet), on rejoue au moins le dernier chiffre. */
+const LAST_STEP_MS = 600;
 /** Au-delà, on lève le rideau quoi qu'il arrive (réseau coupé, retour arrière…). */
 const MAX_MS = 9000;
 const TEXT: Record<CurtainKind, [string, string]> = {
@@ -58,7 +60,7 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
 
   const finish = useCallback((at: number) => {
     clear();
-    const wait = Math.max(0, at + MIN_MS - Date.now());
+    const wait = Math.max(0, at + COUNT_MS - Date.now());
     timers.current.push(window.setTimeout(() => {
       setLeaving(true);
       try { sessionStorage.removeItem(KEY); } catch { /* Voir raiseCurtain. */ }
@@ -69,6 +71,8 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
   const show = useCallback((s: Shown, arrived: boolean) => {
     clear();
     setLeaving(false);
+    // Arrivée après un long aller-retour : le décompte reprend sur le « 1 », jamais en plein milieu.
+    if (arrived && Date.now() - s.at > COUNT_MS - LAST_STEP_MS) s = { ...s, at: Date.now() - (COUNT_MS - LAST_STEP_MS) };
     setShown(s);
     from.current = arrived ? null : { path: window.location.pathname, signedIn };
     if (arrived) finish(s.at);
@@ -106,8 +110,10 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
 
   if (!shown) return null;
   const [title, sub] = TEXT[shown.kind];
+  // Le décompte reprend là où il en est (délai négatif) : il ne repart jamais de 3 au milieu d'une connexion.
+  const vars = { '--count-ms': `${COUNT_MS}ms`, '--delay': `${-Math.max(0, Math.min(COUNT_MS, Date.now() - shown.at))}ms` } as React.CSSProperties;
   return (
-    <div className={`${styles.curtain} ${leaving ? styles.leaving : ''}`} role="status" aria-live="polite" aria-label={title}>
+    <div className={`${styles.curtain} ${leaving ? styles.leaving : ''}`} style={vars} role="status" aria-live="polite" aria-label={title}>
       <span className={styles.beam} aria-hidden="true" />
       <div className={`${styles.film} ${styles.filmTop}`} aria-hidden="true"><i /></div>
       <div className={`${styles.film} ${styles.filmBottom}`} aria-hidden="true"><i /></div>
