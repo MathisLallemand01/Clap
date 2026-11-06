@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
+import { Telegram } from './Telegram';
 import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
 import { FreeBoosters } from './FreeBoosters';
@@ -77,6 +78,10 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                   <nav className={styles.mobileLinks} aria-label="Navigation">
                     {NAV_LINKS.map((l) => <Link key={l.href} href={l.href}>{l.label}{l.href === '/missions' && ctx.missionsReady > 0 && <ReadyBadge n={ctx.missionsReady} />}</Link>)}
                   </nav>
+                  <Link href={`/v/${encodeURIComponent(ctx.user.name)}`}>Ma vitrine</Link>
+                  <Link href="/palmares">Palmarès</Link>
+                  <Link href="/regie">La Régie{ctx.unread > 0 ? ` · ${ctx.unread}` : ''}</Link>
+                  <Link href="/guichet?vue=activite">Mon activité</Link>
                   <Link href="/raretes">Raretés et règles</Link>
                   <Link href="/monnaies">Tickets, sièges et points</Link>
                   <Link href="/parrainage">Parrainage</Link>
@@ -96,6 +101,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
         )}
       </div>
       {ctx?.celebration && <CelebrationHost celebration={ctx.celebration} />}
+      {ctx?.telegram && !ctx.celebration && <Telegram key={ctx.telegram.id} telegram={ctx.telegram} />}
     </header>
   );
 }
@@ -113,6 +119,8 @@ export function Footer() {
           <Link href="/parrainage">Parrainage</Link>
         </nav>
         <span>Ce produit utilise l’API TMDB mais n’est ni approuvé ni certifié par TMDB.</span>
+        {/* Scène post-générique : il faut rester jusqu'au bout pour la trouver. */}
+        <Link href="/generique" prefetch={false} className="footer-credits" aria-label="Scène post-générique">· · ·</Link>
       </div>
     </footer>
   );

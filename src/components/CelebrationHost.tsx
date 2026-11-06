@@ -27,6 +27,7 @@ export function CelebrationHost({ celebration }: { celebration: Celebration }) {
       unit={celebration.unit}
       lines={celebration.lines}
       link={{ href: celebration.href, label: celebration.hrefLabel }}
+      badge={celebration.badge}
       onClose={close}
     />
   );

@@ -11,7 +11,8 @@ import { playerDuos, playerSagas } from '@/lib/collections';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { DUO_BONUS, getCollection, recyclePlan } from '@/lib/game';
-import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
+import { cotes } from '@/lib/cote';
+import { FAMILY, ladderOf, RARITIES, suggestedSeats, type CardKind, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { claimSagaAction, recycleAction } from './actions';
 import styles from './collection.module.css';
@@ -22,11 +23,17 @@ type Search = { vue?: string; type?: string; rarete?: string; q?: string; tri?: 
 type View = 'tout' | 'acteurs' | 'roles' | 'duos' | 'sagas';
 const PAGE = 120;
 
+/** Valeur de la collection en sièges : chaque exemplaire à sa cote, sinon au prix conseillé. */
+function collectionWorth(cards: { id: string; rarity: Parameters<typeof suggestedSeats>[0]; copies: number }[], cote: Map<string, number>): number {
+  return cards.reduce((sum, c) => sum + (cote.get(c.id) ?? suggestedSeats(c.rarity)) * c.copies, 0);
+}
+
 export default async function CollectionPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const ctx = await requireContext('/collection');
   const db = getDb();
   const owned = getCollection(db, ctx.player.id);
+  const worth = collectionWorth(owned, cotes(db));
   const totals = countByRarity(getCatalog(db));
   const mine = countByRarity(owned);
 
@@ -70,6 +77,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               <span><b>{formatNumber(ctx.stats.points)}</b> points</span>
               <span><b>{formatNumber(ctx.stats.duos)}</b> duo{ctx.stats.duos > 1 ? 's' : ''}</span>
               <span><b>{formatNumber(ctx.stats.duplicates)}</b> doublons</span>
+              <span title="Chaque exemplaire à sa cote (médiane des ventes), ou au prix conseillé s’il n’est pas encore coté"><b>{formatNumber(worth)}</b> sièges de valeur</span>
             </div>
             <div className={styles.headActions}>
               <Link href="/catalogue?possession=manquantes" className="btn btn-sm">Voir les cartes qui me manquent</Link>

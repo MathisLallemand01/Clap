@@ -322,3 +322,6 @@ body::after {
 }
 @keyframes pending-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pending-top { from { background-position: -30% 0; } to { background-position: 130% 0; } }
+/* Le lien secret du pied de page : presque invisible, il faut le chercher. */
+.footer-credits { font: 10px var(--mono); color: #2a2a30; letter-spacing: 0.4em; align-self: center; }
+.footer-credits:hover, .footer-credits:focus-visible { color: var(--muted); }

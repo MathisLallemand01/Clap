@@ -55,6 +55,7 @@ export function NotificationBell({ notifications, unread }: { notifications: Not
               <button type="button" onClick={() => startTransition(() => readNotifications())}>Tout marquer comme lu</button>
             )}
           </div>
+          <Link href="/regie" className={styles.regie} onClick={() => setOpen(false)}>Ouvrir la Régie · cartes guettées</Link>
           {notifications.length === 0 ? (
             <p className={styles.empty}>Rien de neuf pour l’instant.</p>
           ) : (

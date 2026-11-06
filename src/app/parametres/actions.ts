@@ -26,7 +26,8 @@ export async function saveAccount(form: FormData): Promise<void> {
 
 export async function saveNotifications(form: FormData): Promise<void> {
   const u = await user();
-  const prefs = Object.fromEntries(NOTIFY_KINDS.map((k) => [k.kind, form.get(k.kind) === 'on']));
+  // Les canaux de la Régie (message Discord…) sont réglés ailleurs : on les garde.
+  const prefs = { ...u.notify, ...Object.fromEntries(NOTIFY_KINDS.map((k) => [k.kind, form.get(k.kind) === 'on'])) };
   updateProfile(getDb(), u.id, { notify: prefs });
   redirect('/parametres?ok=notifications#notifications');
 }

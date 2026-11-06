@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
+import { CoteBlock } from '@/components/CoteBlock';
 import { Footer, Nav } from '@/components/Nav';
+import { isWatched } from '@/lib/watch';
 import { SideRails } from '@/components/SideRails';
 import { cardsOfPerson, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -14,7 +16,7 @@ import { requireContext } from '@/lib/session';
 import { personInfo } from '@/lib/tmdb';
 import styles from '../../fiche.module.css';
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ cote?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cards = cardsOfPerson(getDb(), Number((await params).id));
@@ -26,7 +28,8 @@ function dateFr(iso: string | null): string | null {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
 }
 
-export default async function ActorPage({ params }: Props) {
+export default async function ActorPage({ params, searchParams }: Props) {
+  const coteSpan = (({ '7': 7, '90': 90 } as Record<string, 7 | 90>)[(await searchParams).cote ?? ''] ?? 30) as 7 | 30 | 90;
   const personId = Number((await params).id);
   const db = getDb();
   const cards = cardsOfPerson(db, personId);
@@ -95,6 +98,8 @@ export default async function ActorPage({ params }: Props) {
             </Link>
           )}
         </section>}
+
+        {actor && <CoteBlock card={actor} span={coteSpan} watched={isWatched(db, ctx.user.id, actor.id)} openCount={(db.prepare("SELECT (SELECT COUNT(*) FROM listings WHERE card_id = ? AND status = 'open') + (SELECT COUNT(*) FROM auctions WHERE card_id = ? AND status = 'open') AS n").get(actor.id, actor.id) as { n: number }).n} />}
 
         {roles.length > 0 && (
           <section className={styles.section}>

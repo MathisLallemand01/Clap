@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { GameCard } from '@/components/GameCard';
+import { Laurel } from '@/components/Laurel';
 import { SeatIcon, TicketIcon } from '@/components/Icons';
 import { formatNumber } from '@/lib/format';
 import { RARITIES } from '@/lib/rarity';
@@ -27,6 +28,8 @@ export type CelebrateProps = {
   lines?: string[];
   link?: { href: string; label: string };
   closeLabel?: string;
+  /** Distinction du palmarès : des lauriers à la place des cartes. */
+  badge?: { color: string; icon: string; level: number };
   onClose: () => void;
 };
 
@@ -34,7 +37,7 @@ export type CelebrateProps = {
  * La grande annonce d'une bonne nouvelle : la salle s'assombrit, la ou les cartes arrivent au centre
  * sous leurs rayons, un tampon les marque, puis le bilan en tickets. Achat, vente, échange, cadeau.
  */
-export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, unit = 'tickets', lines = [], link, closeLabel = 'Continuer', onClose }: CelebrateProps) {
+export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, unit = 'tickets', lines = [], link, closeLabel = 'Continuer', badge, onClose }: CelebrateProps) {
   const [mounted, setMounted] = useState(false);
   const [music, setMusic] = useState<ThemeInfo | null>(null);
   const themed = cards.find((c) => themeFor(c))?.id ?? null;
@@ -47,10 +50,10 @@ export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, unit
     setMounted(true);
     const p = createProjector(soundPreference());
     const t1 = window.setTimeout(() => p.coins(tickets > 0 ? 6 : 3), 150);
-    const t2 = window.setTimeout(() => rarity && p.sting(rarity.tier >= 5 ? 3 : rarity.tier >= 4 ? 2 : 1), 700);
+    const t2 = window.setTimeout(() => (badge ? p.sting(Math.min(3, Math.max(1, badge.level)) as 1 | 2 | 3) : rarity && p.sting(rarity.tier >= 5 ? 3 : rarity.tier >= 4 ? 2 : 1)), 700);
     const t3 = window.setTimeout(() => p.dispose(), 3000);
     return () => { [t1, t2, t3].forEach(window.clearTimeout); p.dispose(); };
-  }, [rarity, tickets]);
+  }, [rarity, tickets, badge]);
 
   // Une carte reçue est le Rôle principal d'un film à musique culte : sa musique accompagne l'annonce.
   useEffect(() => {
@@ -69,10 +72,11 @@ export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, unit
 
   if (!mounted) return null;
   return createPortal(
-    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="celebrate-title" style={{ '--rc': rarity?.color ?? 'var(--accent)' } as CSSProperties} onClick={onClose}>
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="celebrate-title" style={{ '--rc': badge?.color ?? rarity?.color ?? 'var(--accent)' } as CSSProperties} onClick={onClose}>
       <span className={styles.rays} aria-hidden="true" />
       <div className={styles.box} onClick={(e) => e.stopPropagation()}>
         <p className={styles.eyebrow}>{eyebrow}</p>
+        {badge && <div className={styles.laurel}><Laurel color={badge.color} icon={badge.icon} size={170} /></div>}
         {shown.length > 0 && (
           <div className={styles.cards} style={{ '--n': shown.length } as CSSProperties}>
             {shown.map((c, i) => (

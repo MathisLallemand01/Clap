@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
+import { CoteBlock } from '@/components/CoteBlock';
 import { Footer, Nav } from '@/components/Nav';
+import { isWatched } from '@/lib/watch';
 import { SideRails } from '@/components/SideRails';
 import { cardsOfMovie, cardsOfPerson, getCard, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -15,11 +17,16 @@ import { movieInfo } from '@/lib/tmdb';
 import styles from '../../fiche.module.css';
 import { Trailer } from './Trailer';
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ cote?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const card = getCard(getDb(), decodeURIComponent((await params).id));
   return { title: card ? `${card.character} · ${card.film}` : 'Rôle' };
+}
+
+/** Exemplaires de cette carte en vente au Guichet (prix fixe ou enchères). */
+function openCountOf(db: ReturnType<typeof getDb>, cardId: string): number {
+  return (db.prepare("SELECT (SELECT COUNT(*) FROM listings WHERE card_id = ? AND status = 'open') + (SELECT COUNT(*) FROM auctions WHERE card_id = ? AND status = 'open') AS n").get(cardId, cardId) as { n: number }).n;
 }
 
 function runtime(min: number | null): string | null {
@@ -27,7 +34,8 @@ function runtime(min: number | null): string | null {
   return `${Math.floor(min / 60)} H ${String(min % 60).padStart(2, '0')}`;
 }
 
-export default async function RolePage({ params }: Props) {
+export default async function RolePage({ params, searchParams }: Props) {
+  const coteSpan = (({ '7': 7, '90': 90 } as Record<string, 7 | 90>)[(await searchParams).cote ?? ''] ?? 30) as 7 | 30 | 90;
   const id = decodeURIComponent((await params).id);
   const db = getDb();
   const card = getCard(db, id);
@@ -80,6 +88,8 @@ export default async function RolePage({ params }: Props) {
             {info?.videos.length ? <a href="#bande-annonce" className="btn btn-primary btn-lg" style={{ alignSelf: 'flex-start' }}>▶ Voir la bande-annonce</a> : null}
           </div>
         </section>
+
+        <CoteBlock card={card} span={coteSpan} watched={isWatched(db, ctx.user.id, card.id)} openCount={openCountOf(db, card.id)} />
 
         <section id="bande-annonce" className={styles.section} style={{ scrollMarginTop: 96 }}>
           <Trailer videos={info?.videos ?? []} title={card.film ?? ''} backdrop={info?.backdrop ?? null} />

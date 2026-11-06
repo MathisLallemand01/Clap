@@ -6,7 +6,7 @@ import { DiscordLogo } from '@/components/DiscordLogo';
 import { SideRails } from '@/components/SideRails';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { pointsBoard, type RankRow } from '@/lib/ranking';
+import { boardOf, BOARDS, boxOffice, myPlaces, weeklyMoves, type BoxRow } from '@/lib/boxoffice';
 import { DUO_BONUS } from '@/lib/game';
 import { FAMILY, ladderOf, RARITIES } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
@@ -18,12 +18,15 @@ const AVATARS = ['#FFC83D', '#B57BFF', '#2EE6D6', '#4C8DFF', '#3DDC97', '#FF2E93
 const avatarColor = (name: string) => AVATARS[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % AVATARS.length];
 
 
-export default async function RankingPage() {
+export default async function RankingPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
   const ctx = await requireContext('/classement');
   const db = getDb();
-  // Un seul classement, au plus simple : des points fixes par carte différente possédée, plus les duos.
-  const rows: RankRow[] = pointsBoard(db);
-  const unit = 'PTS';
+  // Cinq catégories ; la première (Box-office) reste le classement aux points.
+  const board = boardOf((await searchParams).cat);
+  const rows: BoxRow[] = boxOffice(db, board.id);
+  const moves = weeklyMoves(db, board.id, rows);
+  const places = myPlaces(db, ctx.player.id);
+  const unit = board.unit;
   const fmt = (n: number) => formatNumber(n);
   const me = rows.find((r) => r.playerId === ctx.player.id);
   const podium = [rows[1], rows[0], rows[2]];
@@ -40,11 +43,19 @@ export default async function RankingPage() {
           <div className={`container ${styles.head}`}>
             <div className={styles.headText}>
               <p className="slug">INT. SALLE DES FÊTES — SOIR <span>PLAN 01 / PRISE 01</span></p>
-              <span className={styles.season}>★ VOS POINTS · {formatNumber(ctx.stats.points)}{me ? ` · ${me.rank}${me.rank === 1 ? 'ER' : 'E'}` : ''}</span>
-              <h1 className="display h1">Classement</h1>
-              <p className="lead">Chaque carte <b>différente</b> de votre collection rapporte des points selon sa rareté, et chaque duo en ajoute {DUO_BONUS}. Les doublons ne comptent pas : c’est la collection la plus belle qui gagne.</p>
+              <span className={styles.season}>★ {board.label.toUpperCase()} · {me ? `${formatNumber(me.points)} ${unit} · ${me.rank}${me.rank === 1 ? 'ER' : 'E'}` : 'PAS ENCORE CLASSÉ'}</span>
+              <h1 className="display h1">Box-office</h1>
+              <p className="lead">Cinq façons de monter les marches. {board.id === 'points' ? <>Chaque carte <b>différente</b> rapporte des points selon sa rareté, et chaque duo en ajoute {DUO_BONUS}. Les doublons ne comptent pas.</> : board.desc}</p>
             </div>
           </div>
+
+          <nav className={`container ${styles.stubs}`} aria-label="Catégories du box-office">
+            {BOARDS.map((b, i) => (
+              <Link key={b.id} href={b.id === 'points' ? '/classement' : `/classement?cat=${b.id}`} scroll={false} className={styles.stub} aria-current={b.id === board.id ? 'page' : undefined}>
+                <span className="eyebrow">Catégorie {String(i + 1).padStart(2, '0')}</span><b>{b.label}</b><small>{b.desc}</small>
+              </Link>
+            ))}
+          </nav>
 
           <div className={`container ${styles.podium}`}>
             {podium.map((r, i) => {
@@ -75,14 +86,15 @@ export default async function RankingPage() {
             ) : (
               <table className={styles.table}>
                 <thead>
-                  <tr><th>Rang</th><th>Joueur</th><th className={styles.opt}>Cartes</th><th className={styles.opt}>Duos</th><th className={styles.num}>Points</th></tr>
+                  <tr><th>Rang</th><th>Joueur</th><th className={styles.opt}>{board.id === 'points' ? 'Cartes' : board.id === 'filmotheque' ? 'Mythes' : board.id === 'mythes' ? 'Lég./Icônes' : board.id === 'integrales' ? 'Cartes' : 'Distinctions'}</th><th className={styles.opt}>Semaine</th><th className={styles.num}>{board.col}</th></tr>
                 </thead>
                 <tbody>
                   {[...list, ...(meOutside ? [me] : [])].map((r) => (
                     <tr key={r.playerId} className={r.playerId === ctx.player.id ? styles.mine : undefined}>
                       <td className={styles.rank}>{r.rank}</td>
-                      <td><span className={styles.player}><span className={styles.mini} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span><span className={styles.names}>{r.name}{r.discord && <small><DiscordLogo size={10} />{r.discord}</small>}</span>{r.playerId === ctx.player.id && <em>VOUS</em>}</span></td>
-                      <td className={styles.opt}>{formatNumber(r.days)}</td><td className={styles.opt}>{r.streak || '—'}</td>
+                      <td><Link href={`/v/${encodeURIComponent(r.name)}`} className={styles.player}><span className={styles.mini} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span><span className={styles.names}>{r.name}{r.discord && <small><DiscordLogo size={10} />{r.discord}</small>}</span>{r.playerId === ctx.player.id && <em>VOUS</em>}</Link></td>
+                      <td className={styles.opt}>{formatNumber(r.secondary)}</td>
+                      <td className={styles.opt}><span className={(moves.get(r.playerId) ?? 0) > 0 ? styles.up : (moves.get(r.playerId) ?? 0) < 0 ? styles.down : styles.same}>{(moves.get(r.playerId) ?? 0) > 0 ? `▲ ${moves.get(r.playerId)}` : (moves.get(r.playerId) ?? 0) < 0 ? `▼ ${-(moves.get(r.playerId) ?? 0)}` : '='}</span></td>
                       <td className={styles.num}>{fmt(r.points)}</td>
                     </tr>
                   ))}
@@ -93,6 +105,15 @@ export default async function RankingPage() {
           </section>
 
           <aside className={styles.aside}>
+            <div className={styles.rules}>
+              <h2 className="display">Votre place</h2>
+              <ul>
+                {places.map((p) => (
+                  <li key={p.board.id}><Link href={p.board.id === 'points' ? '/classement' : `/classement?cat=${p.board.id}`} scroll={false}>{p.board.label}</Link><b>{p.rank ? `${p.rank}${p.rank === 1 ? 'ᵉʳ' : 'ᵉ'}${p.rank === 1 ? ' ★' : ''}` : '—'}</b></li>
+                ))}
+              </ul>
+              <small className="muted" style={{ display: 'block', marginTop: 10, fontSize: 12 }}>« Semaine » : places gagnées ou perdues depuis lundi, comme au box-office.</small>
+            </div>
             <div className={styles.rules}>
               <h2 className="display">Le barème</h2>
               <ul>

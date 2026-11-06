@@ -72,3 +72,19 @@
 .discord { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; color: #8f97ff; letter-spacing: 0.04em; }
 .names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .names small { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: #8f97ff; font-weight: 400; }
+
+/* Les cinq catégories, en tickets de cinéma (encoches sur les côtés). */
+.stubs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; position: relative; z-index: 2; margin-top: 28px; }
+@media (max-width: 1000px) { .stubs { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
+.stub { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 12px; background: #131317; border: 1px solid #26262c; overflow: hidden; transition: border-color 160ms ease, transform 160ms ease; }
+.stub:hover { border-color: var(--line-2); transform: translateY(-2px); }
+.stub::before, .stub::after { content: ''; position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); border: 1px solid #26262c; transform: translateY(-50%); }
+.stub::before { left: -9px; }
+.stub::after { right: -9px; }
+.stub b { font-stretch: 62%; font-weight: 900; font-size: 24px; text-transform: uppercase; line-height: 0.95; }
+.stub small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.stub[aria-current='page'] { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+.stub[aria-current='page'] small, .stub[aria-current='page'] :global(.eyebrow) { color: #2a0d04; }
+.up { color: var(--ok); font: 700 12px var(--mono); }
+.down { color: #ff6b5a; font: 700 12px var(--mono); }
+.same { color: var(--faint); font: 700 12px var(--mono); }

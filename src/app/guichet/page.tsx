@@ -16,30 +16,41 @@ import { byDeal, getListing, LISTING_DAYS, MARKET_FEE, openListings, playerListi
 import { RARITIES, RARITIES_BY_VALUE, rarityName, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { tickerSales } from '@/lib/ticker';
+import { AUCTION_HOURS, auctionRange } from '@/lib/auctions';
+import { cotes } from '@/lib/cote';
 import { buyAction, cancelAction } from './actions';
+import { ActivityView } from './ActivityView';
+import { AuctionSellForm } from './AuctionSellForm';
+import { AuctionsView } from './AuctionsView';
 import { Purchase } from './Purchase';
 import { SellForm } from './SellForm';
 import styles from './guichet.module.css';
 
 export const metadata: Metadata = { title: 'Le Guichet' };
 
-type Search = { vue?: string; rarete?: string; q?: string; tri?: string; annonce?: string; carte?: string; erreur?: string; achat?: string; vente?: string };
+type Search = { vue?: string; rarete?: string; q?: string; tri?: string; annonce?: string; carte?: string; erreur?: string; achat?: string; vente?: string; lot?: string; offre?: string; nouveau?: string; type?: string; mode?: string };
 
 function remaining(t: number): string {
   const h = Math.max(0, Math.round((t - Date.now()) / 3600000));
   return h >= 24 ? `${Math.round(h / 24)} J` : `${h} H`;
 }
 
-function Delta({ l }: { l: Listing }) {
-  const d = Math.round((l.price / l.suggested - 1) * 100);
-  return <span className="mono" style={{ fontSize: 12, color: d > 5 ? '#ff9a6c' : d < 0 ? 'var(--ok)' : 'var(--muted)' }}>{d > 0 ? '+' : d < 0 ? '−' : '±'}{Math.abs(d)} %</span>;
+/** Écart à la cote (médiane des ventes), ou au prix conseillé quand la carte n'est pas encore cotée. */
+function Delta({ l, cote }: { l: Listing; cote: number | undefined }) {
+  const d = Math.round((l.price / (cote ?? l.suggested) - 1) * 100);
+  return (
+    <span className="mono" title={cote ? `Cote : ${cote} sièges (médiane des ventes)` : `Pas encore cotée · conseillé ${l.suggested}`} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, border: `1px solid ${d < 0 ? '#1d5a3f' : d > 5 ? '#5a2a1c' : 'var(--line)'}`, color: d > 5 ? '#ff9a6c' : d < 0 ? 'var(--ok)' : 'var(--muted)' }}>
+      {d > 0 ? '+' : d < 0 ? '−' : '±'}{Math.abs(d)} %{cote ? ' COTE' : ''}
+    </span>
+  );
 }
 
 export default async function MarketPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const ctx = await requireContext('/guichet');
   const db = getDb();
-  const view = sp.vue === 'vendre' || sp.vue === 'mes-annonces' ? sp.vue : 'acheter';
+  const view = (['vendre', 'mes-annonces', 'encheres', 'activite'] as const).find((v) => v === sp.vue) ?? 'acheter';
+  const coteMap = cotes(db);
   const owned = ownedCardIds(db, ctx.player.id);
 
   const rarity = (sp.rarete && sp.rarete in RARITIES ? sp.rarete : null) as Rarity | null;
@@ -74,8 +85,10 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
             </div>
             <div className="segmented" role="tablist" aria-label="Le Guichet">
               <Link href="/guichet" role="tab" aria-selected={view === 'acheter'}>Acheter<PendingBar /></Link>
+              <Link href="/guichet?vue=encheres" role="tab" aria-selected={view === 'encheres'}>Enchères<PendingBar /></Link>
               <Link href="/guichet?vue=vendre" role="tab" aria-selected={view === 'vendre'}>Vendre<PendingBar /></Link>
               <Link href="/guichet?vue=mes-annonces" role="tab" aria-selected={view === 'mes-annonces'}>Mes annonces<PendingBar /></Link>
+              <Link href="/guichet?vue=activite" role="tab" aria-selected={view === 'activite'}>Mon activité<PendingBar /></Link>
             </div>
           </header>
         </div>
@@ -128,7 +141,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
                           <GameCard card={l.card} width={168} serial={l.serial} />
                           <div className={styles.price}>
                             <span><TicketIcon size={20} />{formatNumber(l.price)}</span>
-                            <Delta l={l} />
+                            <Delta l={l} cote={coteMap.get(l.card.id)} />
                           </div>
                           <div className={styles.seller}><span>{l.sellerId === ctx.player.id ? 'VOUS' : l.sellerName.toUpperCase()}</span><span>{remaining(l.expiresAt)}</span></div>
                         </Link>
@@ -144,6 +157,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
                       <CardLink card={selected.card}><GameCard card={selected.card} width={230} serial={selected.serial} /></CardLink>
                     </div>
                     <ul className={styles.rows}>
+                      <li><span>La cote (médiane 30 j)</span><b>{coteMap.has(selected.card.id) ? `${formatNumber(coteMap.get(selected.card.id)!)} sièges` : 'pas encore cotée'}</b></li>
                       <li><span>Prix conseillé</span><b>{formatNumber(selected.suggested)} sièges</b></li>
                       <li><span>Valeur</span><b>{formatNumber(RARITIES[selected.card.rarity].points)} points au classement</b></li>
                       <li><span>Vous l’avez déjà</span><b style={{ color: owned.has(selected.card.id) ? 'var(--ok)' : 'var(--accent)' }}>{owned.has(selected.card.id) ? 'Oui' : 'Non'}</b></li>
@@ -164,7 +178,11 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
             </>
           )}
 
-          {view === 'vendre' && <SellView ctxPlayer={ctx.player.id} cardId={sp.carte} />}
+          {view === 'vendre' && <SellView ctxPlayer={ctx.player.id} cardId={sp.carte} mode={sp.mode === 'enchere' ? 'enchere' : 'fixe'} />}
+
+          {view === 'encheres' && <AuctionsView ctx={ctx} lot={sp.lot} offre={sp.offre} nouveau={sp.nouveau} />}
+
+          {view === 'activite' && <ActivityView ctx={ctx} type={sp.type} />}
 
           {view === 'mes-annonces' && <MyListings playerId={ctx.player.id} />}
         </div>
@@ -175,7 +193,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   );
 }
 
-async function SellView({ ctxPlayer, cardId }: { ctxPlayer: string; cardId?: string }) {
+async function SellView({ ctxPlayer, cardId, mode }: { ctxPlayer: string; cardId?: string; mode: 'fixe' | 'enchere' }) {
   const db = getDb();
   const collection = getCollection(db, ctxPlayer).sort((a, b) => b.copies - a.copies || RARITIES[b.rarity].points - RARITIES[a.rarity].points);
   const card = cardId ? getCard(db, cardId) : null;
@@ -203,6 +221,7 @@ async function SellView({ ctxPlayer, cardId }: { ctxPlayer: string; cardId?: str
   }
 
   const range = priceRange(card.rarity);
+  const cote = cotes(db).get(card.id);
   return (
     <section className={`panel ${styles.sell}`}>
       <div className={styles.sellCard}>
@@ -212,7 +231,14 @@ async function SellView({ ctxPlayer, cardId }: { ctxPlayer: string; cardId?: str
       <div className={styles.sellText}>
         <span className="eyebrow" style={{ color: 'var(--accent)' }}>Vendre une carte</span>
         <h2 className="display h2">{card.first} {card.last}{card.character ? ` · ${card.character}` : ''}</h2>
-        <SellForm cardId={card.id} min={range.min} max={range.max} suggested={range.suggested} fee={MARKET_FEE} days={LISTING_DAYS} />
+        <div className="segmented" role="tablist" aria-label="Façon de vendre">
+          <Link href={`/guichet?vue=vendre&carte=${encodeURIComponent(card.id)}`} scroll={false} role="tab" aria-selected={mode === 'fixe'}>Prix fixe</Link>
+          <Link href={`/guichet?vue=vendre&carte=${encodeURIComponent(card.id)}&mode=enchere`} scroll={false} role="tab" aria-selected={mode === 'enchere'}>Aux enchères</Link>
+        </div>
+        {cote !== undefined && <p className="mono" style={{ margin: 0, fontSize: 13, color: '#ffb38f' }}>COTE {formatNumber(cote)} SIÈGES · MÉDIANE DES VENTES SUR 30 JOURS</p>}
+        {mode === 'fixe'
+          ? <SellForm cardId={card.id} min={range.min} max={range.max} suggested={range.suggested} fee={MARKET_FEE} days={LISTING_DAYS} cote={cote ?? null} />
+          : <AuctionSellForm cardId={card.id} min={auctionRange(card).min} max={auctionRange(card).max} suggested={range.suggested} cote={cote ?? null} hours={AUCTION_HOURS} />}
         <Link href="/guichet?vue=vendre" className="muted" style={{ fontSize: 14 }}>← Choisir une autre carte</Link>
       </div>
     </section>
