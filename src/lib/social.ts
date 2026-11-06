@@ -100,6 +100,28 @@ function side(db: DatabaseSync, ownedIds: number[], tickets: number): TradeSide 
   return { cards, tickets, value: cards.reduce((s, c) => s + suggestedSeats(c.rarity), 0) };
 }
 
+/**
+ * Échanges et cadeaux réservés aux joueurs installés : il faut avoir ouvert ce nombre de bobines (contre les
+ * comptes créés pour vider leurs cartes vers un compte principal). Les comptes de test illimités en sont dispensés.
+ */
+export const TRADE_MIN_PULLS = 30;
+
+/** Bobines qu'il reste à ouvrir avant de pouvoir échanger (0 = c'est ouvert). */
+export function tradeLock(db: DatabaseSync, userId: string): { have: number; need: number; left: number } {
+  const user = getUser(db, userId);
+  if (!user || getPlayer(db, user.playerId)?.unlimited) return { have: TRADE_MIN_PULLS, need: TRADE_MIN_PULLS, left: 0 };
+  const { n } = db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(user.playerId) as { n: number };
+  return { have: n, need: TRADE_MIN_PULLS, left: Math.max(0, TRADE_MIN_PULLS - n) };
+}
+
+function requireTradeUnlocked(db: DatabaseSync, userId: string, who: 'vous' | string): void {
+  const { left } = tradeLock(db, userId);
+  if (left === 0) return;
+  throw new GameError('trade-locked', who === 'vous'
+    ? `Les échanges s’ouvrent après ${TRADE_MIN_PULLS} bobines ouvertes : encore ${left} à ouvrir.`
+    : `${who} n’a pas encore ouvert ${TRADE_MIN_PULLS} bobines : les échanges ne lui sont pas encore ouverts.`);
+}
+
 /** Bornes d'un échange ou d'un cadeau (contre les requêtes démesurées). */
 const MAX_CARDS = 30;
 const MAX_TICKETS = 10_000_000;
@@ -112,6 +134,8 @@ export function proposeTrade(
   now = Date.now(),
 ): number {
   if (!areFriends(db, fromId, toId)) throw new GameError('not-friends', 'Vous ne pouvez échanger qu’avec vos amis.');
+  requireTradeUnlocked(db, fromId, 'vous');
+  requireTradeUnlocked(db, toId, getUser(db, toId)?.name ?? 'Votre ami');
   if (!offer.give.length && !offer.take.length) throw new GameError('empty', 'Choisissez au moins une carte.');
   if (![offer.giveTickets, offer.takeTickets].every((t) => Number.isInteger(t) && t >= 0 && t <= MAX_TICKETS)) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
   if (offer.give.length + offer.take.length > MAX_CARDS) throw new GameError('too-many', `${MAX_CARDS} cartes au plus par échange.`);
@@ -165,6 +189,8 @@ export function respondTrade(db: DatabaseSync, userId: string, tradeId: number, 
     notify(db, from.id, 'trade', `${to.name} a refusé votre échange.`, '/echanges', now);
     return;
   }
+  requireTradeUnlocked(db, to.id, 'vous');
+  requireTradeUnlocked(db, from.id, from.name);
   try {
     transaction(db, () => {
       const listed = new Set((db.prepare("SELECT owned_id FROM listings WHERE status = 'open'").all() as { owned_id: number }[]).map((r) => r.owned_id));
@@ -223,6 +249,7 @@ export function giftUnlockAt(db: DatabaseSync, userId: string, now = Date.now())
 export function sendGift(db: DatabaseSync, fromId: string, toId: string, gift: { cards: string[]; tickets: number }, now = Date.now()): number {
   if (!areFriends(db, fromId, toId)) throw new GameError('not-friends', 'Vous ne pouvez faire de cadeau qu’à vos amis.');
   if (giftUnlockAt(db, fromId, now)) throw new GameError('too-young', `Les cadeaux s’ouvrent après ${GIFT_MIN_AGE_DAYS} jours d’ancienneté.`);
+  requireTradeUnlocked(db, fromId, 'vous');
   if (!Number.isInteger(gift.tickets) || gift.tickets < 0 || gift.tickets > MAX_TICKETS) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
   if (gift.cards.length > MAX_CARDS) throw new GameError('too-many', `${MAX_CARDS} cartes au plus par cadeau.`);
   if (!gift.cards.length && !gift.tickets) throw new GameError('empty', 'Choisissez au moins une carte ou des tickets à offrir.');

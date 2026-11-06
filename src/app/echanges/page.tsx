@@ -10,7 +10,7 @@ import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { suggestedSeats } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
-import { areFriends, giftUnlockAt, listFriends, listTrades, tradableCollection, type Trade } from '@/lib/social';
+import { areFriends, giftUnlockAt, listFriends, listTrades, tradableCollection, type Trade, tradeLock, TRADE_MIN_PULLS } from '@/lib/social';
 import { acceptFriendAction, addFriendAction, cancelTradeAction, removeFriendAction, respondAction } from './actions';
 import { TradeBuilder } from './TradeBuilder';
 import styles from './echanges.module.css';
@@ -57,6 +57,8 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   const { friends, incoming, outgoing } = listFriends(db, me);
   const { pending, history } = listTrades(db, me);
   const giftLocked = giftUnlockAt(db, me);
+  // Échanges réservés aux joueurs qui ont déjà ouvert un certain nombre de bobines (contre les abus).
+  const lock = tradeLock(db, me);
   const friend = sp.ami && areFriends(db, me, sp.ami) ? getUser(db, sp.ami) : null;
   const toItems = (playerId: string) => tradableCollection(db, playerId)
     .map((c) => ({ ...c, value: suggestedSeats(c.rarity) }))
@@ -78,6 +80,16 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
         </header>
         {sp.ok && <p className="alert alert-ok" role="status">{sp.ok}</p>}
         {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
+        {lock.left > 0 && (
+          <div className={styles.lock} role="status">
+            <div className={styles.lockText}>
+              <strong className="display">Échanges verrouillés</strong>
+              <span>Pour éviter les abus, les échanges et les cadeaux s’ouvrent après <b>{TRADE_MIN_PULLS} bobines ouvertes</b>. Encore <b>{lock.left}</b> à ouvrir : vous pouvez déjà ajouter vos amis.</span>
+            </div>
+            <div className={styles.lockBar} aria-label={`${lock.have} bobines ouvertes sur ${TRADE_MIN_PULLS}`}><span style={{ width: `${(lock.have / TRADE_MIN_PULLS) * 100}%` }} /></div>
+            <div className={styles.lockFoot}><span className="mono">{lock.have} / {TRADE_MIN_PULLS} BOBINES</span><Link href="/bobines" className="btn btn-sm btn-primary">Ouvrir des bobines</Link></div>
+          </div>
+        )}
 
         <div className={styles.layout}>
           <aside className={styles.friends}>
@@ -126,7 +138,11 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
           </aside>
 
           <section className={styles.main}>
-            {friend ? (
+            {friend && lock.left > 0 ? (
+              <p className="alert alert-info">Les échanges avec {friend.name} s’ouvriront quand vous aurez ouvert {TRADE_MIN_PULLS} bobines (encore {lock.left}).</p>
+            ) : friend && tradeLock(db, friend.id).left > 0 ? (
+              <p className="alert alert-info">{friend.name} n’a pas encore ouvert {TRADE_MIN_PULLS} bobines : les échanges ne lui sont pas encore ouverts.</p>
+            ) : friend ? (
               <TradeBuilder
                 friendId={friend.id} friendName={friend.name} mine={toItems(ctx.player.id)} theirs={toItems(friend.playerId)}
                 myTickets={ctx.player.unlimited ? 999_999 : ctx.wallet.tickets}

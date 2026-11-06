@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertDiscordUser, upsertGoogleUser } from '../src/lib/auth.ts';
+import { discordAvatarUrl, getUser, getUserByDiscord, deleteAccount, linkDiscord, logIn, signUp, upsertDiscordUser, upsertGoogleUser } from '../src/lib/auth.ts';
 import { getCatalog, ownedCardIds } from '../src/lib/catalog.ts';
 import { markCelebrationSeen, nextCelebration } from '../src/lib/celebrations.ts';
 import { claimSaga, playerDuos, playerSagas } from '../src/lib/collections.ts';
@@ -10,7 +10,7 @@ import { buyListing, createListing, openListings, priceRange, sellerReceives } f
 import { claimMission, missionStates, periodStart, recordVisit } from '../src/lib/missions.ts';
 import { listNotifications } from '../src/lib/notify.ts';
 import { RARITIES } from '../src/lib/rarity.ts';
-import { acceptFriend, giftUnlockAt, listTrades, proposeTrade, respondTrade, sendFriendRequest, sendGift } from '../src/lib/social.ts';
+import { acceptFriend, giftUnlockAt, listTrades, proposeTrade, respondTrade, sendFriendRequest, sendGift, TRADE_MIN_PULLS } from '../src/lib/social.ts';
 
 const isCode = (code: string) => (e: unknown) => e instanceof GameError && e.code === code;
 
@@ -26,7 +26,7 @@ test('inscription, connexion, refus des doublons et des mauvais mots de passe', 
   await assert.rejects(signUp(db, { name: 'Bob', email: 'b@exemple.fr', password: 'court' }), isCode('weak-password'));
 });
 
-test('Discord : liaison, photo animée (Nitro), unicité, déliaison', async () => {
+test('Discord : liaison définitive, photo animée (Nitro), un Discord par compte', async () => {
   const db = openDb(':memory:');
   const a = await signUp(db, { name: 'Lina', email: 'lina@exemple.fr', password: 'motdepasse' });
   const b = await signUp(db, { name: 'Malo', email: 'malo@exemple.fr', password: 'motdepasse' });
@@ -38,9 +38,13 @@ test('Discord : liaison, photo animée (Nitro), unicité, déliaison', async () 
   assert.equal(linked.avatar, linked.discord!.avatar);
   assert.equal(getUserByDiscord(db, '42')!.id, a.id);
   assert.throws(() => linkDiscord(db, b.id, { id: '42', name: 'x', avatar: null }), isCode('discord-taken'));
-  unlinkDiscord(db, a.id);
-  assert.equal(getUser(db, a.id)!.discord, null);
-  assert.equal(getUserByDiscord(db, '42'), null);
+  // Pas de changement de Discord, et un Discord ne recrée pas de compte une fois le sien supprimé.
+  assert.throws(() => linkDiscord(db, a.id, { id: '43', name: 'Autre', avatar: null }), isCode('discord-locked'));
+  linkDiscord(db, a.id, { id: '42', name: 'Lina 2', avatar: null });
+  assert.equal(getUser(db, a.id)!.discord!.name, 'Lina 2');
+  deleteAccount(db, a.id);
+  assert.throws(() => upsertDiscordUser(db, { id: '42', name: 'Lina', avatar: null, email: null }, undefined), isCode('discord-taken'));
+  assert.throws(() => linkDiscord(db, b.id, { id: '42', name: 'x', avatar: null }), isCode('discord-taken'));
 });
 
 test('Discord : connexion, rattachement par e-mail, création d’un compte', async () => {
@@ -138,6 +142,12 @@ test('Guichet : fourchette de prix, commission, transfert de la carte', async ()
   assert.equal(nextCelebration(db, buyer.playerId), null);
 });
 
+/** Fait comme si le joueur avait déjà ouvert assez de bobines pour échanger. */
+function veteran(db: ReturnType<typeof openDb>, playerId: string, pulls = TRADE_MIN_PULLS): void {
+  const insert = db.prepare("INSERT INTO pulls (player_id, booster_id, paid_with, created_at) VALUES (?, 'casting', 'free', 0)");
+  for (let i = 0; i < pulls; i++) insert.run(playerId);
+}
+
 test('échanges entre amis : cartes et tickets changent de main', async () => {
   const db = openDb(':memory:');
   const a = await signUp(db, { name: 'Alice', email: 'al@exemple.fr', password: 'motdepasse' });
@@ -147,6 +157,11 @@ test('échanges entre amis : cartes et tickets changent de main', async () => {
   assert.throws(() => proposeTrade(db, a.id, b.id, { give: [cardA.id], take: [cardB.id], giveTickets: 0, takeTickets: 0 }), isCode('not-friends'));
   sendFriendRequest(db, a.id, 'bruno');
   acceptFriend(db, b.id, a.id);
+  // Pas d'échange avant TRADE_MIN_PULLS bobines ouvertes, des deux côtés.
+  assert.throws(() => proposeTrade(db, a.id, b.id, { give: [cardA.id], take: [cardB.id], giveTickets: 0, takeTickets: 0 }), isCode('trade-locked'));
+  veteran(db, a.playerId);
+  assert.throws(() => proposeTrade(db, a.id, b.id, { give: [cardA.id], take: [cardB.id], giveTickets: 0, takeTickets: 0 }), isCode('trade-locked'));
+  veteran(db, b.playerId);
   const id = proposeTrade(db, a.id, b.id, { give: [cardA.id], take: [cardB.id], giveTickets: 40, takeTickets: 0 });
   assert.equal(listTrades(db, b.id).pending.length, 1);
   assert.throws(() => respondTrade(db, a.id, id, true), isCode('forbidden'));
@@ -169,6 +184,7 @@ test('cadeaux : 7 jours d’ancienneté (sauf compte illimité), transfert immé
   sendFriendRequest(db, a.id, 'basile');
   acceptFriend(db, b.id, a.id);
   const card = openBoosterFor(db, a.playerId, 'casting').cards[0];
+  veteran(db, a.playerId);
   assert.ok(giftUnlockAt(db, a.id));
   assert.throws(() => sendGift(db, a.id, b.id, { cards: [card.id], tickets: 0 }), isCode('too-young'));
   db.prepare('UPDATE users SET created_at = ? WHERE id = ?').run(Date.now() - 8 * 86_400_000, a.id);

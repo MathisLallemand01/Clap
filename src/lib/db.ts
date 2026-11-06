@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS cards (
 );
 CREATE INDEX IF NOT EXISTS cards_kind_rarity ON cards (kind, rarity);
 
+-- Chaque Discord lié une fois : il ne peut plus servir à un autre compte, même après suppression.
+CREATE TABLE IF NOT EXISTS discord_used (
+  discord_id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS players (
   id TEXT PRIMARY KEY,
   created_at INTEGER NOT NULL,
@@ -281,6 +288,10 @@ function migrate(db: DatabaseSync): void {
   if (!userColumns.has('discord_id')) {
     db.exec('ALTER TABLE users ADD COLUMN discord_id TEXT; ALTER TABLE users ADD COLUMN discord_name TEXT; ALTER TABLE users ADD COLUMN discord_avatar TEXT;');
     db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_discord ON users (discord_id)');
+  }
+  {
+    // Les liaisons existantes comptent comme déjà utilisées.
+    db.exec('INSERT OR IGNORE INTO discord_used (discord_id, user_id, created_at) SELECT discord_id, id, created_at FROM users WHERE discord_id IS NOT NULL');
   }
   // Raretés v2 : le cran Chef-d'œuvre disparaît ; ses cartes prennent le cran de même hauteur (Vedette)
   // en attendant le prochain import, qui recalcule toutes les raretés.

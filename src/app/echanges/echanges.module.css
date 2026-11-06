@@ -64,3 +64,13 @@
 .modeHint { font-size: 14px; color: var(--text-2); }
 .single { grid-template-columns: 1fr !important; }
 .giftTag { color: #ffb84d; }
+
+/* Échanges verrouillés tant que le joueur n'a pas ouvert assez de bobines. */
+.lock { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-radius: 18px; background: var(--panel); border: 1px solid #ffc83d55; }
+.lockText { display: flex; flex-direction: column; gap: 6px; }
+.lockText strong { font-size: clamp(24px, 2.4vw, 32px); text-transform: uppercase; color: #ffc83d; }
+.lockText span { color: var(--text-2); line-height: 1.5; }
+.lockText b { color: var(--text); }
+.lockBar { height: 8px; border-radius: 8px; background: var(--line); overflow: hidden; }
+.lockBar span { display: block; height: 100%; background: #ffc83d; border-radius: 8px; }
+.lockFoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }

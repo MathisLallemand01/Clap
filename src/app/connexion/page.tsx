@@ -24,7 +24,8 @@ const GOOGLE_ERRORS: Record<string, string> = {
   'discord-expire': 'La connexion Discord a expiré (ou a été ouverte depuis une autre adresse du site). Cliquez à nouveau sur « Continuer avec Discord ».',
   'discord-redirect': 'Discord a refusé l’adresse de retour : dans le portail Discord (OAuth2 → Redirects), elle doit être exactement <adresse du site>/api/auth/discord/callback, et APP_URL doit être cette adresse.',
   'discord-lent': 'Discord ne répond pas pour le moment. Réessayez dans une minute.',
-  'discord-taken': 'Ce compte Discord est déjà lié à un autre joueur.',
+  'discord-taken': 'Ce compte Discord est déjà lié à un autre compte Clap (ou l’a été) : un Discord ne sert qu’à un seul compte.',
+  'discord-locked': 'Le compte Clap qui a cette adresse e-mail est déjà lié à un autre Discord : connectez-vous avec celui-ci ou avec votre e-mail.',
   'device-taken': 'Un compte existe déjà sur cet appareil : connectez-vous avec celui-ci. Un seul compte par machine.',
   'ip-limit': 'Cette connexion a déjà servi à créer 5 comptes : c’est le maximum.',
 };

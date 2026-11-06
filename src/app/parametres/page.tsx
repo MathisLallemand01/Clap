@@ -6,13 +6,13 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { SideRails } from '@/components/SideRails';
 import { NOTIFY_KINDS } from '@/lib/notify';
 import { requireContext } from '@/lib/session';
-import { removeAccount, removeDiscord, saveAccount, saveNotifications } from './actions';
+import { removeAccount, saveAccount, saveNotifications } from './actions';
 import { PlayPrefs } from './PlayPrefs';
 import styles from './parametres.module.css';
 
 export const metadata: Metadata = { title: 'Paramètres' };
 
-const OK: Record<string, string> = { compte: 'Compte enregistré.', notifications: 'Préférences de notification enregistrées.', discord: 'Compte Discord lié : votre nom et votre photo s’affichent maintenant sur CLAP.', 'discord-off': 'Compte Discord délié.' };
+const OK: Record<string, string> = { compte: 'Compte enregistré.', notifications: 'Préférences de notification enregistrées.', discord: 'Compte Discord lié : votre nom et votre photo s’affichent maintenant sur CLAP.' };
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; supprimer?: string }> }) {
   const sp = await searchParams;
@@ -80,12 +80,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <div className={styles.saveRow}><button type="submit" className="btn btn-sm btn-light">Enregistrer</button></div>
               </form>
               <div className={`${styles.row} ${styles.discordRow}`}>
-                <div><strong>Discord</strong><span>{u.discord ? 'Votre nom et votre photo Discord (animée avec Nitro) s’affichent sur CLAP. « Continuer avec Discord » vous connecte.' : 'Liez votre compte : votre nom et votre photo Discord (animée avec Nitro) s’afficheront sur CLAP.'}</span></div>
+                <div><strong>Discord</strong><span>{u.discord ? 'Votre nom et votre photo Discord (animée avec Nitro) s’affichent sur CLAP. « Continuer avec Discord » vous connecte. La liaison est définitive.' : 'Liez votre compte : votre nom et votre photo Discord (animée avec Nitro) s’afficheront sur CLAP. Attention : la liaison est définitive, un seul Discord par compte.'}</span></div>
                 {u.discord ? (
                   <div className={styles.discordLinked}>
                     <img src={u.discord.avatar} alt="" width={40} height={40} />
                     <span><b>{u.discord.name}</b><em><DiscordLogo size={12} /> LIÉ</em></span>
-                    <form action={removeDiscord}><button type="submit" className="btn btn-sm">Délier</button></form>
                   </div>
                 ) : (
                   <a href="/api/auth/discord" className={`btn btn-sm ${styles.discordBtn}`}><DiscordLogo size={16} /> Lier Discord</a>

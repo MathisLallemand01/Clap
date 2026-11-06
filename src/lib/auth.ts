@@ -205,9 +205,20 @@ export function discordAvatarUrl(id: string, hash: string | null): string {
 }
 
 /** Lie (ou met à jour) un compte Discord ; refuse s'il est déjà lié à un autre joueur. */
+/**
+ * Lie un compte Discord à un compte Clap. Une seule liaison, définitive : un Discord ne sert qu'à un seul compte
+ * Clap (même supprimé depuis), et un compte Clap ne change jamais de Discord.
+ */
 export function linkDiscord(db: DatabaseSync, userId: string, profile: { id: string; name: string; avatar: string | null }): void {
   const other = db.prepare('SELECT id FROM users WHERE discord_id = ? AND id <> ?').get(profile.id, userId);
-  if (other) throw new GameError('discord-taken', 'Ce compte Discord est déjà lié à un autre joueur.');
+  if (other) throw new GameError('discord-taken', 'Ce compte Discord est déjà lié à un autre compte Clap.');
+  const current = db.prepare('SELECT discord_id FROM users WHERE id = ?').get(userId) as { discord_id: string | null } | undefined;
+  if (current?.discord_id && current.discord_id !== profile.id) {
+    throw new GameError('discord-locked', 'Votre compte Clap est déjà lié à un autre Discord : la liaison est définitive.');
+  }
+  const used = db.prepare('SELECT user_id FROM discord_used WHERE discord_id = ?').get(profile.id) as { user_id: string } | undefined;
+  if (used && used.user_id !== userId) throw new GameError('discord-taken', 'Ce compte Discord a déjà servi à un autre compte Clap.');
+  db.prepare('INSERT OR IGNORE INTO discord_used (discord_id, user_id, created_at) VALUES (?, ?, ?)').run(profile.id, userId, Date.now());
   db.prepare('UPDATE users SET discord_id = ?, discord_name = ?, discord_avatar = ? WHERE id = ?')
     .run(profile.id, profile.name, discordAvatarUrl(profile.id, profile.avatar), userId);
 }
@@ -230,6 +241,10 @@ export function upsertDiscordUser(
       db.prepare('UPDATE users SET discord_name = ?, discord_avatar = ? WHERE id = ?').run(profile.name, discordAvatarUrl(profile.id, profile.avatar), linked.id);
       return getUser(db, linked.id)!;
     }
+    // Un Discord déjà utilisé par un compte supprimé ne recrée pas de compte (pas de comptes à la chaîne).
+    if (db.prepare('SELECT 1 FROM discord_used WHERE discord_id = ?').get(profile.id)) {
+      throw new GameError('discord-taken', 'Ce compte Discord a déjà servi à un autre compte Clap.');
+    }
     const email = profile.email ? normalizeEmail(profile.email) : null;
     const byEmail = email ? (db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined) : undefined;
     let userId = byEmail?.id;
@@ -247,9 +262,6 @@ export function upsertDiscordUser(
   });
 }
 
-export function unlinkDiscord(db: DatabaseSync, userId: string): void {
-  db.prepare('UPDATE users SET discord_id = NULL, discord_name = NULL, discord_avatar = NULL WHERE id = ?').run(userId);
-}
 
 export function getUserByDiscord(db: DatabaseSync, discordId: string): User | null {
   const row = db.prepare('SELECT * FROM users WHERE discord_id = ?').get(discordId) as UserRow | undefined;

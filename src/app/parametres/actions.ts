@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { deleteAccount, unlinkDiscord, updateProfile } from '@/lib/auth';
+import { deleteAccount, updateProfile } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { NOTIFY_KINDS } from '@/lib/notify';
@@ -41,8 +41,3 @@ export async function removeAccount(form: FormData): Promise<void> {
   redirect('/?au-revoir=1');
 }
 
-export async function removeDiscord(): Promise<void> {
-  const u = await user();
-  unlinkDiscord(getDb(), u.id);
-  redirect('/parametres?ok=discord-off#compte');
-}
