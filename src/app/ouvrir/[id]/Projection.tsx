@@ -105,7 +105,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
   const [calm, setCalm] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
   const [guide, setGuide] = useState<number | null>(null);
-  const [dims, setDims] = useState({ cw: 230, pw: 240, tw: 900 });
+  const [dims, setDims] = useState({ cw: 230, pw: 240, tw: 900, th: 600 });
 
   const family = booster.slots[0].kind;
   const projector = useRef<Projector | null>(null);
@@ -151,6 +151,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
         cw: Math.round(Math.max(110, Math.min(270, (h - (w < 560 ? 120 : 100)) / 1.4, w * 0.6))),
         pw: Math.round(Math.max(110, Math.min(280, (h - (w < 560 ? 130 : 100)) / 1.55, w * 0.62))),
         tw: w,
+        th: h,
       });
     };
     fit();
@@ -482,7 +483,8 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
   const gained = cards.reduce((sum, c) => sum + RARITIES[c.rarity].entries, 0);
   const nextCost = freeStock && freeStock > 0 ? `offerte (${freeStock} en réserve)` : `${formatNumber(booster.price)} tickets`;
   const canAfford = (freeStock ?? 0) > 0 || (tickets ?? 0) >= booster.price;
-  const summaryW = Math.floor(Math.max(56, Math.min(cw * 0.62, (dims.tw - 32 - (n - 1) * 12) / Math.max(1, n) / 1.08)));
+  // Générique : 5 cartes de même taille (la meilleure un peu plus grande), qui tiennent en largeur et en hauteur.
+  const summaryW = Math.floor(Math.max(52, Math.min(cw * 0.62, (dims.tw - 32 - (n - 1) * (dims.tw < 560 ? 8 : 12)) / (n + 0.08), (dims.th - 150) / 1.4 / 1.08)));
   const mark = FAMILY[family].mark;
   // Salle teintée à la couleur d'une carte de cran 5 ou 6 (et assombrie pendant qu'on maintient un Mythe).
   const tint = shownCard && shownTier >= 5 && !s.fast ? RARITIES[shownCard.rarity].color : null;
@@ -578,7 +580,8 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
               ) : (
                 <span className={styles.chip}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>
-                  Attrapez la bande du haut, maintenez et glissez <b className={styles.arrow}>⟶</b>
+                  <span>Maintenez et glissez<span className={styles.desk}> sur la bande du haut</span></span>
+                  <b className={styles.arrow}>⟶</b>
                 </span>
               )}
             </div>
@@ -648,13 +651,13 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
                   <span><b>{cardTitle(shownCard)}</b>{shownCard.kind === 'role' ? ` · ${shownCard.first} ${shownCard.last} · ${shownCard.film}` : shownCard.origin ? ` · ${shownCard.origin}` : ''}</span>
                 </span>
               ) : shownCard && !s.fast ? (
-                <span className={styles.chip}>{shownTier >= 3 ? 'Cliquez pour la ranger' : `${rarityName(shownCard.rarity)}${shownCard.isNew ? ' · nouvelle' : ''}`}</span>
+                <span className={styles.chip}>{shownTier >= 3 ? <span><span className={styles.desk}>Cliquez</span><span className={styles.mob}>Touchez</span> pour la ranger</span> : `${rarityName(shownCard.rarity)}${shownCard.isNew ? ' · nouvelle' : ''}`}</span>
               ) : top && topTier >= 4 && !s.fast ? (
                 <span className={`${styles.chip} ${styles.chipRare}`} style={{ '--rc': RARITIES[top.rarity].color } as CSSProperties} key={`h-${s.nudge}`}>
-                  {mark} Une carte rare s’annonce : <b>maintenez</b> le clic pour la retourner
+                  <span>{mark} Carte rare : <b>maintenez</b> pour la retourner</span>
                 </span>
               ) : top && !s.fast ? (
-                <span className={styles.chip}>Cliquez (ou Espace) pour retourner · {s.index + 1} / {n}</span>
+                <span className={styles.chip}><span><span className={styles.desk}>Cliquez (ou Espace) pour retourner</span><span className={styles.mob}>Touchez pour retourner</span> · {s.index + 1} / {n}</span></span>
               ) : null}
             </div>
           </div>
@@ -669,7 +672,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
                 <div key={`${s.pull!.id}-${i}`} className={`${styles.summaryCard} ${i === bestIndex ? styles.summaryBest : ''}`} style={{ animationDelay: `${i * 70}ms`, '--rc': RARITIES[card.rarity].color } as CSSProperties}>
                   <GameCard card={card} width={i === bestIndex ? Math.round(summaryW * 1.08) : summaryW} serial={card.serial} eager />
                   <span className={styles.summaryTag} style={{ color: i === bestIndex ? RARITIES[card.rarity].color : card.isNew ? '#3DDC97' : undefined }}>
-                    {i === bestIndex ? `★ MEILLEURE${card.isNew ? ' · NOUVELLE' : ''}` : card.isNew ? 'NOUVELLE' : RARITIES[card.rarity].short}
+                    {i === bestIndex ? '★ MEILLEURE' : card.isNew ? 'NOUVELLE' : RARITIES[card.rarity].short}
                   </span>
                 </div>
               ))}
@@ -703,7 +706,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
           <span className={`${styles.familyBadge} ${family === 'actor' ? styles.familyActor : styles.familyRole}`}>
             {mark} {n} cartes {FAMILY[family].label}
           </span>
-          <span className="eyebrow">{s.pull ? `${s.stored} / ${n} rangées` : s.phase === 'sealed' ? 'scellée' : 'ouverture…'}</span>
+          <span className={`eyebrow ${styles.count}`}>{s.pull ? <>{s.stored} / {n}<span className={styles.countLong}> rangées</span></> : s.phase === 'sealed' ? 'scellée' : 'ouverture…'}</span>
         </div>
         <div className={styles.trayRow}>
           <div className={styles.slots}>
@@ -718,7 +721,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
               );
             })}
           </div>
-          <div className={styles.actions}>
+          <div className={`${styles.actions} ${s.phase === 'summary' ? styles.actionsEnd : ''}`}>
             {s.phase === 'stack' && !s.fast && (
               <button type="button" className="btn btn-sm" onClick={revealAll}>Tout révéler</button>
             )}

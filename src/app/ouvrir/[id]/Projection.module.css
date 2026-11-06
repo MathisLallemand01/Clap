@@ -1,8 +1,9 @@
 /* L'écran d'ouverture : en-tête, table (paquet puis pile), rangée du bas. */
 .screen {
+  --gap: clamp(14px, 2.4vh, 24px); --pad: clamp(12px, 1.8vw, 20px);
   position: fixed; inset: 0; overflow: hidden; color: var(--text);
   background: radial-gradient(ellipse 60% 70% at 50% 40%, #1d1610, #0b0b0d 62%, #060607);
-  display: grid; grid-template-rows: 76px minmax(0, 1fr) auto;
+  display: grid; grid-template-rows: 76px minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
 
@@ -86,7 +87,7 @@
 @media (max-width: 560px) { .volume { width: 70px; } .volumeValue { display: none; } }
 
 /* ——— La table ——— */
-.table { position: relative; z-index: 2; min-height: 0; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+.table { position: relative; z-index: 2; min-height: 0; padding: var(--gap) 0; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
 .tableActive { cursor: pointer; }
 
 .chip {
@@ -106,7 +107,7 @@
 .error a { text-decoration: underline; color: inherit; }
 
 /* Le paquet */
-.packZone { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.packZone { display: flex; flex-direction: column; align-items: center; gap: var(--gap); }
 .packGrip { position: relative; cursor: grab; touch-action: none; outline: none; }
 .packGrip:focus-visible { box-shadow: 0 0 0 3px var(--accent); border-radius: 12px; }
 .packHeld { cursor: grabbing; }
@@ -124,7 +125,7 @@
   transform-origin: 50% 100%; animation: leak 1000ms ease-out both;
 }
 @keyframes leak { 0% { opacity: 0; transform: scaleY(0.2); } 30% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; transform: scaleY(1.15); } }
-.packHint { min-height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 16px; text-align: center; }
+.packHint { min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 16px; text-align: center; }
 /* Éclats de papier qui partent de la déchirure. */
 .flecks { position: absolute; left: 0; right: 0; top: 11%; height: 0; pointer-events: none; }
 .flecks i { position: absolute; top: 0; width: 4px; height: 3px; border-radius: 1px; background: #e8dcc0; animation: fleck 520ms ease-out forwards; }
@@ -136,7 +137,7 @@
 @keyframes ghost-hand { 0%, 12% { transform: translateX(0) scale(1); opacity: 0; } 18% { opacity: 1; transform: translateX(0) scale(0.88); } 70% { transform: translateX(var(--hand-x, 180px)) scale(0.88); opacity: 1; } 82%, 100% { transform: translateX(var(--hand-x, 180px)) scale(1); opacity: 0; } }
 
 /* La pile */
-.pileZone { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+.pileZone { display: flex; flex-direction: column; align-items: center; gap: var(--gap); }
 .pile { position: relative; perspective: 1400px; animation: pile-in 650ms cubic-bezier(0.2, 1.2, 0.3, 1) both; }
 @keyframes pile-in { 0% { transform: translateY(120px) scale(0.7); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .card {
@@ -225,7 +226,7 @@
 }
 @keyframes rainbow { 0% { opacity: 0; --mythe-turn: 0deg; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0.35; --mythe-turn: 360deg; } }
 
-.pileHint { min-height: 52px; display: flex; align-items: center; justify-content: center; padding: 0 16px; text-align: center; }
+.pileHint { min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 16px; text-align: center; }
 .banner {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 22px; border-radius: 16px;
   background: rgba(11, 11, 13, 0.88); border: 1px solid color-mix(in srgb, var(--rc) 60%, transparent); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -237,26 +238,28 @@
 @keyframes banner-in { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 
 /* Le générique de fin */
-.summary { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 0 16px; animation: chip-in 400ms ease both; }
-.summaryRow { display: flex; gap: 12px; align-items: flex-end; justify-content: center; }
-.summaryCard { display: flex; flex-direction: column; align-items: center; gap: 8px; animation: summary-in 500ms cubic-bezier(0.2, 1.2, 0.3, 1) both; }
+.summary { display: flex; flex-direction: column; align-items: center; gap: var(--gap); padding: 0 16px; animation: chip-in 400ms ease both; }
+.summaryRow { display: flex; gap: 12px; align-items: flex-end; justify-content: center; padding-top: 14px; }
+.summaryCard { display: flex; flex-direction: column; align-items: center; gap: 10px; animation: summary-in 500ms cubic-bezier(0.2, 1.2, 0.3, 1) both; }
 .summaryBest { translate: 0 -14px; filter: drop-shadow(0 0 22px color-mix(in srgb, var(--rc) 45%, transparent)); }
-.summaryTag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-align: center; }
+.summaryTag { width: 100%; display: flex; justify-content: center; height: 12px; line-height: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-align: center; white-space: nowrap; }
 @keyframes summary-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } to { opacity: 1; transform: none; } }
-.summaryStats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-family: var(--mono); font-size: 13px; color: var(--text-2); }
+.summaryStats { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; font-family: var(--mono); font-size: 13px; color: var(--text-2); }
 .gain { color: #3ddc97; }
 
 /* ——— La rangée du bas ——— */
 .tray {
-  position: relative; z-index: 3; justify-self: center; margin: 0 12px clamp(12px, 2.4vw, 28px);
+  position: relative; z-index: 3; justify-self: center; margin: 0 12px var(--gap);
   width: min(860px, calc(100vw - 24px)); box-sizing: border-box;
-  padding: 16px 20px; border-radius: 18px; background: rgba(20, 20, 23, 0.92); border: 1px solid var(--line);
+  padding: var(--pad); border-radius: 18px; background: rgba(20, 20, 23, 0.92); border: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 12px;
 }
-.trayHead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.trayHead { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.trayHead strong { line-height: 1; white-space: nowrap; }
+.count { margin-left: auto; white-space: nowrap; }
+.mob { display: none; }
 .trayHead strong { font-size: 24px; }
-.trayHead :global(.eyebrow) { margin-left: auto; }
-.trayRow { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.trayRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .slots { display: flex; gap: 6px; flex-wrap: wrap; }
 .mini {
   width: 48px; height: 67px; border-radius: 6px; border: 1px dashed #34343c; background: #0b0b0d;
@@ -265,10 +268,22 @@
 .mini i { font-style: normal; font-family: var(--mono); font-size: 10px; color: var(--faint); }
 .miniIn { border: 0; box-shadow: 0 0 0 1.5px var(--rc); animation: mini-in 420ms cubic-bezier(0.2, 1.3, 0.4, 1) both; }
 @keyframes mini-in { from { opacity: 0; transform: translateY(-40px) scale(1.4); } to { opacity: 1; transform: none; } }
-.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 @media (max-width: 719px) {
-  .tray { padding: 12px; gap: 10px; }
+  .tray { gap: 10px; border-radius: 16px; }
+  .trayHead { gap: 8px; }
   .trayHead strong { font-size: 20px; }
+  .familyBadge { padding: 3px 8px; font-size: 10px; letter-spacing: 0.08em; }
+  .countLong { display: none; }
+  .slots { gap: 5px; }
+  /* Fin de bobine : les boutons prennent toute la largeur, en grille régulière. */
+  .actionsEnd { width: 100%; margin-left: 0; display: grid; grid-template-columns: 1fr 1fr; }
+  .actionsEnd > :first-child { grid-column: 1 / -1; }
+  .actionsEnd > * { justify-content: center; text-align: center; }
+  .desk { display: none; }
+  .summaryRow { gap: 8px; }
+  .summaryTag { font-size: 9px; letter-spacing: 0.04em; }
+  .mob { display: inline; }
   .scale { display: none !important; }
   .mini { width: 38px; height: 53px; }
     .chip { font-size: 13px; padding: 8px 12px; }
