@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { GameCard } from '@/components/GameCard';
@@ -22,6 +22,7 @@ const GOOGLE_ERRORS: Record<string, string> = {
   'discord-cle': 'Discord a refusé la connexion : vérifiez DISCORD_CLIENT_SECRET et que la redirection du portail Discord est exactement <adresse du site>/api/auth/discord/callback.',
   'discord-refus': 'Connexion annulée sur Discord.',
   'discord-expire': 'La connexion Discord a expiré (ou a été ouverte depuis une autre adresse du site). Cliquez à nouveau sur « Continuer avec Discord ».',
+  'discord-redirect': 'Discord a refusé l’adresse de retour : dans le portail Discord (OAuth2 → Redirects), elle doit être exactement <adresse du site>/api/auth/discord/callback, et APP_URL doit être cette adresse.',
   'discord-lent': 'Discord ne répond pas pour le moment. Réessayez dans une minute.',
   'discord-taken': 'Ce compte Discord est déjà lié à un autre joueur.',
   'device-taken': 'Un compte existe déjà sur cet appareil : connectez-vous avec celui-ci. Un seul compte par machine.',
@@ -32,6 +33,15 @@ type Search = { mode?: string; suite?: string; parrain?: string; erreur?: string
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
+  // Erreur de configuration Discord : on montre l'adresse de retour exacte (même calcul que la route de départ).
+  let discordHint: string | null = null;
+  if (sp.erreur === 'discord-cle' || sp.erreur === 'discord-redirect' || sp.erreur === 'discord-expire') {
+    const h = await headers();
+    const host = h.get('x-forwarded-host')?.split(',')[0]?.trim() ?? h.get('host');
+    const proto = h.get('x-forwarded-proto')?.split(',')[0]?.trim() ?? 'http';
+    const base = process.env.APP_URL?.trim().replace(/\/+$/, '') || (host ? `${proto}://${host}` : '');
+    discordHint = `${base}/api/auth/discord/callback`;
+  }
   const next = safePath(sp.suite);
   if (await currentUser()) redirect(next);
   const referral = sp.parrain ?? (await cookies()).get('clap_ref')?.value ?? '';
@@ -64,6 +74,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
       <section className={styles.panel}>
         <AuthForm mode={mode} next={next} referral={referral} googleError={sp.erreur ? (GOOGLE_ERRORS[sp.erreur] ?? GOOGLE_ERRORS.google) : null} />
+        {discordHint && (
+          // Aide au réglage : l'adresse de retour que le site envoie à Discord, à recopier dans le portail.
+          <p className={styles.hint}>Adresse de retour envoyée à Discord : <code>{discordHint}</code></p>
+        )}
       </section>
     </main>
   );

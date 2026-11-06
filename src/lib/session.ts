@@ -6,7 +6,7 @@ import { createSession, deleteSession, getUser, SESSION_DAYS, userForSession, ty
 import { nextCelebration, type Celebration } from './celebrations';
 import { getDb } from './db';
 import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from './game';
-import { recordVisit } from './missions';
+import { missionStates, recordVisit } from './missions';
 import { listNotifications, notify, unreadCount, type Notification } from './notify';
 import { isHttpsHeaders } from './origin';
 
@@ -85,6 +85,8 @@ export type Context = {
   unread: number;
   /** Une bonne nouvelle arrivée pendant l'absence du joueur, à lui montrer en grand. */
   celebration: Celebration | null;
+  /** Missions accomplies dont la récompense attend d'être récupérée (pastille sur « Missions »). */
+  missionsReady: number;
 };
 
 function contextFor(user: User): Context | null {
@@ -101,6 +103,7 @@ function contextFor(user: User): Context | null {
     notifications: listNotifications(db, user.id, 10),
     unread: unreadCount(db, user.id),
     celebration: nextCelebration(db, player.id),
+    missionsReady: missionStates(db, player.id).filter((m) => m.done && !m.claimed).length,
   };
 }
 

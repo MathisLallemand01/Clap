@@ -12,6 +12,8 @@ type DiscordUser = { id: string; username: string; global_name?: string | null; 
 
 /** Discord peut répondre lentement : au-delà, on abandonne proprement au lieu de laisser la page tourner. */
 const TIMEOUT_MS = 10_000;
+/** Discord (derrière Cloudflare) refuse parfois les appels sans User-Agent explicite : on se présente. */
+const USER_AGENT = 'Clap (https://github.com/MathisLallemand01/Clap, 1.0)';
 
 export async function GET(request: NextRequest) {
   const origin = publicOrigin(request);
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
   try {
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', 'User-Agent': USER_AGENT },
       body: new URLSearchParams({
         code,
         client_id: clientId,
@@ -67,12 +69,15 @@ export async function GET(request: NextRequest) {
       console.error('[discord] échange du code refusé', tokenRes.status, body);
       if (tokenRes.status === 429) return fail('discord-lent', 'Discord est saturé pour le moment. Réessayez dans une minute.');
       // invalid_grant : code déjà utilisé (page rechargée, double clic) ou redirection différente de celle du départ.
+      // invalid_grant + redirect_uri : l'adresse de retour ne correspond pas à celle du départ ou du portail.
+      if (body.includes('redirect_uri')) return fail('discord-redirect', 'L’adresse de retour ne correspond pas à celle enregistrée dans le portail Discord.');
       if (body.includes('invalid_grant')) return fail('discord-expire', 'La connexion Discord a expiré. Réessayez.');
+      if (body.includes('invalid_client')) return fail('discord-cle', 'Discord ne reconnaît pas l’application : vérifiez DISCORD_CLIENT_ID et DISCORD_CLIENT_SECRET.');
       return fail('discord-cle', 'Discord a refusé la connexion : vérifiez DISCORD_CLIENT_SECRET et la redirection dans le portail Discord.');
     }
     const { access_token, token_type } = (await tokenRes.json()) as { access_token: string; token_type?: string };
     const meRes = await fetch('https://discord.com/api/users/@me', {
-      headers: { Authorization: `${token_type ?? 'Bearer'} ${access_token}` },
+      headers: { Authorization: `${token_type ?? 'Bearer'} ${access_token}`, Accept: 'application/json', 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!meRes.ok) {

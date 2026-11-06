@@ -65,7 +65,7 @@ export default async function MissionsPage({ searchParams }: { searchParams: Pro
 
         {sp.gain && <p className="alert alert-ok" role="status">Récompense récupérée : +{formatNumber(Number(sp.gain))} tickets.</p>}
         {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
-        {ready > 0 && !sp.gain && <p className="alert alert-info">{ready} récompense{ready > 1 ? 's' : ''} à récupérer.</p>}
+        {ready > 0 && !sp.gain && <p className="alert alert-ok" role="status"><b>✓ {ready} récompense{ready > 1 ? 's' : ''} à récupérer</b> : cliquez sur « Récupérer » dans les missions encadrées.</p>}
 
         {GROUPS.map((g) => {
           const items = states.filter((m) => m.scope === g.scope);

@@ -26,6 +26,11 @@ export const NAV_LINKS = [
   { href: '/classement', label: 'Classement' },
 ] as const;
 
+/** Pastille « récompense à récupérer » sur le lien Missions. */
+function ReadyBadge({ n }: { n: number }) {
+  return <span className={styles.ready} title={`${n} récompense${n > 1 ? 's' : ''} à récupérer`}>{n}<span className="visually-hidden"> récompense{n > 1 ? 's' : ''} à récupérer</span></span>;
+}
+
 /** Sens de la transition : vers un onglet à droite, la page glisse vers la gauche, et inversement. */
 function direction(target: number, current: number): string[] {
   if (current < 0 || target === current) return ['nav-fade'];
@@ -47,7 +52,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
             <nav className={styles.links} aria-label="Navigation principale">
               {NAV_LINKS.map((l, i) => (
                 <Link key={l.href} href={l.href} aria-current={current === l.href ? 'page' : undefined}
-                  transitionTypes={direction(i, NAV_LINKS.findIndex((x) => x.href === current))}>{l.label}<PendingBar types={direction(i, NAV_LINKS.findIndex((x) => x.href === current))} /></Link>
+                  transitionTypes={direction(i, NAV_LINKS.findIndex((x) => x.href === current))}>{l.label}{l.href === '/missions' && ctx.missionsReady > 0 && <ReadyBadge n={ctx.missionsReady} />}<PendingBar types={direction(i, NAV_LINKS.findIndex((x) => x.href === current))} /></Link>
               ))}
             </nav>
             <div className={styles.right}>
@@ -60,7 +65,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
               </Link>
               <NotificationBell notifications={ctx.notifications} unread={ctx.unread} />
               <details className={styles.menu}>
-                <summary aria-label="Mon compte" className={styles.avatar}>
+                <summary aria-label={ctx.missionsReady > 0 ? `Mon compte · ${ctx.missionsReady} récompense${ctx.missionsReady > 1 ? 's' : ''} à récupérer` : 'Mon compte'} className={`${styles.avatar} ${ctx.missionsReady > 0 ? styles.avatarDot : ''}`}>
                   {ctx.user.avatar ? <img src={ctx.user.avatar} alt="" referrerPolicy="no-referrer" /> : ctx.user.name.slice(0, 2).toUpperCase()}
                 </summary>
                 <div className={styles.dropdown}>
@@ -70,7 +75,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                     <span className="mono">{formatNumber(ctx.wallet.points)} POINTS · {ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.seats)} SIÈGES</span>
                   </div>
                   <nav className={styles.mobileLinks} aria-label="Navigation">
-                    {NAV_LINKS.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
+                    {NAV_LINKS.map((l) => <Link key={l.href} href={l.href}>{l.label}{l.href === '/missions' && ctx.missionsReady > 0 && <ReadyBadge n={ctx.missionsReady} />}</Link>)}
                   </nav>
                   <Link href="/raretes">Raretés et règles</Link>
                   <Link href="/monnaies">Tickets, sièges et points</Link>

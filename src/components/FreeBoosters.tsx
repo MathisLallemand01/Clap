@@ -37,8 +37,11 @@ export function FreeBoosters({ stock, nextFreeAt }: { stock: number; nextFreeAt:
 
   return (
     <Link href="/bobines" className={`pill ${styles.free} ${ready === 0 ? styles.empty : ''}`} title={title} aria-label={title}>
-      <svg className={styles.icon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" /><circle cx="12" cy="7.5" r="1.6" /><circle cx="16.3" cy="13.4" r="1.6" /><circle cx="7.7" cy="13.4" r="1.6" /><circle cx="12" cy="12" r="0.8" fill="currentColor" />
+      {/* Un clap de cinéma : la bobine offerte qui arrive. */}
+      <svg className={styles.icon} width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+        <path d="M3.5 10.5h17v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z" />
+        <path d="M3.2 10.4 2.6 7.3a1 1 0 0 1 .8-1.2l15.2-2.9a1 1 0 0 1 1.2.8l.6 3.1z" />
+        <path d="m7.4 5.5 2.8 3.6M12.4 4.6l2.8 3.6M17.3 3.6l2.3 3" />
       </svg>
       <b suppressHydrationWarning>{ready}</b><span className={styles.cap}>/{FREE_BOOSTER_CAP}</span>
       {!full && (
