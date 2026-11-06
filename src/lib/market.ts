@@ -2,12 +2,12 @@ import type { DatabaseSync } from 'node:sqlite';
 import { getCard } from './catalog.ts';
 import { queueCelebration } from './celebrations.ts';
 import { transaction } from './db.ts';
-import { addTickets, GameError } from './game.ts';
+import { addSeats, GameError } from './game.ts';
 import { logEvent, notifyPlayer } from './notify.ts';
-import { RARITIES, suggestedTickets, type Rarity } from './rarity.ts';
+import { RARITIES, suggestedSeats, type Rarity } from './rarity.ts';
 import type { Card } from './types.ts';
 
-// Le Guichet : les joueurs vendent leurs cartes en tickets.
+// Le Guichet : les joueurs vendent leurs cartes en sièges (la monnaie du marché ; les tickets servent aux bobines).
 export const MARKET_FEE = 0.05;
 export const MIN_PRICE_RATIO = 0.5;
 export const MAX_PRICE_RATIO = 3;
@@ -29,7 +29,7 @@ export type Listing = {
 };
 
 export function priceRange(rarity: Rarity): { min: number; max: number; suggested: number } {
-  const suggested = suggestedTickets(rarity);
+  const suggested = suggestedSeats(rarity);
   return { min: Math.max(1, Math.round(suggested * MIN_PRICE_RATIO)), max: Math.round(suggested * MAX_PRICE_RATIO), suggested };
 }
 
@@ -48,7 +48,7 @@ function toListing(db: DatabaseSync, r: ListingRow): Listing | null {
   const card = getCard(db, r.card_id);
   if (!card) return null;
   return {
-    id: r.id, card, serial: r.serial, price: r.price, suggested: suggestedTickets(card.rarity), sellerId: r.seller_id,
+    id: r.id, card, serial: r.serial, price: r.price, suggested: suggestedSeats(card.rarity), sellerId: r.seller_id,
     sellerName: r.seller_name ?? 'Joueur', createdAt: r.created_at, expiresAt: r.expires_at, status: r.status,
   };
 }
@@ -93,7 +93,7 @@ export function createListing(
   if (!card) throw new GameError('unknown-card', 'Carte inconnue.');
   const { min, max } = priceRange(card.rarity);
   if (!Number.isInteger(input.price) || input.price < min || input.price > max) {
-    throw new GameError('bad-price', `Le prix doit être compris entre ${min} et ${max} tickets.`);
+    throw new GameError('bad-price', `Le prix doit être compris entre ${min} et ${max} sièges.`);
   }
   if (!LISTING_DAYS.includes(input.days as (typeof LISTING_DAYS)[number])) throw new GameError('bad-duration', 'Durée invalide.');
   const { n } = db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(playerId) as { n: number };
@@ -126,8 +126,8 @@ export function buyListing(db: DatabaseSync, buyerId: string, listingId: number,
       | undefined;
     if (!row) throw new GameError('not-found', 'Cette annonce n’est plus disponible.');
     if (row.seller_id === buyerId) throw new GameError('own-listing', 'Vous ne pouvez pas acheter votre propre annonce.');
-    addTickets(db, buyerId, -row.price);
-    addTickets(db, row.seller_id, sellerReceives(row.price));
+    addSeats(db, buyerId, -row.price);
+    addSeats(db, row.seller_id, sellerReceives(row.price));
     db.prepare('UPDATE owned SET player_id = ?, obtained_at = ? WHERE id = ?').run(buyerId, now, row.owned_id);
     db.prepare("UPDATE listings SET status = 'sold', buyer_id = ?, closed_at = ? WHERE id = ?").run(buyerId, now, row.id);
     logEvent(db, row.seller_id, 'sell', 1, now);
@@ -136,12 +136,12 @@ export function buyListing(db: DatabaseSync, buyerId: string, listingId: number,
     const buyer = (db.prepare('SELECT name FROM users WHERE player_id = ?').get(buyerId) as { name: string } | undefined)?.name ?? 'Un joueur';
     const serial = (db.prepare('SELECT serial FROM owned WHERE id = ?').get(row.owned_id) as { serial: number }).serial;
     queueCelebration(db, row.seller_id, { kind: 'sale', cardId: row.card_id, serial, price: row.price, received: sellerReceives(row.price), buyer }, now);
-    notifyPlayer(db, row.seller_id, 'sale', `Vendu au Guichet : ${card.first} ${card.last}${card.character ? ` (${card.character})` : ''} pour ${row.price} tickets.`, '/guichet?vue=mes-annonces', now);
+    notifyPlayer(db, row.seller_id, 'sale', `Vendu au Guichet : ${card.first} ${card.last}${card.character ? ` (${card.character})` : ''} pour ${row.price} sièges.`, '/guichet?vue=mes-annonces', now);
     return getListing(db, row.id)!;
   });
 }
 
 /** Tri « meilleure affaire » : le plus gros rabais par rapport au prix conseillé d'abord. */
 export function byDeal(a: Listing, b: Listing): number {
-  return a.price / a.suggested - b.price / b.suggested || RARITIES[b.card.rarity].entries - RARITIES[a.card.rarity].entries;
+  return a.price / a.suggested - b.price / b.suggested || RARITIES[b.card.rarity].points - RARITIES[a.card.rarity].points;
 }

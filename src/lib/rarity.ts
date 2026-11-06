@@ -1,5 +1,6 @@
 // Les deux échelles de rareté : cartes Acteur (portrait) et cartes Rôle (acteur dans un film).
-// `entries` = valeur de base en entrées ; le prix conseillé en tickets vaut entries / 100.
+// `points` = ce que rapporte la carte au classement (une fois par carte différente possédée), selon son cran.
+// `seats` = prix conseillé au Guichet, en sièges.
 
 export type CardKind = 'actor' | 'role';
 
@@ -15,7 +16,8 @@ export type RarityInfo = {
   color: string;
   /** Position dans l'échelle de son type, 1 = la plus commune. */
   tier: number;
-  entries: number;
+  /** Points au classement : fixes par cran (1, 3, 10, 30, 100, 500). */
+  points: number;
   /** Reflet holographique sur la carte. */
   foil: boolean;
   /** La règle, en une phrase, telle qu'on l'explique aux joueurs. */
@@ -29,27 +31,27 @@ export const FAMILY: Record<CardKind, { label: string; plural: string; pack: str
 };
 
 export const RARITIES: Record<Rarity, RarityInfo> = {
-  figurant: { id: 'figurant', kind: 'actor', label: 'Figurant', short: 'FIG', color: '#9A988F', tier: 1, entries: 500, foil: false,
+  figurant: { id: 'figurant', kind: 'actor', label: 'Figurant', short: 'FIG', color: '#9A988F', tier: 1, points: 1, foil: false,
     rule: 'Une carrière encore discrète.' },
-  second: { id: 'second', kind: 'actor', label: 'Second rôle', short: '2ND', color: '#3DDC97', tier: 2, entries: 1_500, foil: false,
+  second: { id: 'second', kind: 'actor', label: 'Second rôle', short: '2ND', color: '#3DDC97', tier: 2, points: 3, foil: false,
     rule: 'Un visage qu’on reconnaît.' },
-  premier: { id: 'premier', kind: 'actor', label: 'Premier rôle', short: '1ER', color: '#4C8DFF', tier: 3, entries: 5_000, foil: false,
+  premier: { id: 'premier', kind: 'actor', label: 'Premier rôle', short: '1ER', color: '#4C8DFF', tier: 3, points: 10, foil: false,
     rule: 'Un acteur qui tient des films sur ses épaules.' },
-  tete: { id: 'tete', kind: 'actor', label: 'Tête d’affiche', short: 'TÊTE', color: '#B57BFF', tier: 4, entries: 20_000, foil: false,
+  tete: { id: 'tete', kind: 'actor', label: 'Tête d’affiche', short: 'TÊTE', color: '#B57BFF', tier: 4, points: 30, foil: false,
     rule: 'Une star internationale.' },
-  legende: { id: 'legende', kind: 'actor', label: 'Légende', short: 'LÉG', color: '#FFC83D', tier: 5, entries: 100_000, foil: true,
+  legende: { id: 'legende', kind: 'actor', label: 'Légende', short: 'LÉG', color: '#FFC83D', tier: 5, points: 100, foil: true,
     rule: 'Un monstre sacré du cinéma, âge d’or compris.' },
-  serieb: { id: 'serieb', kind: 'role', label: 'Série B', short: 'SÉRIE B', color: '#D9B48A', tier: 1, entries: 2_500, foil: false,
+  serieb: { id: 'serieb', kind: 'role', label: 'Série B', short: 'SÉRIE B', color: '#D9B48A', tier: 1, points: 1, foil: false,
     rule: 'Un film ou une série peu vus : moins de 1 000 votes.' },
-  succes: { id: 'succes', kind: 'role', label: 'Succès', short: 'SUCCÈS', color: '#C6F05A', tier: 2, entries: 8_000, foil: false,
+  succes: { id: 'succes', kind: 'role', label: 'Succès', short: 'SUCCÈS', color: '#C6F05A', tier: 2, points: 3, foil: false,
     rule: 'Un film ou une série connus : 1 000 votes et plus.' },
-  culte: { id: 'culte', kind: 'role', label: 'Culte', short: 'CULTE', color: '#2EE6D6', tier: 3, entries: 30_000, foil: false,
+  culte: { id: 'culte', kind: 'role', label: 'Culte', short: 'CULTE', color: '#2EE6D6', tier: 3, points: 10, foil: false,
     rule: 'Un film ou une série vus par tous, ou acclamés (note de 7,5 et plus).' },
-  vedette: { id: 'vedette', kind: 'role', label: 'Vedette', short: 'VEDETTE', color: '#FFB547', tier: 4, entries: 100_000, foil: true,
+  vedette: { id: 'vedette', kind: 'role', label: 'Vedette', short: 'VEDETTE', color: '#FFB547', tier: 4, points: 30, foil: true,
     rule: 'Une star en tête d’affiche : Brad Pitt dans Bullet Train, Tom Cruise dans Top Gun : Maverick.' },
-  icone: { id: 'icone', kind: 'role', label: 'Icône', short: 'ICÔNE', color: '#FF2E93', tier: 5, entries: 400_000, foil: true,
+  icone: { id: 'icone', kind: 'role', label: 'Icône', short: 'ICÔNE', color: '#FF2E93', tier: 5, points: 100, foil: true,
     rule: 'La tête d’affiche d’une saga, d’un best-seller ou d’une série phare : Star Wars, Harry Potter, Breaking Bad…' },
-  mythe: { id: 'mythe', kind: 'role', label: 'Mythe', short: 'MYTHE', color: '#FF2440', tier: 6, entries: 1_500_000, foil: true,
+  mythe: { id: 'mythe', kind: 'role', label: 'Mythe', short: 'MYTHE', color: '#FF2440', tier: 6, points: 500, foil: true,
     rule: 'Un personnage entré dans la légende, choisi un à un : Vito Corleone, Jack Sparrow, Walter White…' },
 };
 
@@ -58,7 +60,7 @@ export const ROLE_LADDER: RoleRarity[] = ['serieb', 'succes', 'culte', 'vedette'
 
 /** Toutes les raretés, de la plus précieuse à la plus commune (ordre par valeur). */
 export const RARITIES_BY_VALUE: Rarity[] = (Object.keys(RARITIES) as Rarity[]).sort(
-  (a, b) => RARITIES[b].entries - RARITIES[a].entries,
+  (a, b) => RARITIES[b].points - RARITIES[a].points,
 );
 
 export function ladderOf(kind: CardKind): Rarity[] {
@@ -75,8 +77,18 @@ export function isTopRarity(rarity: Rarity): boolean {
   return RARITIES[rarity].tier === ladderOf(RARITIES[rarity].kind).length;
 }
 
-export function suggestedTickets(rarity: Rarity): number {
-  return Math.round(RARITIES[rarity].entries / 100);
+/** Points en plus au classement pour chaque duo (la carte Acteur + au moins un de ses Rôles). */
+export const DUO_BONUS = 10;
+
+/** Prix conseillé au Guichet, en sièges, par cran. */
+const SEATS_BY_TIER = [0, 2, 5, 15, 40, 120, 400];
+export function suggestedSeats(rarity: Rarity): number {
+  return SEATS_BY_TIER[RARITIES[rarity].tier];
+}
+
+/** Sièges rendus par le recyclage d'un doublon : un quart du prix conseillé (au moins 1). */
+export function recycleSeats(rarity: Rarity): number {
+  return Math.max(1, Math.round(suggestedSeats(rarity) / 4));
 }
 
 /**

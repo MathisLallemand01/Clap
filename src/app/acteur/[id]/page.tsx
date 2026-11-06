@@ -7,9 +7,9 @@ import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
 import { cardsOfPerson, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { DUO_BONUS, ownedCopies } from '@/lib/game';
-import { RARITIES, rarityName } from '@/lib/rarity';
+import { RARITIES, rarityName, suggestedSeats } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { personInfo } from '@/lib/tmdb';
 import styles from '../../fiche.module.css';
@@ -75,14 +75,14 @@ export default async function ActorPage({ params }: Props) {
             )}
             <div className="stat-row">
               <div><span className="eyebrow">Exemplaires</span><strong>×{copies.length}</strong><small>{copies.length ? `Meilleur n° ${String(copies[0].serial).padStart(4, '0')}` : 'Pas encore obtenue'}</small></div>
-              <div><span className="eyebrow">Valeur</span><strong>{formatEntries(rarity.entries)}</strong><small>entrées · {formatNumber(rarity.entries / 100)} TK conseillés</small></div>
+              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pts</strong><small>au classement · {formatNumber(suggestedSeats(actor.rarity))} sièges conseillés</small></div>
               <div><span className="eyebrow">Rôles</span><strong>{formatNumber(roles.filter((r) => owned.has(r.id)).length)} / {formatNumber(roles.length)}</strong><small>obtenus</small></div>
             </div>
           </div>
         </section>
 
         <section className={`${styles.duoBox} ${hasActor && ownedRoleCount > 0 ? styles.duoDone : ''}`} aria-label="Duo">
-          <span className={styles.duoKicker}>{hasActor && ownedRoleCount > 0 ? `DUO COMPLET · +${formatNumber(DUO_BONUS)} ENTRÉES` : 'DUO À FORMER'}</span>
+          <span className={styles.duoKicker}>{hasActor && ownedRoleCount > 0 ? `DUO COMPLET · +${formatNumber(DUO_BONUS)} POINTS` : 'DUO À FORMER'}</span>
           <div className={styles.duoSteps}>
             <span className={hasActor ? styles.stepOk : styles.stepTodo}>{hasActor ? '✓' : '1'} Sa carte Acteur <small>bobines Casting</small></span>
             <span className={styles.duoPlus}>+</span>

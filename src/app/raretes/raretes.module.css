@@ -31,3 +31,14 @@
 .whereCol { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); }
 .whereCol p { margin: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Garanties. */
+.guarantees { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.guarantee { display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 20px; }
+.guarantee strong { font-size: clamp(30px, 3vw, 40px); line-height: 0.9; text-transform: uppercase; }
+.guarantee p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.gKicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+.gTapis { background: linear-gradient(160deg, #3a0810, #1a0508); border: 1px solid #d4a446; }
+.gTapis .gKicker, .gTapis strong { color: #ffe08a; }
+.gMythe { border: 1.5px solid transparent; background: linear-gradient(160deg, #2a0308, #120204) padding-box, linear-gradient(90deg, #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93) border-box; }
+.gMythe .gKicker, .gMythe strong { color: #ff8a9a; }

@@ -5,16 +5,16 @@ import { queueCelebration } from './celebrations.ts';
 import { transaction } from './db.ts';
 import { addTickets, GameError, getPlayer, getStats } from './game.ts';
 import { logEvent, notify } from './notify.ts';
-import { suggestedTickets } from './rarity.ts';
+import { suggestedSeats } from './rarity.ts';
 import type { Card } from './types.ts';
 
-export type Friend = { id: string; name: string; avatar: string | null; unique: number; entries: number };
+export type Friend = { id: string; name: string; avatar: string | null; unique: number; points: number };
 
 export type FriendLists = { friends: Friend[]; incoming: Friend[]; outgoing: Friend[] };
 
 function toFriend(db: DatabaseSync, u: User): Friend {
   const s = getStats(db, u.playerId);
-  return { id: u.id, name: u.name, avatar: u.avatar, unique: s.unique, entries: s.entries };
+  return { id: u.id, name: u.name, avatar: u.avatar, unique: s.unique, points: s.points };
 }
 
 export function listFriends(db: DatabaseSync, userId: string): FriendLists {
@@ -97,7 +97,7 @@ function side(db: DatabaseSync, ownedIds: number[], tickets: number): TradeSide 
     const card = o && getCard(db, o.card_id);
     return card ? [{ ...card, ownedId: id, serial: o.serial }] : [];
   });
-  return { cards, tickets, value: cards.reduce((s, c) => s + suggestedTickets(c.rarity), 0) + tickets };
+  return { cards, tickets, value: cards.reduce((s, c) => s + suggestedSeats(c.rarity), 0) };
 }
 
 /** Bornes d'un échange ou d'un cadeau (contre les requêtes démesurées). */

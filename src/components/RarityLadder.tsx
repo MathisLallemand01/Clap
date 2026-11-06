@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { ACTOR_ODDS, FAMILY_SHELVES, ROLE_ODDS } from '@/lib/boosters';
-import { formatEntries } from '@/lib/format';
 import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
 import styles from './RarityLadder.module.css';
 
@@ -10,7 +9,7 @@ const pct = (n: number | undefined) => `${String(n ?? 0).replace('.', ',')} %`;
 
 /**
  * L'échelle d'une famille de cartes, de la plus rare à la plus commune : marqueur (rond = Acteur,
- * losange = Rôle), nom, règle en une phrase, chance dans une bobine standard et valeur en entrées.
+ * losange = Rôle), nom, règle en une phrase, chance dans une bobine standard et points au classement.
  */
 export function RarityLadder({ kind, detailed = false }: { kind: CardKind; detailed?: boolean }) {
   const family = FAMILY[kind];
@@ -30,7 +29,7 @@ export function RarityLadder({ kind, detailed = false }: { kind: CardKind; detai
               <span className={styles.name}><i className={kind === 'actor' ? styles.round : styles.diamond} />{info.label}</span>
               <span className={styles.bar}><b style={{ width: `${Math.max(3, ((ODDS[r] ?? 0) / max) * 100)}%` }} /></span>
               <span className={styles.odds}>{pct(ODDS[r])}</span>
-              <span className={styles.rule}>{info.rule}{detailed && <> · <b>{formatEntries(info.entries)} entrées</b></>}</span>
+              <span className={styles.rule}>{info.rule}{detailed && <> · <b>{info.points} point{info.points > 1 ? 's' : ''}</b></>}</span>
             </li>
           );
         })}

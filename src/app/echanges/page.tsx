@@ -7,8 +7,8 @@ import { SideRails } from '@/components/SideRails';
 import { showcase } from '@/lib/catalog';
 import { getUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
-import { suggestedTickets } from '@/lib/rarity';
+import { formatNumber } from '@/lib/format';
+import { suggestedSeats } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { areFriends, giftUnlockAt, listFriends, listTrades, tradableCollection, type Trade } from '@/lib/social';
 import { acceptFriendAction, addFriendAction, cancelTradeAction, removeFriendAction, respondAction } from './actions';
@@ -59,7 +59,7 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   const giftLocked = giftUnlockAt(db, me);
   const friend = sp.ami && areFriends(db, me, sp.ami) ? getUser(db, sp.ami) : null;
   const toItems = (playerId: string) => tradableCollection(db, playerId)
-    .map((c) => ({ ...c, value: suggestedTickets(c.rarity) }))
+    .map((c) => ({ ...c, value: suggestedSeats(c.rarity) }))
     .sort((a, b) => b.copies - a.copies || b.value - a.value)
     .slice(0, 300);
 
@@ -106,7 +106,7 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
               {friends.map((f) => (
                 <Link key={f.id} href={`/echanges?ami=${f.id}`} className={`${styles.friendRow} ${styles.friendLink} ${friend?.id === f.id ? styles.active : ''}`}>
                   <Avatar name={f.name} />
-                  <span className={styles.friendName}>{f.name}<small>{formatNumber(f.unique)} CARTES · {formatEntries(f.entries)} ENTRÉES</small></span>
+                  <span className={styles.friendName}>{f.name}<small>{formatNumber(f.unique)} CARTES · {formatNumber(f.points)} POINTS</small></span>
                 </Link>
               ))}
             </div>

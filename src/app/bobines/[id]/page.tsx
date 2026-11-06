@@ -41,7 +41,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
   for (const slot of booster.slots) for (const [r, w] of Object.entries(slot.odds)) odds[r as Rarity] = Math.max(odds[r as Rarity] ?? 0, w);
   // Ordre des chances : la rareté la moins probable d'abord, la plus courante à la fin.
   const tiers = RARITIES_BY_VALUE.filter((r) => counts[r] > 0 && (odds[r] ?? 0) > 0)
-    .sort((a, b) => (odds[a] ?? 0) - (odds[b] ?? 0) || RARITIES[b].entries - RARITIES[a].entries);
+    .sort((a, b) => (odds[a] ?? 0) - (odds[b] ?? 0) || RARITIES[b].points - RARITIES[a].points);
   const focus = (sp.rarete && sp.rarete in RARITIES ? sp.rarete : null) as Rarity | null;
   const missingOnly = sp.voir === 'manquantes';
   const free = ctx.wallet.freeStock > 0;
@@ -179,7 +179,7 @@ function TierHead({ rarity, rank, odds, count, have }: { rarity: Rarity; rank: n
       <span className={styles.spacer} />
       <div className={styles.facts}>
         <span>CHANCE <b>{odds ? `${String(odds).replace('.', ',')} %` : '—'}</b></span>
-        <span>VALEUR <b>{formatNumber(r.entries)} ENTRÉES</b></span>
+        <span>VALEUR <b>{formatNumber(r.points)} POINTS</b></span>
         <span>OBTENUES <b>{formatNumber(have)} / {formatNumber(count)}</b></span>
       </div>
     </div>

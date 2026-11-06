@@ -9,7 +9,7 @@ import { TabContent } from '@/components/TabContent';
 import { countByRarity, getCatalog, searchCards } from '@/lib/catalog';
 import { playerDuos, playerSagas } from '@/lib/collections';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { DUO_BONUS, getCollection, recyclePlan } from '@/lib/game';
 import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
@@ -54,7 +54,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
     return s ? `/collection?${s}` : '/collection';
   };
   const plan = sp.recycler ? recyclePlan(db, ctx.player.id) : null;
-  const [recycledCards, recycledTickets] = (sp.recycle ?? '').split('-').map(Number);
+  const [recycledCards, recycledSeats] = (sp.recycle ?? '').split('-').map(Number);
 
   return (
     <>
@@ -67,7 +67,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             <h1 className="display h1">Collection</h1>
             <div className={styles.kpis}>
               <span><b>{formatNumber(ctx.stats.unique)}</b> / {formatNumber(getCatalog(db).length)} cartes</span>
-              <span>Box-office <b>{formatEntries(ctx.stats.entries)}</b> entrées</span>
+              <span><b>{formatNumber(ctx.stats.points)}</b> points</span>
               <span><b>{formatNumber(ctx.stats.duos)}</b> duo{ctx.stats.duos > 1 ? 's' : ''}</span>
               <span><b>{formatNumber(ctx.stats.duplicates)}</b> doublons</span>
             </div>
@@ -96,7 +96,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
           </div>}
         </header>
 
-        {recycledCards > 0 && <p className="alert alert-ok" role="status">{recycledCards} doublon{recycledCards > 1 ? 's' : ''} recyclé{recycledCards > 1 ? 's' : ''} : +{formatNumber(recycledTickets)} tickets.</p>}
+        {recycledCards > 0 && <p className="alert alert-ok" role="status">{recycledCards} doublon{recycledCards > 1 ? 's' : ''} recyclé{recycledCards > 1 ? 's' : ''} : +{formatNumber(recycledSeats)} sièges.</p>}
 
         <div className={styles.toolbar}>
           <nav className="segmented" aria-label="Onglets de la collection">
@@ -126,7 +126,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
         <TabContent tab={view}>
         {view === 'duos' && (
           <section className={styles.explain} aria-label="Les duos">
-            <p className="lead"><b>Un duo = la carte Acteur d’une personne + au moins un de ses Rôles.</b> Chaque duo ajoute <b>{formatNumber(DUO_BONUS)} entrées</b> à votre box-office. Les cartes Acteur viennent des bobines Casting, les Rôles des bobines Film.</p>
+            <p className="lead"><b>Un duo = la carte Acteur d’une personne + au moins un de ses Rôles.</b> Chaque duo ajoute <b>{formatNumber(DUO_BONUS)} points</b> au classement. Les cartes Acteur viennent des bobines Casting, les Rôles des bobines Film.</p>
             <Link href="/raretes#duos" className={styles.help}>Comment ça marche</Link>
           </section>
         )}
@@ -141,7 +141,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
                     {d.ownedRoles.slice(0, 4).map((r) => <CardLink key={r.id} card={r}><GameCard card={r} width={110} /></CardLink>)}
                   </div>
                   <div className={styles.duoText}>
-                    <span className={styles.duoTag}>DUO · +{formatNumber(DUO_BONUS)} ENTRÉES</span>
+                    <span className={styles.duoTag}>DUO · +{formatNumber(DUO_BONUS)} POINTS</span>
                     <strong className="display">{d.name}</strong>
                     <span className="muted">{d.ownedRoles.length} rôle{d.ownedRoles.length > 1 ? 's' : ''} sur {d.roles.length} · <Link href={`/acteur/${encodeURIComponent(d.actor!.id)}`} className="accent">voir sa filmographie</Link></span>
                   </div>
@@ -227,14 +227,14 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               <p className="lead">Aucun doublon à recycler (les cartes en vente au Guichet sont mises de côté).</p>
             ) : (
               <>
-                <p style={{ margin: 0, color: 'var(--text-2)' }}>On garde toujours votre meilleur exemplaire de chaque carte. Chaque doublon rapporte son prix conseillé en tickets.</p>
+                <p style={{ margin: 0, color: 'var(--text-2)' }}>On garde toujours votre meilleur exemplaire de chaque carte. Chaque doublon rapporte des sièges (un quart de son prix conseillé au Guichet) : de 1 siège pour une carte commune à 100 pour un Mythe.</p>
                 <ul className="list-rows">
                   {plan.items.slice(0, 8).map((it) => (
                     <li key={it.card.id}>
                       <span className="sw" style={{ background: RARITIES[it.card.rarity].color }} />
                       <span className="name">{it.card.first} {it.card.last}{it.card.character ? ` · ${it.card.character}` : ''}</span>
                       <span className="mono muted">×{it.extra}</span>
-                      <span className="mono" style={{ color: 'var(--ok)' }}>+{formatNumber(it.tickets)}</span>
+                      <span className="mono" style={{ color: 'var(--ok)' }}>+{formatNumber(it.seats)}</span>
                     </li>
                   ))}
                   {plan.items.length > 8 && <li><span /><span className="name muted">et {plan.items.length - 8} autres cartes</span><span /><span /></li>}
@@ -245,7 +245,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               <Link href={href({})} className="btn" scroll={false}>Annuler</Link>
               {plan.cards > 0 && (
                 <form action={recycleAction} style={{ display: 'flex' }}>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Recycler {plan.cards} · +{formatNumber(plan.tickets)} TK</button>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Recycler {plan.cards} · +{formatNumber(plan.seats)} sièges</button>
                 </form>
               )}
             </div>

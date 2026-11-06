@@ -10,7 +10,7 @@ import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
 import { getCard, ownedCardIds, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { getCollection, ownedCopies } from '@/lib/game';
 import { byDeal, getListing, LISTING_DAYS, MARKET_FEE, openListings, playerListings, priceRange, type Listing } from '@/lib/market';
 import { RARITIES, RARITIES_BY_VALUE, rarityName, type Rarity } from '@/lib/rarity';
@@ -46,7 +46,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   let listings = openListings(db).filter((l) => !rarity || l.card.rarity === rarity);
   if (sp.q) listings = listings.filter((l) => searchCards([l.card], sp.q!).length > 0);
   if (sp.tri === 'prix') listings.sort((a, b) => a.price - b.price);
-  else if (sp.tri === 'rarete') listings.sort((a, b) => RARITIES[b.card.rarity].entries - RARITIES[a.card.rarity].entries);
+  else if (sp.tri === 'rarete') listings.sort((a, b) => RARITIES[b.card.rarity].points - RARITIES[a.card.rarity].points);
   else if (sp.tri === 'fin') listings.sort((a, b) => a.expiresAt - b.expiresAt);
   else listings.sort(byDeal);
   const selected = sp.annonce ? getListing(db, Number(sp.annonce)) : (listings.find((l) => l.sellerId !== ctx.player.id) ?? null);
@@ -70,7 +70,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
           <header className="page-head">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <h1 className="display h1">Le Guichet</h1>
-              <p className="lead">Le marché des joueurs. Achetez et vendez vos cartes en tickets, 5 % de commission sur chaque vente.</p>
+              <p className="lead">Le marché des joueurs. Achetez et vendez vos cartes en <b>sièges</b>, la monnaie du marché (les tickets, eux, servent aux bobines). 5 % de commission sur chaque vente. <Link href="/monnaies" className="accent">Tickets, sièges, points : à quoi ça sert ?</Link></p>
             </div>
             <div className="segmented" role="tablist" aria-label="Le Guichet">
               <Link href="/guichet" role="tab" aria-selected={view === 'acheter'}>Acheter<PendingBar /></Link>
@@ -84,7 +84,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
         <div className="container page no-glow" style={{ paddingTop: 0 }}>
           {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
           {bought && bought.status === 'sold' && bought.sellerId !== ctx.player.id && (
-            <Purchase card={bought.card} serial={bought.serial} price={bought.price} balance={ctx.wallet.tickets} unlimited={ctx.player.unlimited} />
+            <Purchase card={bought.card} serial={bought.serial} price={bought.price} balance={ctx.wallet.seats} unlimited={ctx.player.unlimited} />
           )}
           {sp.vente && <p className="alert alert-ok" role="status">Votre annonce est en ligne.</p>}
 
@@ -144,20 +144,20 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
                       <CardLink card={selected.card}><GameCard card={selected.card} width={230} serial={selected.serial} /></CardLink>
                     </div>
                     <ul className={styles.rows}>
-                      <li><span>Prix conseillé</span><b>{formatNumber(selected.suggested)} TK</b></li>
-                      <li><span>Valeur</span><b>{formatEntries(RARITIES[selected.card.rarity].entries)} entrées</b></li>
+                      <li><span>Prix conseillé</span><b>{formatNumber(selected.suggested)} sièges</b></li>
+                      <li><span>Valeur</span><b>{formatNumber(RARITIES[selected.card.rarity].points)} points au classement</b></li>
                       <li><span>Vous l’avez déjà</span><b style={{ color: owned.has(selected.card.id) ? 'var(--ok)' : 'var(--accent)' }}>{owned.has(selected.card.id) ? 'Oui' : 'Non'}</b></li>
-                      <li><span>Votre solde</span><b>{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.tickets)} TK</b></li>
+                      <li><span>Votre solde</span><b>{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.seats)} sièges</b></li>
                     </ul>
                     {selected.sellerId === ctx.player.id ? (
                       <form action={cancelAction}><input type="hidden" name="listing" value={selected.id} /><button className="btn btn-block" type="submit">Retirer mon annonce</button></form>
                     ) : (
                       <form action={buyAction}>
                         <input type="hidden" name="listing" value={selected.id} />
-                        <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={ctx.wallet.tickets < selected.price}>Acheter · {formatNumber(selected.price)} TK</button>
+                        <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={!ctx.player.unlimited && ctx.wallet.seats < selected.price}>Acheter · {formatNumber(selected.price)} sièges</button>
                       </form>
                     )}
-                    <span className={styles.after}>{ctx.wallet.tickets >= selected.price ? `Solde après achat : ${formatNumber(ctx.wallet.tickets - selected.price)} TK` : 'Pas assez de tickets : faites quelques missions.'}</span>
+                    <span className={styles.after}>{ctx.player.unlimited || ctx.wallet.seats >= selected.price ? `Solde après achat : ${ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.seats - selected.price)} sièges` : 'Pas assez de sièges : recyclez vos doublons ou vendez une carte.'}</span>
                   </aside>
                 )}
               </div>
@@ -177,7 +177,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
 
 async function SellView({ ctxPlayer, cardId }: { ctxPlayer: string; cardId?: string }) {
   const db = getDb();
-  const collection = getCollection(db, ctxPlayer).sort((a, b) => b.copies - a.copies || RARITIES[b.rarity].entries - RARITIES[a.rarity].entries);
+  const collection = getCollection(db, ctxPlayer).sort((a, b) => b.copies - a.copies || RARITIES[b.rarity].points - RARITIES[a.rarity].points);
   const card = cardId ? getCard(db, cardId) : null;
   const copies = card ? ownedCopies(db, ctxPlayer, card.id) : [];
   const free = copies.filter((c) => !c.listed);
@@ -231,7 +231,7 @@ async function MyListings({ playerId }: { playerId: string }) {
           <GameCard card={l.card} width={96} serial={l.serial} />
           <div className={styles.mineText}>
             <strong>{l.card.first} {l.card.last}{l.card.character ? ` · ${l.card.character}` : ''}</strong>
-            <span className="mono muted" style={{ fontSize: 12 }}>{formatNumber(l.price)} TK · CONSEILLÉ {formatNumber(l.suggested)}{l.status === 'open' ? ` · FIN DANS ${remaining(l.expiresAt)}` : ''}</span>
+            <span className="mono muted" style={{ fontSize: 12 }}>{formatNumber(l.price)} SIÈGES · CONSEILLÉ {formatNumber(l.suggested)}{l.status === 'open' ? ` · FIN DANS ${remaining(l.expiresAt)}` : ''}</span>
           </div>
           <span className="mono" style={{ fontSize: 12, color: color[l.status], border: `1px solid ${color[l.status]}`, borderRadius: 999, padding: '5px 12px' }}>{label[l.status]}</span>
           {l.status === 'open' && (

@@ -13,7 +13,7 @@ import { Tilt } from '@/components/Tilt';
 import { ACTOR_ODDS, BOOSTERS, FAMILY_SHELVES, getBooster, ROLE_ODDS } from '@/lib/boosters';
 import { boosterCover, getCatalog, showcase } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { DUO_BONUS } from '@/lib/game';
 import { ACTOR_LADDER, FAMILY, RARITIES, rarityName, ROLE_LADDER, type Rarity } from '@/lib/rarity';
 import { optionalContext } from '@/lib/session';
@@ -97,8 +97,8 @@ export default async function LandingPage() {
                 <TicketStub
                   className={styles.ticket}
                   top={`${rarityName(fanCenter.rarity).toUpperCase()} · ${pct(ODDS[fanCenter.rarity])}`}
-                  big={formatEntries(RARITIES[fanCenter.rarity].entries)}
-                  bottom="ENTRÉES"
+                  big={formatNumber(RARITIES[fanCenter.rarity].points)}
+                  bottom="POINTS"
                 />
               )}
             </div>
@@ -184,7 +184,7 @@ export default async function LandingPage() {
             ))}
           </div>
           <div className={styles.links}>
-            <span className={styles.linkItem}><b>Duo</b> la carte Acteur + un de ses Rôles = +{formatNumber(DUO_BONUS)} entrées</span>
+            <span className={styles.linkItem}><b>Duo</b> la carte Acteur + un de ses Rôles = +{formatNumber(DUO_BONUS)} points</span>
             <span className={styles.linkItem}><b>Saga</b> tous les rôles d’une saga (Star Wars, Harry Potter…) = des tickets</span>
             <span className={styles.linkItem}><b>Ordre</b> les cartes se révèlent de la moins rare à la plus rare</span>
           </div>
@@ -216,19 +216,19 @@ export default async function LandingPage() {
         {/* Monnaies */}
         <section className={`container ${styles.section}`} aria-labelledby="monnaies">
           <Scene n={5} label="Zéro euro" />
-          <h2 id="monnaies" className={`display h2 ${styles.h2}`}>Deux monnaies</h2>
+          <h2 id="monnaies" className={`display h2 ${styles.h2}`}>Deux monnaies, un score</h2>
           <div className={styles.currencies}>
             <Reveal className={styles.entries}>
               <span className={styles.bgIcon} aria-hidden="true"><SeatIcon size={260} color="var(--gold)" /></span>
-              <span className="eyebrow" style={{ color: 'var(--gold)' }}>Box-office</span>
-              <span className={`display ${styles.currencyName}`}>Entrées</span>
-              <p>La valeur de votre collection. Chaque carte rapporte des entrées selon sa rareté : de {formatNumber(RARITIES.figurant.entries)} pour un Figurant à {formatEntries(RARITIES.mythe.entries)} pour un Mythe, et chaque duo en ajoute {formatNumber(DUO_BONUS)}.</p>
+              <span className="eyebrow" style={{ color: 'var(--gold)' }}>Pour le Guichet</span>
+              <span className={`display ${styles.currencyName}`}>Sièges</span>
+              <p>La monnaie du marché : on les gagne en recyclant ses doublons et en vendant ses cartes, et on les dépense pour acheter des cartes aux autres joueurs. Ils se gagnent lentement, exprès. Votre score, lui, se compte en <b>points</b> : de {formatNumber(RARITIES.figurant.points)} pour une carte commune à {formatNumber(RARITIES.mythe.points)} pour un Mythe.</p>
             </Reveal>
             <Reveal className={styles.tickets} delay={120}>
               <span className={styles.perf} aria-hidden="true" />
               <span className="eyebrow" style={{ color: 'var(--ink)' }}>À dépenser</span>
               <span className={`display ${styles.currencyName}`}>Tickets</span>
-              <p>Gagnés avec les missions, les doublons et le parrainage. Ils ouvrent des bobines en plus ou achètent des cartes au Guichet. Impossible à acheter.</p>
+              <p>Gagnés avec les missions et le parrainage. Ils ouvrent des bobines en plus de vos bobines offertes. Impossible à acheter. <a href="/monnaies" style={{ textDecoration: 'underline' }}>Tout comprendre</a></p>
             </Reveal>
           </div>
         </section>

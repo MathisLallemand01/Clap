@@ -22,6 +22,8 @@ export type Celebration = {
   stamp: string | null;
   /** Gain en tickets (positif) ou dépense (négatif), à mettre en valeur. */
   tickets: number;
+  /** Monnaie du montant : tickets (échanges, cadeaux) ou sièges (ventes au Guichet). */
+  unit?: 'tickets' | 'seats';
   lines: string[];
   href: string;
   hrefLabel: string;
@@ -43,9 +45,9 @@ function view(db: DatabaseSync, id: number, p: CelebrationPayload): Celebration 
       return {
         id, kind: p.kind, eyebrow: '✓ Carte vendue au Guichet', stamp: 'Vendu !',
         title: card.character ?? `${card.first} ${card.last}`,
-        sub: `${p.buyer} l’a achetée ${p.price.toLocaleString('fr-FR')} tickets.`,
-        cards: [{ ...card, serial: p.serial }], tickets: p.received,
-        lines: [`Commission du Guichet : ${(p.price - p.received).toLocaleString('fr-FR')} TK`],
+        sub: `${p.buyer} l’a achetée ${p.price.toLocaleString('fr-FR')} sièges.`,
+        cards: [{ ...card, serial: p.serial }], tickets: p.received, unit: 'seats',
+        lines: [`Commission du Guichet : ${(p.price - p.received).toLocaleString('fr-FR')} sièges`],
         href: '/guichet?vue=mes-annonces', hrefLabel: 'Mes annonces',
       };
     }

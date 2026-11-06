@@ -33,7 +33,7 @@ export function getCard(db: DatabaseSync, id: string): Card | undefined {
 
 /** Tri par valeur décroissante, puis par notoriété (rang). */
 export function byValue(a: Card, b: Card): number {
-  return RARITIES[b.rarity].entries - RARITIES[a.rarity].entries || (a.rank ?? 1e9) - (b.rank ?? 1e9) || (b.votes ?? 0) - (a.votes ?? 0);
+  return RARITIES[b.rarity].points - RARITIES[a.rarity].points || (a.rank ?? 1e9) - (b.rank ?? 1e9) || (b.votes ?? 0) - (a.votes ?? 0);
 }
 
 export function cardsOfPerson(db: DatabaseSync, personId: number): Card[] {
@@ -178,7 +178,7 @@ export function sortedCatalog(db: DatabaseSync, sort: CatalogSort): Card[] {
       if (sort === 'recent') return (b.year ?? 0) - (a.year ?? 0);
       if (sort === 'ancien') return (a.year ?? 9999) - (b.year ?? 9999);
       if (sort === 'nom') return `${a.last} ${a.first}`.localeCompare(`${b.last} ${b.first}`, 'fr');
-      return RARITIES[b.rarity].entries - RARITIES[a.rarity].entries || (b.votes ?? 0) - (a.votes ?? 0) || (a.rank ?? 1e9) - (b.rank ?? 1e9);
+      return RARITIES[b.rarity].points - RARITIES[a.rarity].points || (b.votes ?? 0) - (a.votes ?? 0) || (a.rank ?? 1e9) - (b.rank ?? 1e9);
     });
     entry.bySort.set(sort, list);
   }

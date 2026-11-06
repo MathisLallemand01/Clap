@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
 import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
@@ -52,10 +52,10 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
             </nav>
             <div className={styles.right}>
               <FreeBoosters stock={ctx.wallet.freeStock} nextFreeAt={ctx.wallet.nextFreeAt} />
-              <Link href="/collection" className={`pill ${styles.wallet} ${styles.entries}`} title="Box-office : la valeur de votre collection, en entrées">
-                <SeatIcon />{formatEntries(ctx.wallet.entries)}<span className="visually-hidden"> entrées</span>
+              <Link href="/guichet" className={`pill ${styles.wallet} ${styles.entries}`} title="Sièges : la monnaie du Guichet, pour acheter des cartes aux autres joueurs">
+                <SeatIcon />{ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.seats)}<span className="visually-hidden"> sièges</span>
               </Link>
-              <Link href="/missions" id="wallet-tickets" className={`pill ${styles.wallet}`} title="Tickets à dépenser : bobines en plus, achats au Guichet">
+              <Link href="/missions" id="wallet-tickets" className={`pill ${styles.wallet}`} title="Tickets : pour ouvrir des bobines en plus de vos bobines offertes">
                 <TicketIcon /><TicketCounter value={ctx.wallet.tickets} unlimited={ctx.player.unlimited} /><span className="visually-hidden"> tickets</span>
               </Link>
               <NotificationBell notifications={ctx.notifications} unread={ctx.unread} />
@@ -67,12 +67,13 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                   <div className={styles.who}>
                     <strong>{ctx.user.name}</strong>
                     {ctx.user.discord && <span className={styles.discord}><DiscordLogo size={11} />{ctx.user.discord.name}</span>}
-                    <span className="mono">{formatEntries(ctx.wallet.entries)} ENTRÉES</span>
+                    <span className="mono">{formatNumber(ctx.wallet.points)} POINTS · {ctx.player.unlimited ? '∞' : formatNumber(ctx.wallet.seats)} SIÈGES</span>
                   </div>
                   <nav className={styles.mobileLinks} aria-label="Navigation">
                     {NAV_LINKS.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
                   </nav>
                   <Link href="/raretes">Raretés et règles</Link>
+                  <Link href="/monnaies">Tickets, sièges et points</Link>
                   <Link href="/parrainage">Parrainage</Link>
                   <Link href="/parametres">Paramètres</Link>
                   <LogoutButton />
@@ -98,7 +99,7 @@ export function Footer() {
   return (
     <footer className="footer">
       <div className="container footer-inner">
-        <span>© Clap · Gratuit, sans achat intégré. Les entrées et les tickets n’ont aucune valeur réelle.</span>
+        <span>© Clap · Gratuit, sans achat intégré. Les tickets, sièges et points n’ont aucune valeur réelle.</span>
         <nav aria-label="Liens de bas de page">
           <Link href="/raretes">Raretés et règles</Link>
           <Link href="/catalogue">Catalogue</Link>

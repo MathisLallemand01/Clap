@@ -113,11 +113,11 @@ test('collection, numéros de série et box-office', () => {
 
   const stats = getStats(db, a.id);
   assert.equal(stats.copies, 5);
-  assert.equal(stats.entries, pulled.reduce((s, c) => s + RARITIES[c.rarity].entries, 0));
+  assert.equal(stats.points, pulled.reduce((s, c) => s + RARITIES[c.rarity].points, 0));
   const collection = getCollection(db, a.id);
   assert.equal(collection.reduce((s, c) => s + c.copies, 0), 5);
   for (let i = 1; i < collection.length; i++) {
-    assert.ok(RARITIES[collection[i - 1].rarity].entries >= RARITIES[collection[i].rarity].entries);
+    assert.ok(RARITIES[collection[i - 1].rarity].points >= RARITIES[collection[i].rarity].points);
   }
 });
 

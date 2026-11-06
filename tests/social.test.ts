@@ -5,7 +5,7 @@ import { getCatalog, ownedCardIds } from '../src/lib/catalog.ts';
 import { markCelebrationSeen, nextCelebration } from '../src/lib/celebrations.ts';
 import { claimSaga, playerDuos, playerSagas } from '../src/lib/collections.ts';
 import { openDb } from '../src/lib/db.ts';
-import { DUO_BONUS, GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
+import { DUO_BONUS, GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_SEATS, STARTING_TICKETS } from '../src/lib/game.ts';
 import { buyListing, createListing, openListings, priceRange, sellerReceives } from '../src/lib/market.ts';
 import { claimMission, missionStates, periodStart, recordVisit } from '../src/lib/missions.ts';
 import { listNotifications } from '../src/lib/notify.ts';
@@ -83,11 +83,11 @@ test('recycler garde un exemplaire de chaque carte et crédite les tickets prév
   const u = await signUp(db, { name: 'Recycleur', email: 'r@exemple.fr', password: 'motdepasse' });
   for (let i = 0; i < 3; i++) openBoosterFor(db, u.playerId, 'serie-b');
   const plan = recyclePlan(db, u.playerId);
-  const before = getPlayer(db, u.playerId)!.tickets;
+  const before = getPlayer(db, u.playerId)!.seats;
   const uniqueBefore = getStats(db, u.playerId).unique;
   const done = recycleDuplicates(db, u.playerId);
-  assert.deepEqual(done, { cards: plan.cards, tickets: plan.tickets });
-  assert.equal(getPlayer(db, u.playerId)!.tickets, before + plan.tickets);
+  assert.deepEqual(done, { cards: plan.cards, seats: plan.seats });
+  assert.equal(getPlayer(db, u.playerId)!.seats, before + plan.seats);
   assert.equal(getStats(db, u.playerId).unique, uniqueBefore);
   assert.ok(getCollection(db, u.playerId).every((c) => c.copies === 1));
 });
@@ -122,10 +122,10 @@ test('Guichet : fourchette de prix, commission, transfert de la carte', async ()
   const price = Math.max(min, suggested);
   const id = createListing(db, seller.playerId, { cardId: pulled.id, price, days: 3 });
   assert.equal(openListings(db).length, 1);
-  const sellerBefore = getPlayer(db, seller.playerId)!.tickets;
+  const sellerBefore = getPlayer(db, seller.playerId)!.seats;
   buyListing(db, buyer.playerId, id);
-  assert.equal(getPlayer(db, buyer.playerId)!.tickets, STARTING_TICKETS - price);
-  assert.equal(getPlayer(db, seller.playerId)!.tickets, sellerBefore + sellerReceives(price));
+  assert.equal(getPlayer(db, buyer.playerId)!.seats, STARTING_SEATS - price);
+  assert.equal(getPlayer(db, seller.playerId)!.seats, sellerBefore + sellerReceives(price));
   assert.ok(getCollection(db, buyer.playerId).some((c) => c.id === pulled.id));
   assert.throws(() => buyListing(db, buyer.playerId, id), isCode('not-found'));
   assert.ok(listNotifications(db, seller.id).some((n) => n.kind === 'sale'));
@@ -199,11 +199,11 @@ test('duos et sagas : bonus d’entrées, progression, récompense unique', asyn
   const give = (id: string) => db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, 1, NULL, 0)').run(u.playerId, id);
   give(actor.id);
   assert.equal(getStats(db, u.playerId).duos, 0);
-  const before = getStats(db, u.playerId).entries;
+  const before = getStats(db, u.playerId).points;
   give(role.id);
   const stats = getStats(db, u.playerId);
   assert.equal(stats.duos, 1);
-  assert.equal(stats.entries, before + RARITIES[role.rarity].entries + DUO_BONUS);
+  assert.equal(stats.points, before + RARITIES[role.rarity].points + DUO_BONUS);
   assert.equal(playerDuos(db, u.playerId)[0].personId, role.personId);
 
   // La saga, complétée carte par carte.

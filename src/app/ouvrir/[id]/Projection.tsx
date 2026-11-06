@@ -518,11 +518,12 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
   const shownTier = shownCard ? tierOf(shownCard) : 0;
   const { cw, pw } = dims;
   // Générique : les 5 meilleures cartes (toutes s'il n'y en a que 5), la meilleure à la fin, soulevée.
-  const shownInSummary = cards.length > 5 ? sortForReveal([...cards].sort((a, b) => RARITIES[b.rarity].entries - RARITIES[a.rarity].entries).slice(0, 5)) : cards;
+  const shownInSummary = cards.length > 5 ? sortForReveal([...cards].sort((a, b) => RARITIES[b.rarity].points - RARITIES[a.rarity].points).slice(0, 5)) : cards;
   const best = shownInSummary[shownInSummary.length - 1];
   const bestIndex = shownInSummary.length - 1;
   const newCount = cards.filter((c) => c.isNew).length;
-  const gained = cards.reduce((sum, c) => sum + RARITIES[c.rarity].entries, 0);
+  // Points gagnés au classement : seules les nouvelles cartes comptent (une carte ne compte qu'une fois).
+  const gained = cards.filter((c) => c.isNew).reduce((sum, c) => sum + RARITIES[c.rarity].points, 0);
   const canAfford = avail >= 1;
   // ×1, ×5, ×10, puis « Tout » : tout ce que la réserve et les tickets permettent (50 au plus).
   const pickOptions = [...COUNTS.map((k) => ({ k: k as number, label: `×${k}` })), ...(avail > 1 && !COUNTS.includes(avail as 1) ? [{ k: avail, label: `Tout · ${avail}` }] : [])];
@@ -737,7 +738,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
               {s.pull.packs > 1 && <span>{cards.length} CARTES</span>}
               <span>+{newCount} NOUVELLE{newCount > 1 ? 'S' : ''}</span>
               {s.pull.specials.map((sp, k) => <span key={k} style={{ color: SPECIALS[sp].color }}>{SPECIALS[sp].short}</span>)}
-              <span className={styles.gain}>+{formatNumber(gained)} ENTRÉES</span>
+              <span className={styles.gain}>+{formatNumber(gained)} POINTS</span>
               {best && <span style={{ color: RARITIES[best.rarity].color }}>{mark} {rarityName(best.rarity).toUpperCase()}</span>}
             </div>
           </div>
@@ -863,7 +864,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
                 <p>Cette bobine contient <b>{booster.slots.length} cartes {FAMILY[family].label}</b>. {family === 'actor'
                   ? 'Une carte Acteur, c’est une personne et toute sa carrière (marqueurs ronds).'
                   : 'Une carte Rôle, c’est un acteur dans un film précis (marqueurs en losange).'}</p>
-                <p>La <b>carte Acteur</b> d’une personne + <b>un de ses Rôles</b> = un duo, qui ajoute des entrées à votre box-office. Les sagas se complètent de la même façon.</p>
+                <p>La <b>carte Acteur</b> d’une personne + <b>un de ses Rôles</b> = un duo, qui ajoute des points au classement. Les sagas se complètent de la même façon.</p>
                 <p className={styles.guideMuted}>Tout est expliqué sur la page « Raretés et règles », depuis le menu.</p>
               </>
             )}

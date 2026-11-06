@@ -10,7 +10,7 @@ export function TicketIcon({ size = 22, color = 'var(--accent)' }: IconProps) {
   );
 }
 
-/** Fauteuil de salle : les entrées, valeur de la collection. */
+/** Fauteuil de salle : les sièges, la monnaie du Guichet. */
 export function SeatIcon({ size = 16, color = 'var(--text)' }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">

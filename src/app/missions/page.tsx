@@ -4,7 +4,7 @@ import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { missionStates, periodStart, STREAK_BONUS, STREAK_DAYS, visitStreak, type MissionScope } from '@/lib/missions';
 import { requireContext } from '@/lib/session';
 import { ClaimButton } from './ClaimButton';
@@ -20,7 +20,7 @@ const GROUPS: { scope: MissionScope; title: string }[] = [
 const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 function show(scope: MissionScope, id: string, n: number): string {
-  return id === 'saga-entries' ? formatEntries(n) : formatNumber(n);
+  return formatNumber(n);
 }
 
 export default async function MissionsPage({ searchParams }: { searchParams: Promise<{ gain?: string; erreur?: string }> }) {

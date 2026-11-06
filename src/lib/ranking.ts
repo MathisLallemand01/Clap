@@ -3,7 +3,7 @@ import { getCatalog } from './catalog.ts';
 import { addTickets } from './game.ts';
 import { periodStart } from './missions.ts';
 import { notifyPlayer } from './notify.ts';
-import { RARITIES } from './rarity.ts';
+import { DUO_BONUS, RARITIES } from './rarity.ts';
 
 // Le classement : des points de présence gagnés en passant en salle, remis à zéro chaque mois (une saison).
 
@@ -77,14 +77,31 @@ export function presenceBoard(db: DatabaseSync, from: number, to: number, now = 
   return rank(db, rows);
 }
 
-/** Valeur des collections, en entrées (tous temps). */
-export function boxOfficeBoard(db: DatabaseSync): RankRow[] {
-  const value = new Map(getCatalog(db).map((c) => [c.id, RARITIES[c.rarity].entries]));
-  const totals = new Map<string, number>();
-  for (const r of db.prepare('SELECT player_id, card_id FROM owned').all() as { player_id: string; card_id: string }[]) {
-    totals.set(r.player_id, (totals.get(r.player_id) ?? 0) + (value.get(r.card_id) ?? 0));
+/**
+ * Le classement : des points fixes par carte différente possédée (1, 3, 10, 30, 100, 500 selon le cran),
+ * plus un bonus par duo. Les doublons ne comptent pas. C'est le même total que « points » dans la collection.
+ */
+export function pointsBoard(db: DatabaseSync): RankRow[] {
+  const catalog = new Map(getCatalog(db).map((c) => [c.id, c]));
+  const owned = new Map<string, Set<string>>();
+  for (const r of db.prepare('SELECT DISTINCT player_id, card_id FROM owned').all() as { player_id: string; card_id: string }[]) {
+    if (!owned.has(r.player_id)) owned.set(r.player_id, new Set());
+    owned.get(r.player_id)!.add(r.card_id);
   }
-  return rank(db, [...totals].map(([playerId, points]) => ({ playerId, points, days: 0, streak: 0 })));
+  const rows = [...owned].map(([playerId, ids]) => {
+    let points = 0;
+    const actors = new Set<number>();
+    const roles = new Set<number>();
+    for (const id of ids) {
+      const c = catalog.get(id);
+      if (!c) continue;
+      points += RARITIES[c.rarity].points;
+      (c.kind === 'actor' ? actors : roles).add(c.personId);
+    }
+    const duos = [...actors].filter((p) => roles.has(p)).length;
+    return { playerId, points: points + duos * DUO_BONUS, days: ids.size, streak: duos };
+  });
+  return rank(db, rows);
 }
 
 function rank(db: DatabaseSync, rows: Omit<RankRow, 'rank' | 'name'>[]): RankRow[] {

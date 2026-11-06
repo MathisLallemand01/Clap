@@ -24,6 +24,7 @@ export function CelebrationHost({ celebration }: { celebration: Celebration }) {
       sub={celebration.sub}
       cards={celebration.cards}
       tickets={celebration.tickets}
+      unit={celebration.unit}
       lines={celebration.lines}
       link={{ href: celebration.href, label: celebration.hrefLabel }}
       onClose={close}

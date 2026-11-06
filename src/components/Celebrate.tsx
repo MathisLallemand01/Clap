@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { GameCard } from '@/components/GameCard';
-import { TicketIcon } from '@/components/Icons';
+import { SeatIcon, TicketIcon } from '@/components/Icons';
 import { formatNumber } from '@/lib/format';
 import { RARITIES } from '@/lib/rarity';
 import { createProjector, soundPreference } from '@/lib/sound';
@@ -22,6 +22,8 @@ export type CelebrateProps = {
   stamp?: string | null;
   /** Tickets gagnés (positif) ou dépensés (négatif). */
   tickets?: number;
+  /** Monnaie du montant : tickets (par défaut) ou sièges (Guichet). */
+  unit?: 'tickets' | 'seats';
   lines?: string[];
   link?: { href: string; label: string };
   closeLabel?: string;
@@ -32,7 +34,7 @@ export type CelebrateProps = {
  * La grande annonce d'une bonne nouvelle : la salle s'assombrit, la ou les cartes arrivent au centre
  * sous leurs rayons, un tampon les marque, puis le bilan en tickets. Achat, vente, échange, cadeau.
  */
-export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, lines = [], link, closeLabel = 'Continuer', onClose }: CelebrateProps) {
+export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, unit = 'tickets', lines = [], link, closeLabel = 'Continuer', onClose }: CelebrateProps) {
   const [mounted, setMounted] = useState(false);
   const [music, setMusic] = useState<ThemeInfo | null>(null);
   const themed = cards.find((c) => themeFor(c))?.id ?? null;
@@ -87,7 +89,7 @@ export function Celebrate({ eyebrow, title, sub, cards, stamp, tickets = 0, line
         <p className={styles.sub}>{sub}{rarity && cards.length === 1 && <> · <span style={{ color: 'var(--rc)' }}>{rarity.label}</span></>}</p>
         {(tickets !== 0 || lines.length > 0) && (
           <div className={styles.receipt}>
-            {tickets !== 0 && <span className={tickets > 0 ? styles.gain : styles.spend}><TicketIcon size={16} /> {tickets > 0 ? '+' : '−'}{formatNumber(Math.abs(tickets))} TK</span>}
+            {tickets !== 0 && <span className={tickets > 0 ? styles.gain : styles.spend}>{unit === 'seats' ? <SeatIcon size={16} /> : <TicketIcon size={16} />} {tickets > 0 ? '+' : '−'}{formatNumber(Math.abs(tickets))} {unit === 'seats' ? 'sièges' : 'TK'}</span>}
             {lines.map((l) => <span key={l}>{l}</span>)}
           </div>
         )}

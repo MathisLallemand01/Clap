@@ -6,7 +6,6 @@ import { createSession, deleteSession, getUser, SESSION_DAYS, userForSession, ty
 import { nextCelebration, type Celebration } from './celebrations';
 import { getDb } from './db';
 import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from './game';
-import { claimSeasonReward } from './ranking';
 import { recordVisit } from './missions';
 import { listNotifications, notify, unreadCount, type Notification } from './notify';
 import { isHttpsHeaders } from './origin';
@@ -75,7 +74,7 @@ export async function endSession(): Promise<void> {
   jar.delete(SESSION_COOKIE);
 }
 
-export type Wallet = { tickets: number; entries: number; freeStock: number; nextFreeAt: number | null };
+export type Wallet = { tickets: number; seats: number; points: number; freeStock: number; nextFreeAt: number | null };
 
 export type Context = {
   user: User;
@@ -93,13 +92,12 @@ function contextFor(user: User): Context | null {
   const player = getPlayer(db, user.playerId);
   if (!player) return null;
   recordVisit(db, player.id);
-  claimSeasonReward(db, player.id);
   const stats = getStats(db, player.id);
   return {
     user,
     player,
     stats,
-    wallet: { tickets: player.tickets, entries: stats.entries, freeStock: player.freeStock, nextFreeAt: player.nextFreeAt },
+    wallet: { tickets: player.tickets, seats: player.seats, points: stats.points, freeStock: player.freeStock, nextFreeAt: player.nextFreeAt },
     notifications: listNotifications(db, user.id, 10),
     unread: unreadCount(db, user.id),
     celebration: nextCelebration(db, player.id),

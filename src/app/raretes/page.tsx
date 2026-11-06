@@ -13,6 +13,7 @@ import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { DUO_BONUS } from '@/lib/game';
 import { FAMILY, RARITIES } from '@/lib/rarity';
+import { MYTHIQUE_AT, SPECIALS, TAPIS_ROUGE_EVERY } from '@/lib/pity';
 import { optionalContext } from '@/lib/session';
 import type { Card } from '@/lib/types';
 import styles from './raretes.module.css';
@@ -100,23 +101,41 @@ export default async function RaritiesPage() {
           <p className="lead">On déchire le paquet en glissant sur la bande du haut, puis les cinq cartes se retournent <b>de la moins rare à la plus rare</b>, comme dans un vrai paquet. Une carte rare s’annonce : son dos s’allume à sa couleur et il faut maintenir le clic pour la retourner. Le bandeau en bas de l’écran rappelle la famille de la bobine et son échelle.</p>
         </section>
 
+        <section id="garanties" className={styles.section} aria-labelledby="t-garanties">
+          <Scene n={4} label="Les garanties" />
+          <h2 id="t-garanties" className="display h2">Tapis rouge et Bobine mythique</h2>
+          <div className={styles.guarantees}>
+            <div className={`${styles.guarantee} ${styles.gTapis}`}>
+              <span className={styles.gKicker}>★ Toutes les {TAPIS_ROUGE_EVERY} bobines</span>
+              <strong className="display">Tapis rouge</strong>
+              <p>{SPECIALS['tapis-rouge'].explain} Le paquet porte un tampon doré et un ruban rouge : vous savez avant de le déchirer.</p>
+            </div>
+            <div className={`${styles.guarantee} ${styles.gMythe}`}>
+              <span className={styles.gKicker}>◆ À {MYTHIQUE_AT} bobines</span>
+              <strong className="display">Bobine mythique</strong>
+              <p>{SPECIALS.mythique.explain} Son contour arc-en-ciel tourne autour du paquet.</p>
+            </div>
+          </div>
+          <p className="lead">Les compteurs sont à vous seul et repartent à zéro dès que la grosse carte tombe, par chance ou par garantie. Où vous en êtes : sur la page <Link href="/bobines" className="accent">Bobines</Link> et sur la fiche de chaque bobine.</p>
+        </section>
+
         <section id="duos" className={styles.section} aria-labelledby="t-duos">
-          <Scene n={4} label="Ce qui relie les deux familles" />
+          <Scene n={5} label="Ce qui relie les deux familles" />
           <h2 id="t-duos" className="display h2">Les duos</h2>
           <div className={styles.duo}>
             {duoActor && <CardLink card={duoActor}><GameCard card={duoActor} width={180} /></CardLink>}
             <span className={styles.plus} aria-hidden="true">+</span>
             {duoRole && <CardLink card={duoRole}><GameCard card={duoRole} width={180} /></CardLink>}
             <div className={styles.duoText}>
-              <span className={styles.duoTag}>DUO · +{formatNumber(DUO_BONUS)} ENTRÉES</span>
-              <p className="lead"><b>La carte Acteur d’une personne + au moins un de ses Rôles = un duo.</b> Chaque duo ajoute {formatNumber(DUO_BONUS)} entrées à votre box-office et s’affiche sur sa fiche.</p>
+              <span className={styles.duoTag}>DUO · +{formatNumber(DUO_BONUS)} POINTS</span>
+              <p className="lead"><b>La carte Acteur d’une personne + au moins un de ses Rôles = un duo.</b> Chaque duo ajoute {formatNumber(DUO_BONUS)} points au classement et s’affiche sur sa fiche.</p>
               <p className="muted">La carte Acteur vient d’une bobine <b>Casting</b>, le Rôle d’une bobine <b>Film</b>. La fiche de chaque acteur indique ce qu’il vous manque.</p>
             </div>
           </div>
         </section>
 
         <section id="sagas" className={styles.section} aria-labelledby="t-sagas">
-          <Scene n={5} label="Star Wars, Harry Potter, 007…" />
+          <Scene n={6} label="Star Wars, Harry Potter, 007…" />
           <h2 id="t-sagas" className="display h2">Les sagas</h2>
           <p className="lead"><b>Une saga = les Rôles de tous ses films + les cartes Acteur de leurs interprètes.</b> Complétez-la pour gagner des tickets : 150 par carte, de {formatNumber(sagaReward(1))} à {formatNumber(sagaReward(1000))}. Suivez votre progression dans <Link href="/collection?vue=sagas" className="accent">Collection → Sagas</Link>.</p>
           {sagas.length > 0 && (
@@ -127,7 +146,7 @@ export default async function RaritiesPage() {
         </section>
 
         <section className={styles.section} aria-labelledby="ou">
-          <Scene n={6} label={`${BOOSTERS.length} bobines`} />
+          <Scene n={7} label={`${BOOSTERS.length} bobines`} />
           <h2 id="ou" className="display h2">Où trouver quoi</h2>
           <div className={styles.where}>
             {[{ kind: 'actor' as const, list: castings }, { kind: 'role' as const, list: films }].map(({ kind, list }) => (

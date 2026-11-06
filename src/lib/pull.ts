@@ -119,12 +119,12 @@ export function openBooster(
   return sortForReveal(cards);
 }
 
-/** Du moins rare au plus rare ; à cran égal, la carte qui rapporte le plus d'entrées passe après. Tri stable. */
+/** Du moins rare au plus rare ; à cran égal, la carte qui rapporte le plus de points passe après. Tri stable. */
 export function sortForReveal<T extends Pick<Card, 'rarity'>>(cards: T[]): T[] {
   return cards
     .map((card, i) => ({ card, i }))
     .sort((a, b) => RARITIES[a.card.rarity].tier - RARITIES[b.card.rarity].tier
-      || RARITIES[a.card.rarity].entries - RARITIES[b.card.rarity].entries
+      || RARITIES[a.card.rarity].points - RARITIES[b.card.rarity].points
       || a.i - b.i)
     .map(({ card }) => card);
 }

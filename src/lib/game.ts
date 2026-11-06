@@ -8,7 +8,7 @@ import { openBooster, type Rng } from './pull.ts';
 import { nextSpecial, type Pity, type Special } from './pity.ts';
 import { MAX_OPEN_AT_ONCE } from './limits.ts';
 export { MAX_OPEN_AT_ONCE } from './limits.ts';
-import { RARITIES, rarityName, suggestedTickets } from './rarity.ts';
+import { DUO_BONUS, RARITIES, rarityName, recycleSeats } from './rarity.ts';
 import type { Card, OwnedCard } from './types.ts';
 
 export { getCatalog };
@@ -90,6 +90,14 @@ export function getPlayer(db: DatabaseSync, id: string, now = Date.now()): Playe
   if (!row) return null;
   const { stock, updatedAt } = regenerate(row, now);
   return toPlayer(row, stock, updatedAt);
+}
+
+/** Crédite (ou débite, si négatif) des sièges, la monnaie du Guichet ; refuse de passer sous zéro. */
+export function addSeats(db: DatabaseSync, playerId: string, amount: number): void {
+  if (amount === 0) return;
+  if (amount < 0 && (db.prepare('SELECT unlimited FROM players WHERE id = ?').get(playerId) as { unlimited: number } | undefined)?.unlimited) return;
+  const res = db.prepare('UPDATE players SET seats = seats + ? WHERE id = ? AND seats + ? >= 0').run(amount, playerId, amount);
+  if (res.changes === 0) throw new GameError('not-enough-seats', 'Pas assez de sièges.');
 }
 
 /** Crédite (ou débite, si négatif) des tickets ; refuse de passer sous zéro. */
@@ -281,7 +289,7 @@ export function getCollection(db: DatabaseSync, playerId: string): OwnedCard[] {
     GROUP BY c.id`).all(playerId) as (CardRow & { serial: number; obtained_at: number; copies: number })[];
   return rows
     .map((r) => ({ ...rowToCard(r), serial: r.serial, obtainedAt: r.obtained_at, copies: r.copies }))
-    .sort((a, b) => RARITIES[b.rarity].entries - RARITIES[a.rarity].entries || a.last.localeCompare(b.last, 'fr'));
+    .sort((a, b) => RARITIES[b.rarity].points - RARITIES[a.rarity].points || a.last.localeCompare(b.last, 'fr'));
 }
 
 /** Les exemplaires possédés d'une carte, du meilleur numéro au moins bon. */
@@ -291,10 +299,10 @@ export function ownedCopies(db: DatabaseSync, playerId: string, cardId: string):
     .map((r) => ({ ...r, listed: listed.has(r.id) }));
 }
 
-export type PlayerStats = { entries: number; unique: number; copies: number; pulls: number; duplicates: number; duos: number };
+export type PlayerStats = { points: number; unique: number; copies: number; pulls: number; duplicates: number; duos: number };
 
 /** Un duo (la carte Acteur et au moins un de ses Rôles) ajoute ces entrées au box-office. */
-export const DUO_BONUS = 2_000;
+export { DUO_BONUS } from './rarity.ts';
 
 /** Nombre de duos : personnes dont le joueur possède la carte Acteur et au moins une carte Rôle. */
 export function countDuos(db: DatabaseSync, playerId: string): number {
@@ -313,7 +321,7 @@ export function getStats(db: DatabaseSync, playerId: string): PlayerStats {
   const pulls = (db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(playerId) as { n: number }).n;
   const duos = countDuos(db, playerId);
   return {
-    entries: owned.reduce((sum, o) => sum + RARITIES[o.rarity].entries, 0) + duos * DUO_BONUS,
+    points: owned.reduce((sum, o) => sum + RARITIES[o.rarity].points, 0) + duos * DUO_BONUS,
     unique,
     copies: owned.length,
     pulls,
@@ -330,7 +338,7 @@ export function getRecentCards(db: DatabaseSync, playerId: string, limit = 10): 
   return rows.map(rowToCard);
 }
 
-export type RecyclePlan = { items: { card: Card; extra: number; tickets: number }[]; cards: number; tickets: number };
+export type RecyclePlan = { items: { card: Card; extra: number; seats: number }[]; cards: number; seats: number };
 
 /** Ce que rapporterait le recyclage des doublons (on garde toujours le meilleur numéro de chaque carte). */
 export function recyclePlan(db: DatabaseSync, playerId: string): RecyclePlan {
@@ -342,14 +350,14 @@ export function recyclePlan(db: DatabaseSync, playerId: string): RecyclePlan {
   for (const [cardId, ids] of byCard) {
     const extra = ids.slice(1).filter((id) => !listed.has(id)).length;
     const card = getCard(db, cardId);
-    if (extra > 0 && card) items.push({ card, extra, tickets: extra * suggestedTickets(card.rarity) });
+    if (extra > 0 && card) items.push({ card, extra, seats: extra * recycleSeats(card.rarity) });
   }
-  items.sort((a, b) => b.tickets - a.tickets);
-  return { items, cards: items.reduce((s, i) => s + i.extra, 0), tickets: items.reduce((s, i) => s + i.tickets, 0) };
+  items.sort((a, b) => b.seats - a.seats);
+  return { items, cards: items.reduce((s, i) => s + i.extra, 0), seats: items.reduce((s, i) => s + i.seats, 0) };
 }
 
-/** Recycle tous les doublons (hors cartes en vente) contre leur prix conseillé en tickets. */
-export function recycleDuplicates(db: DatabaseSync, playerId: string, now = Date.now()): { cards: number; tickets: number } {
+/** Recycle tous les doublons (hors cartes en vente) contre des sièges (un quart de leur prix conseillé au Guichet). */
+export function recycleDuplicates(db: DatabaseSync, playerId: string, now = Date.now()): { cards: number; seats: number } {
   return transaction(db, () => {
     const listed = listedOwnedIds(db, playerId);
     const rows = db.prepare('SELECT o.id, o.card_id, c.rarity FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.player_id = ? ORDER BY o.card_id, o.serial')
@@ -357,7 +365,7 @@ export function recycleDuplicates(db: DatabaseSync, playerId: string, now = Date
     const seen = new Set<string>();
     const remove = db.prepare('DELETE FROM owned WHERE id = ?');
     let cards = 0;
-    let tickets = 0;
+    let seats = 0;
     for (const r of rows) {
       if (!seen.has(r.card_id)) {
         seen.add(r.card_id);
@@ -366,13 +374,13 @@ export function recycleDuplicates(db: DatabaseSync, playerId: string, now = Date
       if (listed.has(r.id)) continue;
       remove.run(r.id);
       cards++;
-      tickets += suggestedTickets(r.rarity);
+      seats += recycleSeats(r.rarity);
     }
     if (cards) {
-      addTickets(db, playerId, tickets);
+      addSeats(db, playerId, seats);
       logEvent(db, playerId, 'recycle', cards, now);
     }
-    return { cards, tickets };
+    return { cards, seats };
   });
 }
 

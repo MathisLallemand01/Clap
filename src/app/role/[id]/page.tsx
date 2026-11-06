@@ -7,9 +7,9 @@ import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
 import { cardsOfMovie, cardsOfPerson, getCard, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
-import { formatEntries, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { ownedCopies } from '@/lib/game';
-import { RARITIES } from '@/lib/rarity';
+import { RARITIES, suggestedSeats } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { movieInfo } from '@/lib/tmdb';
 import styles from '../../fiche.module.css';
@@ -73,7 +73,7 @@ export default async function RolePage({ params }: Props) {
             </div>
             {info?.overview && <p className="lead">{info.overview}</p>}
             <div className="stat-row">
-              <div><span className="eyebrow">Valeur</span><strong>{formatEntries(rarity.entries)}</strong><small>entrées · {formatNumber(rarity.entries / 100)} TK conseillés</small></div>
+              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pts</strong><small>au classement · {formatNumber(suggestedSeats(card.rarity))} sièges conseillés</small></div>
               <div><span className="eyebrow">Exemplaires</span><strong>×{copies.length}</strong><small>{copies.length ? `Meilleur n° ${String(copies[0].serial).padStart(4, '0')}` : 'Pas encore obtenue'}</small></div>
               <div><span className="eyebrow">Votes TMDB</span><strong>{formatNumber(card.votes ?? 0)}</strong><small>notoriété du film</small></div>
             </div>

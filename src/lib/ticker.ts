@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { BOOSTERS, boosterOfTheDay, featuredEvent } from './boosters.ts';
 import { getCard, getCatalog, showcase } from './catalog.ts';
-import { formatEntries, formatNumber } from './format.ts';
+import { formatNumber } from './format.ts';
 import { recentSales } from './market.ts';
 import { MISSIONS } from './missions.ts';
 import { RARITIES } from './rarity.ts';
@@ -32,7 +32,7 @@ function cardHref(c: Card): string {
 
 function fromCard(c: Card, key: string, who?: string): TickerItem {
   const r = RARITIES[c.rarity];
-  return { key, color: r.color, shape: c.kind === 'role' ? 'diamond' : 'dot', who, text: cardText(c), value: formatEntries(r.entries), href: cardHref(c) };
+  return { key, color: r.color, shape: c.kind === 'role' ? 'diamond' : 'dot', who, text: cardText(c), value: `${formatNumber(r.points)} pts`, href: cardHref(c) };
 }
 
 /** Les plus beaux tirages récents (rang 3 et plus). Complété par les vedettes du catalogue tant que le jeu est calme. */
@@ -65,7 +65,7 @@ export function tickerSales(db: DatabaseSync, limit = 20): TickerItem[] {
     return {
       key: `l${l.id}`, color: r.color, shape: l.card.kind === 'role' ? 'diamond' : 'dot',
       text: l.card.kind === 'role' ? `${l.card.last} · ${l.card.character}` : `${l.card.first} ${l.card.last}`.trim(),
-      value: `${formatNumber(l.price)} T`,
+      value: `${formatNumber(l.price)} sièges`,
       delta: { text: diff > 0 ? `▲ ${diff} %` : diff < 0 ? `▼ ${-diff} %` : '= 0 %', tone: diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat' },
       href: cardHref(l.card),
     } satisfies TickerItem;

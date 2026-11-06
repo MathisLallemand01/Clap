@@ -26,7 +26,8 @@ export function Purchase({ card, serial, price, balance, unlimited }: { card: Ca
       sub={`rejoint votre collection${card.kind === 'role' ? ` · ${card.first} ${card.last}` : ''}`}
       cards={[{ ...card, serial }]}
       tickets={-price}
-      lines={[`Solde : ${unlimited ? '∞' : formatNumber(balance)} TK`]}
+      unit="seats"
+      lines={[`Solde : ${unlimited ? '∞' : formatNumber(balance)} sièges`]}
       link={{ href: '/collection', label: 'Voir ma collection' }}
       closeLabel="Continuer mes achats"
       onClose={close}

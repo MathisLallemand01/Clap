@@ -256,8 +256,18 @@ function migrate(db: DatabaseSync): void {
   if (!playerColumns.has('unlimited')) db.exec('ALTER TABLE players ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0');
   // Garanties : bobines ouvertes depuis la dernière grosse carte (voir pity.ts).
   if (!playerColumns.has('pity_legend')) db.exec('ALTER TABLE players ADD COLUMN pity_legend INTEGER NOT NULL DEFAULT 0; ALTER TABLE players ADD COLUMN pity_mythe INTEGER NOT NULL DEFAULT 0;');
-  // Sièges : la monnaie du Guichet.
-  if (!playerColumns.has('seats')) db.exec('ALTER TABLE players ADD COLUMN seats INTEGER NOT NULL DEFAULT 20');
+  // Sièges : la monnaie du Guichet. Les annonces existantes, en tickets, passent en sièges (même rapport au prix conseillé).
+  if (!playerColumns.has('seats')) {
+    db.exec('ALTER TABLE players ADD COLUMN seats INTEGER NOT NULL DEFAULT 20');
+    const seatsByTier: Record<string, number> = { figurant: 2, serieb: 2, second: 5, succes: 5, premier: 15, culte: 15, tete: 40, vedette: 40, legende: 120, icone: 120, mythe: 400 };
+    const ticketsByRarity: Record<string, number> = { figurant: 5, second: 15, premier: 50, tete: 200, legende: 1000, serieb: 25, succes: 80, culte: 300, vedette: 1000, icone: 4000, mythe: 15000 };
+    const rows = db.prepare('SELECT l.id, l.price, c.rarity FROM listings l JOIN cards c ON c.id = l.card_id').all() as { id: number; price: number; rarity: string }[];
+    const update = db.prepare('UPDATE listings SET price = ? WHERE id = ?');
+    for (const r of rows) {
+      const ratio = r.price / (ticketsByRarity[r.rarity] ?? r.price);
+      update.run(Math.max(1, Math.round((seatsByTier[r.rarity] ?? 1) * ratio)), r.id);
+    }
+  }
   const userColumns = new Set((db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name));
   // Compte Discord lié : identifiant, nom affiché et adresse de la photo (GIF si Nitro).
   if (!userColumns.has('discord_id')) {

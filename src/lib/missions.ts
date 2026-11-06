@@ -31,7 +31,7 @@ export const MISSIONS: MissionDef[] = [
   { id: 'weekly-trade', scope: 'weekly', title: 'Conclure un échange avec un ami', goal: 1, reward: 250, glyph: '⇄', progress: { event: 'trade' } },
   { id: 'weekly-themes', scope: 'weekly', title: 'Ouvrir une bobine Pays, Genre et Époque', goal: 3, reward: 250, glyph: '◎', progress: { distinct: ['open:country', 'open:genre', 'open:era'] } },
   { id: 'saga-unique-100', scope: 'saga', title: 'Posséder 100 cartes différentes', goal: 100, reward: 1000, glyph: '▤', progress: { stat: (db, p) => getStats(db, p).unique } },
-  { id: 'saga-entries', scope: 'saga', title: 'Atteindre 5 M d’entrées au box-office', goal: 5_000_000, reward: 1500, glyph: '★', progress: { stat: (db, p) => getStats(db, p).entries } },
+  { id: 'saga-entries', scope: 'saga', title: 'Atteindre 1 000 points au classement', goal: 1_000, reward: 1500, glyph: '★', progress: { stat: (db, p) => getStats(db, p).points } },
   { id: 'saga-legends', scope: 'saga', title: 'Posséder 10 Légendes', goal: 10, reward: 2000, glyph: '★', progress: {
     stat: (db, p) => (db.prepare("SELECT COUNT(DISTINCT o.card_id) AS n FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.player_id = ? AND c.rarity = 'legende'").get(p) as { n: number }).n,
   } },
