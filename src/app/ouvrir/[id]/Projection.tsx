@@ -45,6 +45,8 @@ const SPARKS = [
   { x: 54, y: 106, s: 13, d: 180 }, { x: -10, y: 46, s: 10, d: 420 },
 ];
 const SPARK_COUNT: Record<number, number> = { 3: 3, 4: 5, 5: 7, 6: 8 };
+/** « Tout révéler » range d'un coup tout ce qui est en dessous de ce cran (Icône, Légende) : les meilleures restent à retourner. */
+const BEST_TIER = 5;
 
 type Phase = 'sealed' | 'opening' | 'stack' | 'summary';
 type Pull = { id: number; batch: number; cards: PulledCard[]; paidWith: OpenResult['paidWith']; packs: number; specials: Special[] };
@@ -71,6 +73,8 @@ type Game = {
   error: string | null;
   /** Petite relance visuelle quand on clique sur une rare sans maintenir. */
   nudge: number;
+  /** Cartes rangées d'un coup par « Tout révéler » (affiché un instant). */
+  revealedAtOnce: number;
 };
 
 const tierOf = (card: Pick<Card, 'rarity'>) => RARITIES[card.rarity].tier;
@@ -105,7 +109,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
   initialPity?: Pity;
 }) {
   // L'état du jeu vit dans une référence (les minuteries lisent toujours la valeur à jour) ; `render` redessine.
-  const g = useRef<Game>({ phase: 'sealed', tear: 0, held: false, torn: false, pull: null, index: 0, shown: null, stored: 0, leaving: [], charging: null, fast: false, error: null, nudge: 0 });
+  const g = useRef<Game>({ phase: 'sealed', tear: 0, held: false, torn: false, pull: null, index: 0, shown: null, stored: 0, leaving: [], charging: null, fast: false, error: null, nudge: 0, revealedAtOnce: 0 });
   const [, render] = useReducer((n: number) => n + 1, 0);
   const set = useCallback((patch: Partial<Game>) => {
     Object.assign(g.current, patch);
@@ -394,19 +398,37 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
     flip(s.index);
   }, [flip, set, store]);
 
-  /** « Tout révéler » : les cartes restantes défilent seules, sans attente. */
+  /**
+   * « Tout révéler » : toutes les cartes en dessous d'Icône (cran 5) sont rangées d'un coup ; il ne reste
+   * sur la table que les meilleures (Icône, Légende, Mythe), que le joueur retourne lui-même, avec leur annonce.
+   */
   const revealAll = useCallback(() => {
     cancelHold();
-    set({ fast: true });
-    const step = () => {
-      const s = g.current;
-      if (!s.pull) return;
-      if (s.shown !== null) store();
-      if (s.index < s.pull.cards.length) flip(s.index);
-      if (g.current.shown !== null) fastTimer.current = later(step, 240);
-    };
-    step();
-  }, [cancelHold, flip, later, set, store]);
+    const s = g.current;
+    if (s.phase !== 'stack' || !s.pull) return;
+    if (autoStore.current) window.clearTimeout(autoStore.current);
+    autoStore.current = null;
+    const cards = s.pull.cards;
+    // La pile est triée de la moins rare à la plus rare : on range tout jusqu'à la première meilleure carte.
+    const firstBest = cards.findIndex((c, i) => i >= s.index && tierOf(c) >= BEST_TIER);
+    const until = firstBest === -1 ? cards.length : firstBest;
+    const already = s.shown !== null ? 1 : 0;
+    const count = until - s.index + already;
+    if (count <= 0) return;
+    const leaving = s.shown !== null ? [...s.leaving, s.shown] : s.leaving;
+    projector.current?.flip(Math.min(6, until), 2);
+    later(() => projector.current?.slide(), 120);
+    set({ index: until, shown: null, stored: until, leaving, revealedAtOnce: count });
+    later(() => set({ leaving: [] }), 420);
+    later(() => set({ revealedAtOnce: 0 }), 2600);
+    if (until === cards.length) {
+      later(() => {
+        set({ phase: 'summary' });
+        projector.current?.fanfare();
+        if (guest) later(() => setKeepOpen(true), 1500);
+      }, 500);
+    }
+  }, [cancelHold, guest, later, set]);
 
   // Clavier : maintenir → (ou Espace) déchire le paquet ; ensuite Espace / Entrée / → retournent.
   useEffect(() => {
@@ -525,8 +547,12 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
   // Points gagnés au classement : seules les nouvelles cartes comptent (une carte ne compte qu'une fois).
   const gained = cards.filter((c) => c.isNew).reduce((sum, c) => sum + RARITIES[c.rarity].points, 0);
   const canAfford = avail >= 1;
+  // Ce qui reste sur la table : les cartes ordinaires (rangées d'un coup par « Tout révéler ») et les meilleures.
+  const remaining = s.phase === 'stack' ? cards.slice(s.index) : [];
+  const restBest = remaining.filter((c) => tierOf(c) >= BEST_TIER).length;
+  const restBelow = remaining.length - restBest + (s.shown !== null && shownTier < BEST_TIER ? 1 : 0);
   // ×1, ×5, ×10, puis « Tout » : tout ce que la réserve et les tickets permettent (50 au plus).
-  const pickOptions = [...COUNTS.map((k) => ({ k: k as number, label: `×${k}` })), ...(avail > 1 && !COUNTS.includes(avail as 1) ? [{ k: avail, label: `Tout · ${avail}` }] : [])];
+  const pickOptions = [...COUNTS.map((k) => ({ k: k as number, label: `×${k}` })), ...(avail > 1 ? [{ k: avail, label: `Tout · ${avail}` }] : [])];
   // Générique : 5 cartes de même taille (la meilleure un peu plus grande), qui tiennent en largeur et en hauteur.
   const summaryW = Math.floor(Math.max(52, Math.min(cw * 0.62, (dims.tw - 32 - (shownInSummary.length - 1) * (dims.tw < 560 ? 8 : 12)) / (shownInSummary.length + 0.08), (dims.th - 150) / 1.4 / 1.08)));
   const mark = FAMILY[family].mark;
@@ -702,7 +728,11 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
               })}
             </div>
             <div className={styles.pileHint} role="status">
-              {shownCard && shownTier >= 4 && !s.fast ? (
+              {s.revealedAtOnce > 0 ? (
+                <span className={`${styles.chip} ${styles.chipDone}`} key={`r-${s.revealedAtOnce}`}>
+                  <span>✓ {s.revealedAtOnce} carte{s.revealedAtOnce > 1 ? 's' : ''} rangée{s.revealedAtOnce > 1 ? 's' : ''} d’un coup{restBest > 0 ? ` · à vous les ${restBest} meilleure${restBest > 1 ? 's' : ''}` : ''}</span>
+                </span>
+              ) : shownCard && shownTier >= 4 && !s.fast ? (
                 <span className={styles.banner} style={{ '--rc': RARITIES[shownCard.rarity].color } as CSSProperties} key={`b-${s.shown}`}>
                   <em>{mark} {rarityName(shownCard.rarity)}{shownCard.isNew ? ' · NOUVELLE' : ''}</em>
                   <span><b>{cardTitle(shownCard)}</b>{shownCard.kind === 'role' ? ` · ${shownCard.first} ${shownCard.last} · ${shownCard.film}` : shownCard.origin ? ` · ${shownCard.origin}` : ''}</span>
@@ -783,8 +813,10 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
             })}
           </div>
           <div className={`${styles.actions} ${s.phase === 'summary' ? styles.actionsEnd : ''}`}>
-            {s.phase === 'stack' && !s.fast && (
-              <button type="button" className="btn btn-sm" onClick={revealAll}>Tout révéler</button>
+            {s.phase === 'stack' && restBelow > 0 && (
+              <button type="button" className="btn btn-sm" onClick={revealAll} title="Range d’un coup toutes les cartes en dessous d’Icône ; vous retournez vous-même les meilleures.">
+                {restBest > 0 ? `Tout révéler · ${restBelow} carte${restBelow > 1 ? 's' : ''}, garder les ${restBest} meilleure${restBest > 1 ? 's' : ''}` : `Tout révéler · ${restBelow}`}
+              </button>
             )}
             {s.phase === 'summary' && guest && (
               <button type="button" className="btn btn-sm btn-primary" onClick={() => setKeepOpen(true)}>Garder mes cartes</button>
@@ -795,7 +827,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
                 {pickOptions.map(({ k, label }) => (
                   <button
                     key={label} type="button" role="radio" aria-checked={count === k}
-                    className={count === k ? styles.countOn : undefined}
+                    className={count === k && (label.startsWith('Tout') || k !== avail || avail <= 1) ? styles.countOn : undefined}
                     disabled={k > avail || k < 1}
                     onClick={() => (s.phase === 'summary' ? another(k) : setCount(k))}
                     title={`${k} bobine${k > 1 ? 's' : ''} · ${costOf(k)}`}

@@ -381,3 +381,7 @@
 .counts .countOn:hover:not(:disabled) { background: var(--text); color: #0b0b0d; }
 .costNote { align-self: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .miniMore { display: flex; align-items: center; padding: 0 6px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+/* « Tout révéler » : confirmation brève des cartes rangées d'un coup. */
+.chipDone { border-color: #3ddc9788; color: var(--text); }
+.chipDone span { color: #9ff0c8; }

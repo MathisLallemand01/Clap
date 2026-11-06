@@ -93,7 +93,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
               {can > 1 && (
                 <span className={styles.multi} aria-label="Ouvrir plusieurs bobines">
                   {[5, 10].filter((k) => k <= can).map((k) => <Link key={k} href={`/ouvrir/${booster.id}?n=${k}`} className="btn btn-lg">×{k}</Link>)}
-                  {![5, 10].includes(can) && <Link href={`/ouvrir/${booster.id}?n=tout`} className="btn btn-lg">Tout · {can}</Link>}
+                  <Link href={`/ouvrir/${booster.id}?n=tout`} className="btn btn-lg">Tout · {can}</Link>
                 </span>
               )}
               <Link href={missingOnly ? `/bobines/${id}` : `/bobines/${id}?voir=manquantes`} className="btn btn-lg">{missingOnly ? 'Tout afficher' : 'Voir les manquantes'}</Link>
