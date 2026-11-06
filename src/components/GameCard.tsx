@@ -97,6 +97,9 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
     );
   }
 
+  // Le portrait de l'acteur est toujours incrusté : deux cartes du même film (même affiche, même plan)
+  // ne se confondent jamais, on voit d'abord qui joue.
+  const withPortrait = Boolean(card.portrait);
   return (
     <div className={`${styles.card} ${styles.role} ${top ? styles.top5 : ''} ${card.rarity === 'icone' ? styles.icon : ''} ${card.rarity === 'mythe' ? styles.mythe : ''} ${liveClass}`} style={style} role="img" aria-label={label}>
       <div className={styles.rail}><span /></div>
@@ -105,14 +108,26 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
           <span className={styles.rarity}><span className={styles.diamond} />{rarity.label}</span>
           {number && <span className={styles.num}>{number}</span>}
         </div>
-        <span className={styles.film}>{series && <b className={styles.series}>SÉRIE</b>}{card.film}{card.year ? ` · ${card.year}` : ''}</span>
-        <div className={`${styles.photo} ${styles.still}`}>
+        {/* Le titre du film, en grand : deux cartes du même film se distinguent par l'acteur, pas par le titre. */}
+        <div className={styles.filmBand}>
+          {series && <b className={styles.series}>SÉRIE</b>}
+          <span className={styles.filmTitle}>{card.film}</span>
+          {card.year && <span className={styles.filmYear}>{card.year}</span>}
+        </div>
+        <div className={`${styles.photo} ${styles.still} ${withPortrait ? styles.withPortrait : ''}`}>
           {image ?? <span className={styles.source}>PHOTOGRAMME · TMDB</span>}
           {image && <span className={styles.scrim} />}
           {shine}
           {chip}
-          <span className={styles.as}>DANS LE RÔLE DE</span>
-          <span className={styles.character}>{card.character}</span>
+          {withPortrait && (
+            <span className={styles.portrait}>
+              <img src={sized(card.portrait!, 'actor', Math.round(width * 0.4), false)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+            </span>
+          )}
+          <div className={styles.asBlock}>
+            <span className={styles.as}>DANS LE RÔLE DE</span>
+            <span className={styles.character}>{card.character}</span>
+          </div>
         </div>
         <div className={styles.roleFoot}>
           <div className={styles.roleName}>

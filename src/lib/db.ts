@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS tmdb_cache (
 export type CardRow = {
   id: string; kind: Card['kind']; person_id: number; first: string; last: string; rarity: Card['rarity'];
   tone: string; image: string | null; origin: string | null; movie_id: number | null; film: string | null;
-  year: number | null; character: string | null; tags: string; rank?: number | null; votes?: number | null;
+  year: number | null; character: string | null; tags: string; rank?: number | null; votes?: number | null; portrait?: string | null;
 };
 
 export function rowToCard(r: CardRow): Card {
@@ -197,6 +197,7 @@ export function rowToCard(r: CardRow): Card {
     id: r.id, kind: r.kind, personId: r.person_id, first: r.first, last: r.last, rarity: r.rarity,
     tone: r.tone, image: r.image, origin: r.origin, movieId: r.movie_id, film: r.film, year: r.year,
     character: r.character, tags: JSON.parse(r.tags) as string[], rank: r.rank ?? null, votes: r.votes ?? null,
+    portrait: r.portrait ?? null,
   };
 }
 
@@ -215,16 +216,17 @@ export function cardsVersion(db: DatabaseSync): string {
 export function upsertCards(db: DatabaseSync, cards: Card[]): void {
   localCardWrites.set(db, (localCardWrites.get(db) ?? 0) + 1);
   const stmt = db.prepare(`
-    INSERT INTO cards (id, kind, person_id, first, last, rarity, tone, image, origin, movie_id, film, year, character, tags, rank, votes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cards (id, kind, person_id, first, last, rarity, tone, image, origin, movie_id, film, year, character, tags, rank, votes, portrait)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (id) DO UPDATE SET
       person_id = excluded.person_id, first = excluded.first, last = excluded.last, rarity = excluded.rarity,
       image = excluded.image, origin = excluded.origin, movie_id = excluded.movie_id, film = excluded.film,
-      year = excluded.year, character = excluded.character, tags = excluded.tags, rank = excluded.rank, votes = excluded.votes`);
+      year = excluded.year, character = excluded.character, tags = excluded.tags, rank = excluded.rank, votes = excluded.votes,
+      portrait = COALESCE(excluded.portrait, cards.portrait)`);
   transaction(db, () => {
     for (const c of cards) {
       stmt.run(c.id, c.kind, c.personId, c.first, c.last, c.rarity, c.tone, c.image ?? null, c.origin ?? null,
-        c.movieId ?? null, c.film ?? null, c.year ?? null, c.character ?? null, JSON.stringify(c.tags), c.rank ?? null, c.votes ?? null);
+        c.movieId ?? null, c.film ?? null, c.year ?? null, c.character ?? null, JSON.stringify(c.tags), c.rank ?? null, c.votes ?? null, c.portrait ?? null);
     }
   });
 }
@@ -251,6 +253,12 @@ function migrate(db: DatabaseSync): void {
   const columns = new Set((db.prepare('PRAGMA table_info(cards)').all() as { name: string }[]).map((c) => c.name));
   if (!columns.has('rank')) db.exec('ALTER TABLE cards ADD COLUMN rank INTEGER');
   if (!columns.has('votes')) db.exec('ALTER TABLE cards ADD COLUMN votes INTEGER');
+  // Portrait de l'acteur sur les cartes Rôle : repris de sa carte Acteur (même personne).
+  if (!columns.has('portrait')) {
+    db.exec('ALTER TABLE cards ADD COLUMN portrait TEXT');
+    db.exec(`UPDATE cards SET portrait = (SELECT a.image FROM cards a WHERE a.kind = 'actor' AND a.person_id = cards.person_id)
+      WHERE kind = 'role'`);
+  }
   const playerColumns = new Set((db.prepare('PRAGMA table_info(players)').all() as { name: string }[]).map((c) => c.name));
   // Comptes de test : tickets illimités (jamais débités).
   if (!playerColumns.has('unlimited')) db.exec('ALTER TABLE players ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0');

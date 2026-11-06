@@ -12,6 +12,8 @@ export type Card = {
   tone: string;
   /** URL de la photo (portrait pour un Acteur, photogramme pour un Rôle). */
   image?: string | null;
+  /** Carte Rôle : le portrait de l'acteur, incrusté sur l'image du film (on reconnaît qui joue). */
+  portrait?: string | null;
   origin?: string | null;
   movieId?: number | null;
   film?: string | null;

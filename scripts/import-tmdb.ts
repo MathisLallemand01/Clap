@@ -327,6 +327,8 @@ async function main() {
       // Une série est rangée sous un identifiant négatif pour ne jamais croiser un film du même numéro.
       movieId: r.tv ? -m.id : m.id, film: m.title, year, character: r.character.split(' / ')[0].replace(/\s*\(uncredited\)/i, ''),
       image: still ? `${IMG}/w780${still}` : null,
+      // Le portrait de l'acteur, incrusté sur l'image du film : on voit tout de suite qui joue.
+      portrait: p.profile ? `${IMG}/w500${p.profile}` : null,
       tags: [
         ...countries, ...genres, `decade:${Math.floor(year / 10) * 10}`,
         ...(r.tv ? ['media:tv'] : []),
