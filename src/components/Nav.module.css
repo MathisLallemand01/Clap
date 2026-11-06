@@ -2,7 +2,7 @@
 .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 72px; }
 .brand { flex: none; }
 .links { display: none; gap: 2px; font-size: 15px; font-weight: 600; }
-.links a { padding: 10px 14px; border-radius: 999px; color: var(--text-2); transition: color 160ms ease, background-color 160ms ease; white-space: nowrap; }
+.links a { position: relative; padding: 10px 14px; border-radius: 999px; color: var(--text-2); transition: color 160ms ease, background-color 160ms ease; white-space: nowrap; }
 .links a:hover { color: var(--text); }
 .links a[aria-current='page'] { background: var(--panel); color: var(--text); }
 @media (min-width: 1100px) { .links { display: flex; } }

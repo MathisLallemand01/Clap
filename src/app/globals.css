@@ -143,6 +143,7 @@ optgroup { color: var(--muted); font-style: normal; }
 
 .segmented { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--panel); gap: 2px; flex-wrap: wrap; }
 .segmented a, .segmented button {
+  position: relative;
   height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; color: var(--text-2);
   font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap;
 }
@@ -207,7 +208,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
   .reveal { opacity: 1; transform: none; }
-  /* Les bandes qui défilent restent en mouvement : lentes, sans clignotement, et elles s'arrêtent au survol. */
+  .pending-top, .pending-underline.is-pending { animation: none; }
+  /* Les bandes qui défilent restent en mouvement : lentes et sans clignotement. */
   .keep-moving { animation-duration: var(--marquee-dur, 80s) !important; animation-iteration-count: infinite !important; }
 }
 
@@ -297,3 +299,20 @@ body::after {
 
 /* Le contenu d'un onglet garde l'espacement de la page qui le contient. */
 .tab-content { display: flex; flex-direction: column; gap: inherit; min-width: 0; }
+
+/* Navigation en cours (voir components/PendingBar.tsx). */
+.pending-underline {
+  position: absolute; left: 14px; right: 14px; bottom: 5px; height: 2px; border-radius: 2px;
+  background: var(--accent); opacity: 0; transform: scaleX(0.2); transition: opacity 120ms ease, transform 120ms ease; pointer-events: none;
+}
+.pending-underline.is-pending { opacity: 1; animation: pending-sweep 900ms ease-in-out infinite; }
+.pending-top {
+  position: fixed; left: 0; top: 0; z-index: 1001; height: 3px; width: 100%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent) 30%, #ffb38f 50%, var(--accent) 70%, transparent);
+  background-size: 50% 100%; background-repeat: no-repeat;
+  animation: pending-top 1s cubic-bezier(0.4, 0, 0.2, 1) infinite, pending-in 200ms ease both;
+  box-shadow: 0 0 12px rgba(255, 74, 28, 0.6);
+}
+@keyframes pending-sweep { 0%, 100% { transform: scaleX(0.25); } 50% { transform: scaleX(1); } }
+@keyframes pending-top { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+@keyframes pending-in { from { opacity: 0; } to { opacity: 1; } }

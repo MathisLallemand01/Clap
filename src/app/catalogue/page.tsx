@@ -6,7 +6,7 @@ import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
 import { BOOSTERS, getBooster } from '@/lib/boosters';
-import { boostersOfCard, getCatalog, ownedCardIds, poolOf, searchCards } from '@/lib/catalog';
+import { boostersOfCard, getCatalog, ownedCardIds, poolOf, searchCards, sortedCatalog, type CatalogSort } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
@@ -59,7 +59,12 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
     const people = new Set(catalog.filter((c) => c.kind === 'role' && pred(c)).map((c) => c.personId));
     return (c: Card) => (c.kind === 'role' ? pred(c) : people.has(c.personId));
   };
-  let cards: Card[] = booster ? poolOf(db, booster) : catalog;
+  // On part du catalogue déjà trié (en cache) : chaque filtre garde l'ordre.
+  let cards: Card[] = sortedCatalog(db, tri as CatalogSort);
+  if (booster) {
+    const pool = new Set(poolOf(db, booster).map((c) => c.id));
+    cards = cards.filter((c) => pool.has(c.id));
+  }
   if (famille) cards = cards.filter((c) => c.kind === famille);
   if (media) cards = cards.filter((c) => c.kind === 'role' && c.tags.includes('media:tv') === (media === 'series'));
   if (rarete) cards = cards.filter((c) => c.rarity === rarete);
@@ -69,13 +74,7 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
   if (ctx && sp.possession === 'possedees') cards = cards.filter((c) => owned.has(c.id));
   if (ctx && sp.possession === 'manquantes') cards = cards.filter((c) => !owned.has(c.id));
   cards = searchCards(cards, sp.q ?? '');
-  const sorted = [...cards].sort((a, b) => {
-    if (tri === 'populaire') return (a.rank ?? 1e9) - (b.rank ?? 1e9) || (b.votes ?? 0) - (a.votes ?? 0);
-    if (tri === 'recent') return (b.year ?? 0) - (a.year ?? 0);
-    if (tri === 'ancien') return (a.year ?? 9999) - (b.year ?? 9999);
-    if (tri === 'nom') return `${a.last} ${a.first}`.localeCompare(`${b.last} ${b.first}`, 'fr');
-    return RARITIES[b.rarity].entries - RARITIES[a.rarity].entries || (b.votes ?? 0) - (a.votes ?? 0) || (a.rank ?? 1e9) - (b.rank ?? 1e9);
-  });
+  const sorted = cards;
   const page = Math.max(1, Number(sp.page) || 1);
   const shown = sorted.slice(0, page * PAGE);
   const have = ctx ? cards.filter((c) => owned.has(c.id)).length : 0;

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
+import { PendingBar } from '@/components/PendingBar';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
@@ -97,10 +98,10 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
 
         <div className={styles.toolbar}>
           <nav className="segmented" aria-label="Onglets de la collection">
-            <Link href="/collection" aria-current={view === 'acteurs' ? 'true' : undefined}><i className={styles.round} />Acteurs · {formatNumber(ownedOf('actor'))}<small> / {formatNumber(catalogOf('actor'))}</small></Link>
-            <Link href="/collection?vue=roles" aria-current={view === 'roles' ? 'true' : undefined}><i className={styles.diamond} />Rôles · {formatNumber(ownedOf('role'))}<small> / {formatNumber(catalogOf('role'))}</small></Link>
-            <Link href="/collection?vue=duos" aria-current={view === 'duos' ? 'true' : undefined} className={styles.tabDuo}>Duos · {formatNumber(ctx.stats.duos)}</Link>
-            <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)} commencée{sagaCount > 1 ? 's' : ''}</Link>
+            <Link href="/collection" aria-current={view === 'acteurs' ? 'true' : undefined}><i className={styles.round} />Acteurs · {formatNumber(ownedOf('actor'))}<small> / {formatNumber(catalogOf('actor'))}</small><PendingBar /></Link>
+            <Link href="/collection?vue=roles" aria-current={view === 'roles' ? 'true' : undefined}><i className={styles.diamond} />Rôles · {formatNumber(ownedOf('role'))}<small> / {formatNumber(catalogOf('role'))}</small><PendingBar /></Link>
+            <Link href="/collection?vue=duos" aria-current={view === 'duos' ? 'true' : undefined} className={styles.tabDuo}>Duos · {formatNumber(ctx.stats.duos)}<PendingBar /></Link>
+            <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)} commencée{sagaCount > 1 ? 's' : ''}<PendingBar /></Link>
           </nav>
           {(view === 'acteurs' || view === 'roles') && <form className={styles.search} role="search" action="/collection">
             {view === 'roles' && <input type="hidden" name="vue" value="roles" />}

@@ -5,6 +5,7 @@ import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
 import { SeatIcon, TicketIcon } from './Icons';
 import { LogoutButton } from './LogoutButton';
+import { PendingBar } from './PendingBar';
 import { Wordmark } from './Mark';
 import { NotificationBell } from './NotificationBell';
 import { TicketCounter } from './TicketCounter';
@@ -45,7 +46,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
             <nav className={styles.links} aria-label="Navigation principale">
               {NAV_LINKS.map((l, i) => (
                 <Link key={l.href} href={l.href} aria-current={current === l.href ? 'page' : undefined}
-                  transitionTypes={direction(i, NAV_LINKS.findIndex((x) => x.href === current))}>{l.label}</Link>
+                  transitionTypes={direction(i, NAV_LINKS.findIndex((x) => x.href === current))}>{l.label}<PendingBar /></Link>
               ))}
             </nav>
             <div className={styles.right}>

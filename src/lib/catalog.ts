@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { BOOSTERS, type BoosterDef } from './boosters.ts';
-import { rowToCard, type CardRow } from './db.ts';
+import { cardsVersion, rowToCard, type CardRow } from './db.ts';
 import { boosterPool } from './pull.ts';
 import { RARITIES, type Rarity } from './rarity.ts';
 import type { Card } from './types.ts';
@@ -10,10 +10,7 @@ import type { Card } from './types.ts';
 const cache = new WeakMap<DatabaseSync, { version: string; cards: Card[]; byId: Map<string, Card>; sorted: Card[] }>();
 
 function version(db: DatabaseSync): string {
-  const { n, m } = db.prepare('SELECT COUNT(*) AS n, MAX(rowid) AS m FROM cards').get() as { n: number; m: number | null };
-  // data_version change quand un autre processus écrit dans la base (un import pendant que le site tourne).
-  const { data_version: d } = db.prepare('PRAGMA data_version').get() as { data_version: number };
-  return `${n}:${m}:${d}`;
+  return cardsVersion(db);
 }
 
 function load(db: DatabaseSync) {
@@ -126,10 +123,22 @@ export function ownedCardIds(db: DatabaseSync, playerId: string): Set<string> {
   return new Set((db.prepare('SELECT DISTINCT card_id FROM owned WHERE player_id = ?').all(playerId) as { card_id: string }[]).map((r) => r.card_id));
 }
 
-const boosterIndex = new WeakMap<DatabaseSync, { version: string; byCard: Map<string, string[]> }>();
+const boosterIndex = new WeakMap<DatabaseSync, { version: string; byCard: Map<string, string[]>; totals: Map<string, number> }>();
 
 /** Les bobines où l'on peut tirer chaque carte, la plus ciblée d'abord (calculé une fois par version du catalogue). */
 export function boostersOfCard(db: DatabaseSync, cardId: string): string[] {
+  return index(db).byCard.get(cardId) ?? [];
+}
+
+/** Pour chaque bobine : combien de cartes elle peut donner, et combien le joueur en possède. */
+export function boosterProgress(db: DatabaseSync, owned: Set<string>): Map<string, { owned: number; total: number }> {
+  const { byCard, totals } = index(db);
+  const out = new Map([...totals].map(([id, total]) => [id, { owned: 0, total }]));
+  for (const cardId of owned) for (const b of byCard.get(cardId) ?? []) out.get(b)!.owned++;
+  return out;
+}
+
+function index(db: DatabaseSync) {
   const { version: v } = load(db);
   let entry = boosterIndex.get(db);
   if (!entry || entry.version !== v) {
@@ -143,8 +152,35 @@ export function boostersOfCard(db: DatabaseSync, cardId: string): string[] {
     // La bobine la plus ciblée (la plus petite réserve) d'abord : c'est là qu'on a le plus de chances de la tirer.
     const size = new Map(BOOSTERS.map((b) => [b.id, poolOf(db, b).length]));
     for (const list of byCard.values()) list.sort((a, b) => size.get(a)! - size.get(b)!);
-    entry = { version: v, byCard };
+    const totals = new Map(BOOSTERS.map((b) => [b.id, 0]));
+    for (const list of byCard.values()) for (const b of list) totals.set(b, totals.get(b)! + 1);
+    entry = { version: v, byCard, totals };
     boosterIndex.set(db, entry);
   }
-  return entry.byCard.get(cardId) ?? [];
+  return entry;
+}
+
+export type CatalogSort = 'rarete' | 'populaire' | 'recent' | 'ancien' | 'nom';
+const sortedCache = new WeakMap<DatabaseSync, { version: string; bySort: Map<CatalogSort, Card[]> }>();
+
+/** Tout le catalogue trié (mis en cache) : les filtres gardent l'ordre, aucun tri à refaire par visite. */
+export function sortedCatalog(db: DatabaseSync, sort: CatalogSort): Card[] {
+  const { version: v, cards } = load(db);
+  let entry = sortedCache.get(db);
+  if (!entry || entry.version !== v) {
+    entry = { version: v, bySort: new Map() };
+    sortedCache.set(db, entry);
+  }
+  let list = entry.bySort.get(sort);
+  if (!list) {
+    list = [...cards].sort((a, b) => {
+      if (sort === 'populaire') return (a.rank ?? 1e9) - (b.rank ?? 1e9) || (b.votes ?? 0) - (a.votes ?? 0);
+      if (sort === 'recent') return (b.year ?? 0) - (a.year ?? 0);
+      if (sort === 'ancien') return (a.year ?? 9999) - (b.year ?? 9999);
+      if (sort === 'nom') return `${a.last} ${a.first}`.localeCompare(`${b.last} ${b.first}`, 'fr');
+      return RARITIES[b.rarity].entries - RARITIES[a.rarity].entries || (b.votes ?? 0) - (a.votes ?? 0) || (a.rank ?? 1e9) - (b.rank ?? 1e9);
+    });
+    entry.bySort.set(sort, list);
+  }
+  return list;
 }

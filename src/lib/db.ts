@@ -200,7 +200,20 @@ export function rowToCard(r: CardRow): Card {
   };
 }
 
+/** Changements du catalogue faits par cette connexion (ceux des autres processus se lisent dans data_version). */
+const localCardWrites = new WeakMap<DatabaseSync, number>();
+
+/**
+ * Version du catalogue, pour savoir si les caches sont à jour. Instantané : PRAGMA data_version change
+ * dès qu'un autre processus écrit (un import pendant que le site tourne), le compteur local couvre le reste.
+ */
+export function cardsVersion(db: DatabaseSync): string {
+  const { data_version: d } = db.prepare('PRAGMA data_version').get() as { data_version: number };
+  return `${d}:${localCardWrites.get(db) ?? 0}`;
+}
+
 export function upsertCards(db: DatabaseSync, cards: Card[]): void {
+  localCardWrites.set(db, (localCardWrites.get(db) ?? 0) + 1);
   const stmt = db.prepare(`
     INSERT INTO cards (id, kind, person_id, first, last, rarity, tone, image, origin, movie_id, film, year, character, tags, rank, votes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

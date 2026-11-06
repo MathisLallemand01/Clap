@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Scene, Searchlights } from '@/components/Decor';
 import { Footer, Nav } from '@/components/Nav';
 import { DiscordLogo } from '@/components/DiscordLogo';
+import { PendingBar } from '@/components/PendingBar';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
 import { getDb } from '@/lib/db';
@@ -65,7 +66,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
               </p>
             </div>
             <nav className="segmented" aria-label="Classements">
-              {VIEWS.map((v) => <Link key={v.id} href={`/classement?vue=${v.id}`} aria-current={v.id === view ? 'true' : undefined}>{v.label}</Link>)}
+              {VIEWS.map((v) => <Link key={v.id} href={`/classement?vue=${v.id}`} aria-current={v.id === view ? 'true' : undefined}>{v.label}<PendingBar /></Link>)}
             </nav>
           </div>
 

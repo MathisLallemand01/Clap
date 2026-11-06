@@ -4,6 +4,7 @@ import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { PendingBar } from '@/components/PendingBar';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
@@ -72,9 +73,9 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
               <p className="lead">Le marché des joueurs. Achetez et vendez vos cartes en tickets, 5 % de commission sur chaque vente.</p>
             </div>
             <div className="segmented" role="tablist" aria-label="Le Guichet">
-              <Link href="/guichet" role="tab" aria-selected={view === 'acheter'}>Acheter</Link>
-              <Link href="/guichet?vue=vendre" role="tab" aria-selected={view === 'vendre'}>Vendre</Link>
-              <Link href="/guichet?vue=mes-annonces" role="tab" aria-selected={view === 'mes-annonces'}>Mes annonces</Link>
+              <Link href="/guichet" role="tab" aria-selected={view === 'acheter'}>Acheter<PendingBar /></Link>
+              <Link href="/guichet?vue=vendre" role="tab" aria-selected={view === 'vendre'}>Vendre<PendingBar /></Link>
+              <Link href="/guichet?vue=mes-annonces" role="tab" aria-selected={view === 'mes-annonces'}>Mes annonces<PendingBar /></Link>
             </div>
           </header>
         </div>

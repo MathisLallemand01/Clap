@@ -72,6 +72,17 @@ d’Apple (iTunes Search, repli sur Deezer), avec un lien « Écouter en entier 
 nécessaire, mais le serveur doit pouvoir joindre `itunes.apple.com`. La bobine « Bande originale » ne contient
 que ces cartes.
 
+## Sécurité
+
+- Mots de passe hachés (scrypt) ; la base ne garde que l'empreinte SHA-256 des jetons de session.
+- Cookies `httpOnly`, `SameSite=Lax`, `Secure` en production.
+- Tentatives limitées : connexion (20 par adresse IP et 8 par compte toutes les 15 minutes), inscription
+  (5 par heure et par adresse), bobine offerte aux visiteurs (3 par jour et par adresse). Ces compteurs
+  sont en mémoire : ils valent pour un seul processus et repartent de zéro au redémarrage.
+- Redirections limitées aux chemins internes du site ; en-têtes de sécurité (anti-cadre, `nosniff`,
+  `Referrer-Policy`, `Permissions-Policy`, HSTS en production) dans `next.config.ts`.
+- Le compte de test aux tickets illimités (`npm run account:test`) est refusé en production.
+
 ## Scripts
 
 | Commande | Rôle |

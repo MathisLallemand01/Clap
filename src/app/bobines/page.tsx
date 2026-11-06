@@ -7,11 +7,12 @@ import { FlipClock } from '@/components/FlipClock';
 import { ArrowIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
 import { PackTile } from '@/components/PackTile';
+import { PendingBar } from '@/components/PendingBar';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
 import { BOOSTERS, boosterOfTheDay, FAMILY_SHELVES, featuredEvent, FREE_BOOSTER_CAP, getBooster, GROUP_LABELS, NEW_BOOSTERS, type BoosterFamily, type BoosterGroup } from '@/lib/boosters';
-import { boosterCover, ownedCardIds, poolOf } from '@/lib/catalog';
+import { boosterCover, boosterProgress, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { FAMILY, ladderOf, RARITIES, rarityName, type Rarity } from '@/lib/rarity';
@@ -57,10 +58,9 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
           .map((g) => ({ id: `film-${g}`, label: GROUP_LABELS[g], boosters: BOOSTERS.filter((b) => b.family === f && b.group === g) }))
           .filter((g) => g.boosters.length > 0),
     }));
-  const progress = (id: string) => {
-    const pool = poolOf(db, getBooster(id)!);
-    return { owned: pool.reduce((n, c) => n + (owned.has(c.id) ? 1 : 0), 0), total: pool.length };
-  };
+  // Progression de chaque bobine : les cartes qu'elle peut donner, et celles déjà obtenues.
+  const progressAll = boosterProgress(db, owned);
+  const progress = (id: string) => progressAll.get(id) ?? { owned: 0, total: 0 };
   const eventOdds = event.slots[event.slots.length - 1].odds as Partial<Record<Rarity, number>>;
 
   return (
@@ -134,7 +134,7 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
           <div className="segmented">
             {SHELVES.map((x) => (
               <Link key={x.id} href={x.id === 'tout' ? '/bobines#rayons' : `/bobines?rayon=${x.id}#rayons`} aria-current={x.id === shelf.id ? 'true' : undefined} scroll={false}>
-                {x.family && <i className={x.family === 'actor' ? styles.markRound : styles.markDiamond} />}{x.label}
+                {x.family && <i className={x.family === 'actor' ? styles.markRound : styles.markDiamond} />}{x.label}<PendingBar />
               </Link>
             ))}
           </div>
