@@ -58,6 +58,7 @@ export default async function RolePage({ params }: Props) {
             <span className={styles.rarityPill} style={{ color: rarity.color, borderColor: rarity.color }}>
               <span style={{ background: rarity.color, borderRadius: 2, transform: 'rotate(45deg)' }} />Rôle · {rarity.label}
             </span>
+            <span className="muted" style={{ fontSize: 14 }}>{rarity.rule} <Link href="/raretes#roles" className="accent">Les raretés Rôle</Link></span>
             <h1 className="display">{card.film}</h1>
             <p className={styles.lead2}>
               <Link href={`/acteur/${card.personId}`}><b>{card.first} {card.last}</b></Link> dans le rôle de <b style={{ color: rarity.color }}>{card.character}</b>

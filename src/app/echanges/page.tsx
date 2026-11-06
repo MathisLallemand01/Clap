@@ -52,7 +52,7 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const ctx = await requireContext('/echanges');
   const db = getDb();
-  const demo = [...showcase(db, { count: 1, kind: 'actor', rarities: ['tete'] }), ...showcase(db, { count: 1, kind: 'role', rarities: ['chef'] })];
+  const demo = [...showcase(db, { count: 1, kind: 'actor', rarities: ['tete'] }), ...showcase(db, { count: 1, kind: 'role', rarities: ['icone'] })];
   const me = ctx.user.id;
   const { friends, incoming, outgoing } = listFriends(db, me);
   const { pending, history } = listTrades(db, me);

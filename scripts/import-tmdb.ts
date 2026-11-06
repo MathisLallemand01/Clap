@@ -1,12 +1,15 @@
-// Importe le catalogue réel depuis TMDB : acteurs populaires, portraits, rôles principaux.
+// Importe le catalogue réel depuis TMDB, à partir de deux sources :
+//   1. les films les plus vus au monde (5 000 par défaut), avec leurs 4 premiers rôles au générique ;
+//   2. les acteurs populaires (10 000 par défaut), avec leurs 10 rôles principaux les plus vus.
+// Ainsi aucun grand film ne manque, et les stars de l'âge d'or arrivent par leurs films.
 //
-//   npm run import:tmdb                  (10 000 acteurs : 500 pages de 20, le maximum de TMDB)
-//   TMDB_PAGES=25 npm run import:tmdb    (500 acteurs, pour un essai rapide)
+//   npm run import:tmdb                                (complet : compter environ 1 h 30)
+//   TMDB_PAGES=25 TMDB_FILM_PAGES=25 npm run import:tmdb   (essai rapide : 500 acteurs, 500 films)
 //
 // Les hôtes api.themoviedb.org et image.tmdb.org doivent être joignables.
 import { join } from 'node:path';
-import { openDb, upsertCards } from '../src/lib/db.ts';
-import { actorRarityFromRank, roleRarityFromMovie, type RoleRarity } from '../src/lib/rarity.ts';
+import { openDb, upsertCards, upsertSagas } from '../src/lib/db.ts';
+import { actorRarityFromRank, roleRarity, type ActorRarity } from '../src/lib/rarity.ts';
 import type { Card } from '../src/lib/types.ts';
 
 const KEY = process.env.TMDB_API_KEY;
@@ -14,48 +17,67 @@ if (!KEY) {
   console.error('TMDB_API_KEY manquante (voir .env.example).');
   process.exit(1);
 }
+/** Acteurs populaires : pages de 20 (500 au maximum chez TMDB). */
 const PAGES = Math.min(500, Number(process.env.TMDB_PAGES ?? 500));
-const ROLES_PER_ACTOR = 6;
+/** Films les plus vus : pages de 20 (250 pages = 5 000 films). */
+const FILM_PAGES = Math.min(500, Number(process.env.TMDB_FILM_PAGES ?? 250));
+const ROLES_PER_ACTOR = 10;
+/** Les 4 premiers noms au générique (0 à 3). */
+const MAX_ORDER = 3;
 const IMG = 'https://image.tmdb.org/t/p';
 const TONES = ['#352C22', '#2E2A36', '#22303A', '#2A2F26', '#30262A', '#232A38', '#2E2B27', '#2B2A30', '#2A1622', '#1F2A3A'];
 
-/** Les Icônes sont choisies à la main : « acteur|titre original ». */
-const ICONS = new Set([
-  'Heath Ledger|The Dark Knight',
-  'Al Pacino|The Godfather',
-  'Marlon Brando|The Godfather',
-  'Harrison Ford|Star Wars',
-  'Mark Hamill|Star Wars',
-  'Carrie Fisher|Star Wars',
-  'Harrison Ford|Raiders of the Lost Ark',
-  'Sigourney Weaver|Alien',
-  'Robert De Niro|Taxi Driver',
-  'Jack Nicholson|The Shining',
-  'Anthony Hopkins|The Silence of the Lambs',
-  'Keanu Reeves|The Matrix',
-  'Uma Thurman|Pulp Fiction',
-  'John Travolta|Pulp Fiction',
-  'Samuel L. Jackson|Pulp Fiction',
-  'Arnold Schwarzenegger|The Terminator',
-  'Johnny Depp|Pirates of the Caribbean: The Curse of the Black Pearl',
-  'Leonardo DiCaprio|Titanic',
-  'Audrey Hepburn|Breakfast at Tiffany\'s',
-  'Marilyn Monroe|Some Like It Hot',
-  'Sylvester Stallone|Rocky',
-  'Bruce Willis|Die Hard',
-  'Joaquin Phoenix|Joker',
-  'Michael J. Fox|Back to the Future',
-  'Tom Hanks|Forrest Gump',
-  'Morgan Freeman|The Shawshank Redemption',
-  'Russell Crowe|Gladiator',
-  'Robert Downey Jr.|Iron Man',
-  'Elijah Wood|The Lord of the Rings: The Fellowship of the Ring',
-  'Ian McKellen|The Lord of the Rings: The Fellowship of the Ring',
-  'Daniel Radcliffe|Harry Potter and the Philosopher\'s Stone',
-  'Jean-Paul Belmondo|À bout de souffle',
-  'Audrey Tautou|Le Fabuleux Destin d\'Amélie Poulain',
-  'Jean Reno|Léon',
-]);
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
+
+/**
+ * Les Mythes, choisis un à un : « acteur|titre » (titre original ou français, peu importe la casse et les accents).
+ * Ce sont les personnages que tout le monde reconnaît, au-delà du film.
+ */
+const MYTHES = new Set([
+  'Marlon Brando|The Godfather', 'Al Pacino|The Godfather', 'Robert De Niro|The Godfather Part II', 'Al Pacino|Scarface',
+  'Robert De Niro|Taxi Driver', 'Harrison Ford|Star Wars', 'Mark Hamill|Star Wars', 'Carrie Fisher|Star Wars',
+  'Harrison Ford|Raiders of the Lost Ark', 'Sigourney Weaver|Alien', 'Arnold Schwarzenegger|The Terminator',
+  'Arnold Schwarzenegger|Terminator 2: Judgment Day', 'Linda Hamilton|Terminator 2: Judgment Day', 'Keanu Reeves|The Matrix',
+  'Keanu Reeves|John Wick', 'Johnny Depp|Pirates of the Caribbean: The Curse of the Black Pearl', 'Heath Ledger|The Dark Knight',
+  'Christian Bale|The Dark Knight', 'Joaquin Phoenix|Joker', 'Jack Nicholson|The Shining', "Jack Nicholson|One Flew Over the Cuckoo's Nest",
+  'Jack Nicholson|Batman', 'Michael Keaton|Batman', 'Anthony Hopkins|The Silence of the Lambs', 'Jodie Foster|The Silence of the Lambs',
+  'Tom Hanks|Forrest Gump', 'Morgan Freeman|The Shawshank Redemption', 'Tim Robbins|The Shawshank Redemption',
+  'Leonardo DiCaprio|Titanic', 'Kate Winslet|Titanic', 'Leonardo DiCaprio|The Wolf of Wall Street', 'Leonardo DiCaprio|Inception',
+  'Russell Crowe|Gladiator', 'Brad Pitt|Fight Club', 'Edward Norton|Fight Club', 'Uma Thurman|Pulp Fiction', 'John Travolta|Pulp Fiction',
+  'Samuel L. Jackson|Pulp Fiction', 'Uma Thurman|Kill Bill: Vol. 1', 'Bruce Willis|Die Hard', 'Sylvester Stallone|Rocky',
+  'Sylvester Stallone|First Blood', 'Michael J. Fox|Back to the Future', 'Christopher Lloyd|Back to the Future',
+  "Daniel Radcliffe|Harry Potter and the Philosopher's Stone", "Emma Watson|Harry Potter and the Philosopher's Stone",
+  "Rupert Grint|Harry Potter and the Philosopher's Stone", 'Elijah Wood|The Lord of the Rings: The Fellowship of the Ring',
+  'Ian McKellen|The Lord of the Rings: The Fellowship of the Ring', 'Viggo Mortensen|The Lord of the Rings: The Return of the King',
+  'Robert Downey Jr.|Iron Man', 'Christian Bale|American Psycho', 'Mel Gibson|Mad Max', 'Mel Gibson|Braveheart',
+  'Charlize Theron|Mad Max: Fury Road', 'Tom Hardy|Mad Max: Fury Road', 'Tom Cruise|Top Gun', 'Tom Cruise|Mission: Impossible',
+  'Matt Damon|The Bourne Identity', 'Daniel Craig|Casino Royale', 'Sean Connery|Goldfinger', 'Sean Connery|Dr. No',
+  'Clint Eastwood|Il buono, il brutto, il cattivo', 'Clint Eastwood|Dirty Harry', 'Humphrey Bogart|Casablanca', 'Ingrid Bergman|Casablanca',
+  'Marilyn Monroe|Some Like It Hot', "Audrey Hepburn|Breakfast at Tiffany's", 'Vivien Leigh|Gone with the Wind', 'Clark Gable|Gone with the Wind',
+  'Judy Garland|The Wizard of Oz', 'Charlie Chaplin|Modern Times', 'Anthony Perkins|Psycho', 'Malcolm McDowell|A Clockwork Orange',
+  'Dustin Hoffman|Rain Man', 'Jim Carrey|The Mask', 'Jim Carrey|The Truman Show', 'Will Smith|Men in Black', 'Tommy Lee Jones|Men in Black',
+  'Bill Murray|Ghostbusters', 'Eddie Murphy|Beverly Hills Cop', 'Liam Neeson|Taken', 'Hugh Jackman|X-Men', 'Hugh Jackman|Logan',
+  'Ryan Reynolds|Deadpool', 'Chris Evans|The Avengers', 'Chris Hemsworth|Thor', 'Tobey Maguire|Spider-Man', 'Gal Gadot|Wonder Woman',
+  'Vin Diesel|The Fast and the Furious', 'Paul Walker|The Fast and the Furious', 'Ryan Gosling|Drive', 'Margot Robbie|Barbie',
+  'Cillian Murphy|Oppenheimer', 'Matthew McConaughey|Interstellar', 'Timothée Chalamet|Dune', 'Natalie Portman|Léon', 'Jean Reno|Léon',
+  "Audrey Tautou|Le Fabuleux Destin d'Amélie Poulain", 'Jean-Paul Belmondo|À bout de souffle', 'Omar Sy|Intouchables',
+  'François Cluzet|Intouchables', 'Louis de Funès|La Grande Vadrouille', 'Bourvil|La Grande Vadrouille', 'Alain Delon|Le Samouraï',
+  'Gérard Depardieu|Cyrano de Bergerac', 'Christian Clavier|Les Visiteurs', 'Jean Reno|Les Visiteurs', 'Song Kang-ho|기생충',
+  'Toshirō Mifune|七人の侍', 'Bruce Lee|Enter the Dragon', 'Shah Rukh Khan|Dilwale Dulhania Le Jayenge', "Robin Williams|Dead Poets Society",
+  'Martin Sheen|Apocalypse Now', 'Ray Liotta|Goodfellas', 'Daniel Day-Lewis|There Will Be Blood', 'Javier Bardem|No Country for Old Men',
+  'Kevin Costner|Dances with Wolves', 'Julia Roberts|Pretty Woman', 'Patrick Swayze|Dirty Dancing', 'Sharon Stone|Basic Instinct',
+].map((k) => norm(k)));
+
+/** Monstres sacrés : Légendes d'office, même si les votes TMDB favorisent les films récents. */
+const LEGENDS = new Set([
+  'Humphrey Bogart', 'Marilyn Monroe', 'Audrey Hepburn', 'Cary Grant', 'James Stewart', 'Marlon Brando', 'James Dean', 'Grace Kelly',
+  'Ingrid Bergman', 'Katharine Hepburn', 'Bette Davis', 'Clark Gable', 'Vivien Leigh', 'Charlie Chaplin', 'Elizabeth Taylor',
+  'Gregory Peck', 'Henry Fonda', 'John Wayne', 'Paul Newman', 'Steve McQueen', 'Sophia Loren', 'Marcello Mastroianni', 'Jean Gabin',
+  'Alain Delon', 'Jean-Paul Belmondo', 'Brigitte Bardot', 'Catherine Deneuve', 'Louis de Funès', 'Simone Signoret', 'Toshirō Mifune',
+  'Bruce Lee', 'Orson Welles', 'Kirk Douglas', 'Burt Lancaster', 'Gene Kelly', 'Fred Astaire', 'Judy Garland', 'Greta Garbo',
+  'Lauren Bacall', 'Jack Lemmon', "Peter O'Toole", 'Sean Connery', 'Clint Eastwood', 'Robert Redford', 'Dustin Hoffman', 'Al Pacino',
+  'Robert De Niro', 'Jack Nicholson', 'Meryl Streep', 'Gérard Depardieu', 'Jean Reno', 'Tom Hanks', 'Denzel Washington',
+].map(norm));
 
 const GENRES: Record<number, string> = { 28: 'action', 35: 'comedy', 878: 'scifi', 27: 'horror', 18: 'drama', 16: 'animation', 37: 'western' };
 
@@ -65,7 +87,14 @@ type CastCredit = {
   vote_count: number; vote_average: number; genre_ids: number[]; backdrop_path: string | null; poster_path: string | null;
 };
 type PersonDetails = { id: number; name: string; profile_path: string | null; movie_credits: { cast: CastCredit[] } };
-type MovieDetails = { production_countries: { iso_3166_1: string }[]; revenue: number };
+type MovieDetails = {
+  id: number; title: string; original_title: string; release_date?: string; vote_count: number; vote_average: number; revenue: number;
+  genres: { id: number }[]; production_countries: { iso_3166_1: string }[]; backdrop_path: string | null; poster_path: string | null;
+  belongs_to_collection: { id: number; name: string } | null;
+  credits?: { cast: { id: number; name: string; character: string; order: number; profile_path: string | null; known_for_department?: string }[] };
+};
+/** Un rôle repéré, en attendant de connaître le rang de son acteur pour calculer sa rareté. */
+type RoleFacts = { personId: number; order: number; character: string; movie: MovieDetails };
 
 async function tmdb<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`https://api.themoviedb.org/3${path}`);
@@ -74,11 +103,12 @@ async function tmdb<T>(path: string, params: Record<string, string> = {}): Promi
   const bearer = KEY!.startsWith('eyJ');
   if (!bearer) url.searchParams.set('api_key', KEY!);
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { headers: bearer ? { Authorization: `Bearer ${KEY}` } : {} });
-    if (res.status === 429 && attempt < 5) {
+    const res = await fetch(url, { headers: bearer ? { Authorization: `Bearer ${KEY}` } : {} }).catch(() => null);
+    if ((!res || res.status === 429 || res.status >= 500) && attempt < 6) {
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       continue;
     }
+    if (!res) throw new Error(`TMDB injoignable sur ${path}`);
     if (!res.ok) throw new Error(`TMDB ${res.status} sur ${path}`);
     return res.json() as Promise<T>;
   }
@@ -102,28 +132,59 @@ const split = (name: string) => {
   return i < 0 ? { first: '', last: name } : { first: name.slice(0, i), last: name.slice(i + 1) };
 };
 
-const movieCache = new Map<number, Promise<MovieDetails>>();
-const movie = (id: number) => {
-  if (!movieCache.has(id)) movieCache.set(id, tmdb<MovieDetails>(`/movie/${id}`));
+/** Doublage, archives, apparitions dans son propre rôle : une carte Rôle doit montrer l'acteur à l'image. */
+const playsOnScreen = (character: string) =>
+  !!character && !/\((voice|voix|archive)/i.test(character) && !/^(him|her)?self\b/i.test(character) && !/^(lui|elle)-même/i.test(character);
+
+const movieCache = new Map<number, Promise<MovieDetails | null>>();
+const movie = (id: number, withCredits = false) => {
+  if (!movieCache.has(id)) {
+    movieCache.set(id, tmdb<MovieDetails>(`/movie/${id}`, withCredits ? { append_to_response: 'credits' } : {}).catch(() => null));
+  }
   return movieCache.get(id)!;
 };
 
 async function main() {
   const db = openDb(process.env.CLAP_DB_PATH || join(process.cwd(), 'data', 'clap.db'));
+  const people = new Map<number, { id: number; name: string; profile: string | null; popRank: number | null }>();
+  const roles = new Map<string, RoleFacts>();
+  const addRole = (personId: number, order: number, character: string, m: MovieDetails) => {
+    const key = `role:${personId}:${m.id}`;
+    const prev = roles.get(key);
+    if (!prev || order < prev.order) roles.set(key, { personId, order, character, movie: m });
+  };
+
+  // 1. Les films les plus vus, avec leurs premiers rôles.
+  console.log(`Films les plus vus : ${FILM_PAGES} pages…`);
+  const filmPages = await pool(Array.from({ length: FILM_PAGES }, (_, i) => i + 1), 8, (page) =>
+    tmdb<{ results: { id: number }[] }>('/discover/movie', { sort_by: 'vote_count.desc', page: String(page), without_genres: '16,99', include_adult: 'false' })
+      .catch(() => ({ results: [] })));
+  const filmIds = [...new Set(filmPages.flatMap((p) => p.results.map((r) => r.id)))];
+  let done = 0;
+  await pool(filmIds, 8, async (id) => {
+    const m = await movie(id, true);
+    if (m?.credits && m.release_date) {
+      for (const c of m.credits.cast) {
+        if (c.order > MAX_ORDER || !c.profile_path || !playsOnScreen(c.character)) continue;
+        if (!people.has(c.id)) people.set(c.id, { id: c.id, name: c.name, profile: c.profile_path, popRank: null });
+        addRole(c.id, c.order, c.character, m);
+      }
+    }
+    if (++done % 500 === 0) console.log(`  ${done} / ${filmIds.length} films, ${people.size} acteurs, ${roles.size} rôles`);
+  });
+
+  // 2. Les acteurs populaires, avec leurs rôles principaux les plus vus.
   console.log(`Acteurs populaires : ${PAGES} pages…`);
   const pages = await pool(Array.from({ length: PAGES }, (_, i) => i + 1), 8, (page) =>
     tmdb<{ results: Person[] }>('/person/popular', { page: String(page) }).catch(() => ({ results: [] as Person[] })));
-  const seen = new Set<number>();
-  const people = pages
-    .flatMap((p) => p.results)
-    .filter((p) => p.known_for_department === 'Acting' && !p.adult && p.profile_path && !seen.has(p.id) && seen.add(p.id));
-  console.log(`${people.length} acteurs avec portrait. Filmographies…`);
-
-  const cards: Card[] = [];
-  const fame = new Map<number, number>();
-  let done = 0;
-  await pool(people, 8, async (person, index) => {
-    const rank = index + 1;
+  const popular = pages.flatMap((p) => p.results).filter((p) => p.known_for_department === 'Acting' && !p.adult && p.profile_path);
+  popular.forEach((p, i) => {
+    const known = people.get(p.id);
+    if (known) known.popRank ??= i + 1;
+    else people.set(p.id, { id: p.id, name: p.name, profile: p.profile_path, popRank: i + 1 });
+  });
+  done = 0;
+  await pool(popular, 8, async (person) => {
     let d: PersonDetails;
     try {
       d = await tmdb<PersonDetails>(`/person/${person.id}`, { append_to_response: 'movie_credits' });
@@ -131,59 +192,73 @@ async function main() {
       console.warn(`  ${person.name} ignoré : ${(err as Error).message}`);
       return;
     }
-    const { first, last } = split(d.name);
-    const tone = TONES[d.id % TONES.length];
-    // Notoriété de carrière : votes cumulés des films où l'acteur tient un rôle principal.
-    const leads = d.movie_credits.cast.filter((c) => c.order <= 3);
-    fame.set(d.id, leads.reduce((sum, c) => sum + c.vote_count, 0) + 2_000 / rank);
-    cards.push({
-      id: `actor:${d.id}`, kind: 'actor', personId: d.id, first, last, tone, rank,
-      rarity: 'figurant',
-      image: d.profile_path ? `${IMG}/w500${d.profile_path}` : null,
-      tags: [],
-    });
-
-    // Rôles principaux uniquement (4 premiers au générique), des films les plus vus.
-    const roles = d.movie_credits.cast
-      // On écarte le doublage (dessins animés, voix) et les apparitions dans son propre rôle :
-      // une carte Rôle doit montrer l'acteur à l'image.
-      .filter((c) => c.order <= 3 && c.character && c.release_date && c.vote_count >= 30 && (c.backdrop_path || c.poster_path)
-        && !c.genre_ids.includes(16) && !/\((voice|voix|archive)/i.test(c.character) && !/^(him|her)?self\b/i.test(c.character))
+    const best = d.movie_credits.cast
+      .filter((c) => c.order <= MAX_ORDER && c.release_date && c.vote_count >= 30 && (c.backdrop_path || c.poster_path)
+        && !c.genre_ids.includes(16) && playsOnScreen(c.character))
       .sort((a, b) => b.vote_count - a.vote_count)
       .slice(0, ROLES_PER_ACTOR);
-
-    for (const c of roles) {
-      const details = await movie(c.id).catch(() => ({ production_countries: [], revenue: 0 }));
-      const year = Number(c.release_date!.slice(0, 4));
-      const countries = details.production_countries.map((p) => `country:${p.iso_3166_1}`);
-      const genres = c.genre_ids.filter((g) => GENRES[g]).map((g) => `genre:${GENRES[g]}`);
-      const rarity: RoleRarity = ICONS.has(`${d.name}|${c.original_title}`) ? 'icone' : roleRarityFromMovie(c.vote_count, c.vote_average);
-      const still = c.backdrop_path ?? c.poster_path;
-      cards.push({
-        id: `role:${d.id}:${c.id}`, kind: 'role', personId: d.id, first, last, tone, rarity, rank, votes: c.vote_count,
-        movieId: c.id, film: c.title, year, character: c.character.split(' / ')[0].replace(/\s*\(uncredited\)/i, ''),
-        image: still ? `${IMG}/w780${still}` : null,
-        tags: [...countries, ...genres, `decade:${Math.floor(year / 10) * 10}`, ...(details.revenue >= 300_000_000 ? ['blockbuster'] : [])],
-      });
+    for (const c of best) {
+      const m = await movie(c.id);
+      if (m) addRole(d.id, c.order, c.character, m);
     }
-    if (++done % 250 === 0) console.log(`  ${done} / ${people.length} acteurs, ${cards.length} cartes`);
+    if (++done % 500 === 0) console.log(`  ${done} / ${popular.length} acteurs populaires, ${roles.size} rôles`);
   });
 
-  // Rareté des acteurs : par rang de notoriété de carrière.
-  const actors = cards.filter((c) => c.kind === 'actor').sort((a, b) => (fame.get(b.personId) ?? 0) - (fame.get(a.personId) ?? 0));
-  actors.forEach((a, i) => {
-    a.rank = i + 1;
-    a.rarity = actorRarityFromRank(i + 1, actors.length);
-  });
+  // 3. Notoriété de carrière : votes cumulés des films où l'acteur tient un rôle principal, plus sa popularité du moment.
+  const fame = new Map<number, number>();
+  for (const r of roles.values()) fame.set(r.personId, (fame.get(r.personId) ?? 0) + r.movie.vote_count * (r.order <= 1 ? 1 : 0.5));
+  for (const p of people.values()) if (p.popRank) fame.set(p.id, (fame.get(p.id) ?? 0) + 200_000 / p.popRank);
+  const ranked = [...people.values()].filter((p) => fame.has(p.id)).sort((a, b) => fame.get(b.id)! - fame.get(a.id)!);
+  const rankOf = new Map(ranked.map((p, i) => [p.id, i + 1]));
+
+  const cards: Card[] = [];
+  const sagas = new Map<number, string>();
+  const countryCount = new Map<number, Map<string, number>>();
+  for (const p of ranked) {
+    const { first, last } = split(p.name);
+    const rank = rankOf.get(p.id)!;
+    const rarity: ActorRarity = LEGENDS.has(norm(p.name)) ? 'legende' : actorRarityFromRank(rank, ranked.length);
+    cards.push({
+      id: `actor:${p.id}`, kind: 'actor', personId: p.id, first, last, tone: TONES[p.id % TONES.length], rank, rarity,
+      image: p.profile ? `${IMG}/w500${p.profile}` : null, tags: [],
+    });
+  }
+  const byId = new Map(ranked.map((p) => [p.id, p]));
+  for (const [id, r] of roles) {
+    const p = byId.get(r.personId);
+    const m = r.movie;
+    if (!p || !m.release_date) continue;
+    const { first, last } = split(p.name);
+    const year = Number(m.release_date.slice(0, 4));
+    const countries = m.production_countries.map((c) => `country:${c.iso_3166_1}`);
+    const genres = m.genres.map((g) => GENRES[g.id]).filter(Boolean).map((g) => `genre:${g}`);
+    const saga = m.belongs_to_collection;
+    if (saga) sagas.set(saga.id, saga.name.replace(/\s*-\s*Saga$/i, '').replace(/^Saga\s+/i, ''));
+    const mythe = MYTHES.has(norm(`${p.name}|${m.original_title}`)) || MYTHES.has(norm(`${p.name}|${m.title}`));
+    const rarity = roleRarity({
+      votes: m.vote_count, average: m.vote_average, revenue: m.revenue ?? 0, order: r.order,
+      saga: !!saga, actorRank: rankOf.get(p.id) ?? Infinity, mythe,
+    });
+    const still = m.backdrop_path ?? m.poster_path;
+    const counts = countryCount.get(p.id) ?? new Map<string, number>();
+    for (const c of countries) counts.set(c, (counts.get(c) ?? 0) + 1);
+    countryCount.set(p.id, counts);
+    cards.push({
+      id, kind: 'role', personId: p.id, first, last, tone: TONES[p.id % TONES.length], rarity, rank: rankOf.get(p.id), votes: m.vote_count,
+      movieId: m.id, film: m.title, year, character: r.character.split(' / ')[0].replace(/\s*\(uncredited\)/i, ''),
+      image: still ? `${IMG}/w780${still}` : null,
+      tags: [
+        ...countries, ...genres, `decade:${Math.floor(year / 10) * 10}`,
+        ...(m.revenue >= 300_000_000 ? ['blockbuster'] : []),
+        ...(saga ? [`saga:${saga.id}`] : []),
+        ...(m.vote_average >= 7.8 && m.vote_count >= 3_000 ? ['acclaimed'] : []),
+      ],
+    });
+  }
 
   // Le pays d'un acteur : celui qui revient le plus dans ses rôles.
   for (const actor of cards.filter((c) => c.kind === 'actor')) {
-    const counts = new Map<string, number>();
-    for (const r of cards) {
-      if (r.kind !== 'role' || r.personId !== actor.personId) continue;
-      for (const t of r.tags.filter((t) => t.startsWith('country:'))) counts.set(t, (counts.get(t) ?? 0) + 1);
-    }
-    const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const top = [...(countryCount.get(actor.personId) ?? [])].sort((a, b) => b[1] - a[1])[0]?.[0];
     if (top) {
       actor.tags = [top];
       actor.origin = top.slice('country:'.length);
@@ -191,10 +266,13 @@ async function main() {
   }
 
   upsertCards(db, cards);
+  upsertSagas(db, [...sagas].map(([id, name]) => ({ id, name })));
   // Le catalogue de démarrage disparaît, sauf les cartes déjà possédées par des joueurs.
   db.exec('DELETE FROM cards WHERE person_id < 0 AND id NOT IN (SELECT card_id FROM owned)');
-  const byKind = cards.reduce((acc, c) => ({ ...acc, [c.kind]: (acc[c.kind] ?? 0) + 1 }), {} as Record<string, number>);
-  console.log(`Importé : ${byKind.actor ?? 0} cartes Acteur, ${byKind.role ?? 0} cartes Rôle.`);
+  const count = (kind: string, rarity?: string) => cards.filter((c) => c.kind === kind && (!rarity || c.rarity === rarity)).length;
+  console.log(`Importé : ${count('actor')} cartes Acteur, ${count('role')} cartes Rôle, ${sagas.size} sagas.`);
+  console.log(`  Rôles : ${['mythe', 'icone', 'vedette', 'culte', 'succes', 'serieb'].map((r) => `${r} ${count('role', r)}`).join(' · ')}`);
+  console.log(`  Acteurs : ${['legende', 'tete', 'premier', 'second', 'figurant'].map((r) => `${r} ${count('actor', r)}`).join(' · ')}`);
 }
 
 await main();

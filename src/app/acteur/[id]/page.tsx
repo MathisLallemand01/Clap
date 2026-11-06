@@ -8,8 +8,8 @@ import { SideRails } from '@/components/SideRails';
 import { cardsOfPerson, ownedCardIds } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
-import { ownedCopies } from '@/lib/game';
-import { RARITIES } from '@/lib/rarity';
+import { DUO_BONUS, ownedCopies } from '@/lib/game';
+import { RARITIES, rarityName } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { personInfo } from '@/lib/tmdb';
 import styles from '../../fiche.module.css';
@@ -38,6 +38,8 @@ export default async function ActorPage({ params }: Props) {
   const copies = ownedCopies(db, ctx.player.id, actor.id);
   const info = await personInfo(personId);
   const rarity = RARITIES[actor.rarity];
+  const hasActor = owned.has(actor.id);
+  const ownedRoleCount = roles.filter((r) => owned.has(r.id)).length;
   const bio = info?.biography?.split('\n').filter(Boolean).slice(0, 3) ?? [];
   const born = dateFr(info?.birthday ?? null);
   const died = dateFr(info?.deathday ?? null);
@@ -57,8 +59,9 @@ export default async function ActorPage({ params }: Props) {
           </div>
           <div className={styles.heroText}>
             <span className={styles.rarityPill} style={{ color: rarity.color, borderColor: rarity.color }}>
-              <span style={{ background: rarity.color }} />{rarity.label}{actor.rank ? ` · n° ${formatNumber(actor.rank)} au classement` : ''}
+              <span style={{ background: rarity.color, borderRadius: '50%' }} />{rarityName(actor.rarity)}{actor.rank ? ` · n° ${formatNumber(actor.rank)} au classement` : ''}
             </span>
+            <span className="muted" style={{ fontSize: 14 }}>{rarity.rule} <Link href="/raretes#acteurs" className="accent">Les raretés Acteur</Link></span>
             <h1 className="display">{actor.first}<br />{actor.last}</h1>
             <div className={styles.facts}>
               {born && <span>{died ? `${born} – ${died}` : `Né·e le ${born}`}</span>}
@@ -78,12 +81,26 @@ export default async function ActorPage({ params }: Props) {
           </div>
         </section>
 
+        <section className={`${styles.duoBox} ${hasActor && ownedRoleCount > 0 ? styles.duoDone : ''}`} aria-label="Duo">
+          <span className={styles.duoKicker}>{hasActor && ownedRoleCount > 0 ? `DUO COMPLET · +${formatNumber(DUO_BONUS)} ENTRÉES` : 'DUO À FORMER'}</span>
+          <div className={styles.duoSteps}>
+            <span className={hasActor ? styles.stepOk : styles.stepTodo}>{hasActor ? '✓' : '1'} Sa carte Acteur <small>bobines Casting</small></span>
+            <span className={styles.duoPlus}>+</span>
+            <span className={ownedRoleCount > 0 ? styles.stepOk : styles.stepTodo}>{ownedRoleCount > 0 ? '✓' : '2'} Au moins un de ses Rôles <small>bobines Film</small></span>
+          </div>
+          {!(hasActor && ownedRoleCount > 0) && (
+            <Link href={hasActor ? '/bobines?rayon=films#rayons' : '/bobines?rayon=castings#rayons'} className="btn btn-sm btn-light">
+              {hasActor ? 'Trouver un de ses Rôles' : 'Trouver sa carte Acteur'}
+            </Link>
+          )}
+        </section>
+
         {roles.length > 0 && (
           <section className={styles.section}>
             <div className="section-head">
-              <h2 className="display h2">Ses rôles</h2>
+              <h2 className="display h2">Ses Rôles</h2>
               <span className="rule" />
-              <span className="eyebrow">Cliquez pour voir la bande-annonce</span>
+              <span className="eyebrow">◆ Cartes Rôle · bobines Film · cliquez pour la bande-annonce</span>
             </div>
             <ul className="card-grid">
               {roles.map((r) => (

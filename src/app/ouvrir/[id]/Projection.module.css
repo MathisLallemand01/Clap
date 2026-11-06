@@ -242,3 +242,26 @@
 @keyframes np-in { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
 @media (max-width: 1100px) { .nowPlaying { bottom: auto; top: 76px; left: 50%; right: auto; translate: -50% 0; animation: none; } }
 @media (max-width: 719px) { .npText span, .npLink { display: none; } }
+
+/* Cran 6 (Mythe) : par-dessus le cran 5, la salle vire au rouge et les rayons prennent toutes les couleurs. */
+.lv6 .dim { background: radial-gradient(circle at 50% 50%, rgba(90, 6, 16, 0.86), rgba(20, 2, 4, 0.94) 70%); }
+.lv6 .burstRays {
+  background: repeating-conic-gradient(rgba(255, 36, 64, 0.34) 0 4deg, rgba(255, 230, 0, 0.2) 4deg 6deg, transparent 6deg 10deg, rgba(46, 230, 214, 0.2) 10deg 12deg, transparent 12deg 15deg);
+}
+.lv6 .ring { border-color: #ff2440; box-shadow: 0 0 30px rgba(255, 36, 64, 0.6); }
+.lv6 .ring2 { border-color: #ffe600; }
+.lv6 .sparks i:nth-child(3n) { background: #ffe600; box-shadow: 0 0 12px #ffe600; }
+.lv6 .sparks i:nth-child(3n + 1) { background: #2ee6d6; box-shadow: 0 0 12px #2ee6d6; }
+.lv6 .banner { border-image: conic-gradient(#ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93, #ff2440) 1; border-radius: 0; }
+
+/* Famille de la bobine et échelle de ses raretés, sous les cases. */
+.familyBadge { padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.familyActor { border: 1px solid #FFC83D88; color: #FFC83D; }
+.familyRole { border: 1px solid #FF2E9388; color: #FF7AB8; }
+.slot i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px; }
+.markRound { border-radius: 50%; }
+.markDiamond { transform: rotate(45deg); }
+.scale { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding-top: 10px; border-top: 1px solid #222227; font-size: 12px; color: var(--text-2); }
+.scale > span:first-child { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); }
+.scaleStep { display: inline-flex; align-items: center; gap: 6px; }
+.scaleStep i { display: inline-block; width: 8px; height: 8px; }

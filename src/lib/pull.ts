@@ -27,6 +27,12 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
   if (def.pool === 'themes') return catalog.filter((c) => themeFor(c));
   if (def.pool === 'famous') return catalog.filter((c) => c.kind === 'role' && (c.votes ?? 0) >= FAMOUS_VOTES && RARITIES[c.rarity].tier >= 3);
+  if (def.pool === 'sagas' || def.pool === 'acclaimed') {
+    const wanted = def.pool === 'sagas' ? (t: string) => t.startsWith('saga:') : (t: string) => t === 'acclaimed';
+    const pool = catalog.filter((c) => c.kind === 'role' && c.tags.some(wanted));
+    // Catalogue importé avant les sagas : on se rabat sur les grands rôles des films très vus.
+    return pool.length ? pool : catalog.filter((c) => c.kind === 'role' && (c.votes ?? 0) >= 5_000);
+  }
   const tags = def.tags;
   if (!tags?.length) return catalog;
   const matches = (c: Card) => c.tags.some((t) => tags.includes(t));

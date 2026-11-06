@@ -10,7 +10,7 @@ import { Wordmark } from '@/components/Mark';
 import type { BoosterDef } from '@/lib/boosters';
 import { formatNumber } from '@/lib/format';
 import type { OpenResult, PulledCard } from '@/lib/game';
-import { RARITIES } from '@/lib/rarity';
+import { FAMILY, ladderOf, RARITIES, rarityName } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import { calmPreference, speedPreference } from '@/lib/prefs';
 import { createProjector, saveSoundPreference, saveVolumePreference, soundPreference, volumePreference, type Projector } from '@/lib/sound';
@@ -74,7 +74,7 @@ function stingLevel(card: PulledCard): 0 | 1 | 2 | 3 {
 }
 
 /** Durée de l'animation de rareté, par cran (2 à 5) : la bande attend qu'elle se termine. */
-const BURST_MS: Record<number, number> = { 2: 700, 3: 1000, 4: 1500, 5: 3600 };
+const BURST_MS: Record<number, number> = { 2: 700, 3: 1000, 4: 1500, 5: 3600, 6: 3600 };
 /** Étincelles déterministes (pas de hasard au rendu) ; chaque cran en utilise davantage. */
 const SPARKS = Array.from({ length: 56 }, (_, i) => ({
   a: (i * 137.5) % 360,
@@ -82,7 +82,7 @@ const SPARKS = Array.from({ length: 56 }, (_, i) => ({
   s: 0.6 + ((i * 29) % 5) * 0.18,
   delay: (i % 7) * 30,
 }));
-const SPARK_COUNT: Record<number, number> = { 2: 8, 3: 16, 4: 30, 5: 56 };
+const SPARK_COUNT: Record<number, number> = { 2: 8, 3: 16, 4: 30, 5: 56, 6: 56 };
 
 type Burst = { key: string; level: number; card: PulledCard; x: number; y: number };
 
@@ -142,6 +142,8 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const [hintSeen, setHintSeen] = useState(false);
 
   const layout = LAYOUTS[layoutName];
+  /** Une bobine ne contient qu'une famille : Casting = Acteurs, Film = Rôles. */
+  const family = booster.slots[0].kind;
   const framesRef = useRef<Frame[]>([]);
   const frameEls = useRef(new Map<string, HTMLDivElement>());
   const holesRef = useRef<SVGPathElement>(null);
@@ -431,7 +433,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
       {!calm && <button type="button" className={styles.advance} onClick={advance} aria-label="Vignette suivante" tabIndex={-1} />}
       {burst && burst.level < 5 && (
         // Derrière la bande : les rayons et l'éclat ne passent jamais devant la carte révélée.
-        <div key={`${burst.key}-back`} className={`${styles.burst} ${styles.burstBack} ${styles[`lv${burst.level}`]}`} style={burstStyle(burst)} aria-hidden="true">
+        <div key={`${burst.key}-back`} className={`${styles.burst} ${styles.burstBack} ${styles[`lv${Math.min(burst.level, 5)}`]} ${burst.level >= 6 ? styles.lv6 : ''}`} style={burstStyle(burst)} aria-hidden="true">
           <span className={styles.flash} />
           <span className={styles.burstRays} />
           <span className={styles.ring} />
@@ -515,7 +517,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
       {burst && burst.level >= 4 && (
         <div
           key={`${burst.key}-front`}
-          className={`${styles.burst} ${styles[`lv${burst.level}`]}`}
+          className={`${styles.burst} ${styles[`lv${Math.min(burst.level, 5)}`]} ${burst.level >= 6 ? styles.lv6 : ''}`}
           style={burstStyle(burst)}
           role="status"
         >
@@ -530,7 +532,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
             </>
           )}
           <div className={styles.banner}>
-            <span className="eyebrow">◆ {RARITIES[burst.card.rarity].label} ◆</span>
+            <span className="eyebrow">{FAMILY[burst.card.kind].mark} {rarityName(burst.card.rarity)} {FAMILY[burst.card.kind].mark}</span>
             <strong className="display">{burst.card.character ?? `${burst.card.first} ${burst.card.last}`}</strong>
             <span>{burst.card.kind === 'role' ? `${burst.card.first} ${burst.card.last} · ${burst.card.film}` : `Carte Acteur${burst.card.origin ? ` · ${burst.card.origin}` : ''}`}</span>
           </div>
@@ -608,6 +610,9 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
       <div className={styles.tray} aria-live="polite">
         <div className={styles.trayHead}>
           <strong className="display">Bobine {String(Math.max(1, batches.length)).padStart(2, '0')}</strong>
+          <span className={`${styles.familyBadge} ${family === 'actor' ? styles.familyActor : styles.familyRole}`}>
+            {FAMILY[family].mark} {booster.slots.length} cartes {FAMILY[family].label}
+          </span>
           <span className="eyebrow">
             {booster.name} · {current ? `${revealedCount} / ${current.size} révélées` : loading ? 'chargement…' : ''}
           </span>
@@ -619,6 +624,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
               const shown = revealed.has(f.key);
               return (
                 <span key={f.key} className={styles.slot} style={shown ? { borderColor: r.color, color: r.color } : undefined}>
+                  {shown && <i className={family === 'actor' ? styles.markRound : styles.markDiamond} style={{ background: r.color }} />}
                   {shown ? r.short : '—'}
                 </span>
               );
@@ -641,6 +647,15 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
               </>
             )}
           </div>
+        </div>
+        <div className={styles.scale} aria-label={`Échelle des cartes ${FAMILY[family].label}`}>
+          <span>{FAMILY[family].plural.toUpperCase()}, DU PLUS COMMUN AU PLUS RARE :</span>
+          {ladderOf(family).map((id) => (
+            <span key={id} className={styles.scaleStep}>
+              <i className={family === 'actor' ? styles.markRound : styles.markDiamond} style={{ background: RARITIES[id].color }} />
+              {RARITIES[id].label}
+            </span>
+          ))}
         </div>
         {error && (
           <span className={styles.error} role="alert">

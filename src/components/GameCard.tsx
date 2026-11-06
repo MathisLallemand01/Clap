@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { formatSerial } from '@/lib/format';
-import { ladderOf, RARITIES } from '@/lib/rarity';
+import { FAMILY, isTopRarity, ladderOf, RARITIES } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import styles from './GameCard.module.css';
 
@@ -28,7 +28,8 @@ function sized(url: string, kind: Card['kind'], width: number): string {
 
 const FOILS: Record<string, string> = {
   legende: 'repeating-linear-gradient(115deg, transparent 0 1.4em, rgba(255,200,61,0.18) 1.4em 1.55em, rgba(140,210,255,0.14) 1.55em 1.7em, transparent 1.7em 3.4em)',
-  chef: 'repeating-linear-gradient(65deg, transparent 0 1.2em, rgba(46,230,214,0.16) 1.2em 1.35em, rgba(242,239,232,0.12) 1.35em 1.5em, transparent 1.5em 3em)',
+  vedette: 'repeating-linear-gradient(65deg, transparent 0 1.3em, rgba(255,181,71,0.18) 1.3em 1.45em, rgba(255,240,200,0.12) 1.45em 1.6em, transparent 1.6em 3.2em)',
+  mythe: 'repeating-linear-gradient(65deg, transparent 0 0.9em, rgba(255,36,64,0.24) 0.9em 1.05em, rgba(255,230,0,0.14) 1.05em 1.2em, rgba(46,230,214,0.14) 1.2em 1.35em, rgba(181,123,255,0.14) 1.35em 1.5em, transparent 1.5em 2.8em)',
   icone: 'repeating-linear-gradient(65deg, transparent 0 1em, rgba(255,46,147,0.24) 1em 1.15em, rgba(255,200,230,0.16) 1.15em 1.3em, transparent 1.3em 2.6em)',
 };
 
@@ -44,7 +45,8 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
   } as CSSProperties;
   const initials = `${card.first[0] ?? ''}${card.last[0] ?? ''}`;
   const number = serial ? `№ ${formatSerial(serial)}` : null;
-  const top = rarity.tier === ladder.length;
+  const top = isTopRarity(card.rarity);
+  const family = FAMILY[card.kind];
   const liveClass = live ? styles.live : '';
   const image = card.image
     ? <img src={sized(card.image, card.kind, width)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
@@ -56,8 +58,10 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
     </>
   );
   const label = card.kind === 'actor'
-    ? `${card.first} ${card.last}, carte Acteur ${rarity.label}`
-    : `${card.first} ${card.last} dans ${card.film}, rôle de ${card.character}, carte Rôle ${rarity.label}`;
+    ? `${card.first} ${card.last}, carte Acteur · ${rarity.label}`
+    : `${card.first} ${card.last} dans ${card.film}, rôle de ${card.character}, carte Rôle · ${rarity.label}`;
+  // La famille, écrite sur la photo : on ne confond jamais une carte Acteur et une carte Rôle.
+  const chip = <span className={`${styles.family} ${card.kind === 'actor' ? styles.familyActor : styles.familyRole}`}>{family.mark} {family.label.toUpperCase()}</span>;
 
   if (card.kind === 'actor') {
     return (
@@ -74,6 +78,7 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
             </>
           )}
           {shine}
+          {chip}
         </div>
         <div className={styles.names}>
           <span className={styles.first}>{card.first}</span>
@@ -83,14 +88,14 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
           <div className={styles.meter}>
             {ladder.map((r, i) => <span key={r} className={i < rarity.tier ? styles.on : ''} />)}
           </div>
-          <span className={styles.tag}>ACTEUR{card.origin ? ` · ${card.origin}` : ''}</span>
+          <span className={styles.tag}>{card.origin ?? ''}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`${styles.card} ${styles.role} ${top ? styles.top5 : ''} ${card.rarity === 'icone' ? styles.icon : ''} ${liveClass}`} style={style} role="img" aria-label={label}>
+    <div className={`${styles.card} ${styles.role} ${top ? styles.top5 : ''} ${card.rarity === 'icone' ? styles.icon : ''} ${card.rarity === 'mythe' ? styles.mythe : ''} ${liveClass}`} style={style} role="img" aria-label={label}>
       <div className={styles.rail}><span /></div>
       <div className={styles.roleBody}>
         <div className={styles.head}>
@@ -102,6 +107,7 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
           {image ?? <span className={styles.source}>PHOTOGRAMME · TMDB</span>}
           {image && <span className={styles.scrim} />}
           {shine}
+          {chip}
           <span className={styles.as}>DANS LE RÔLE DE</span>
           <span className={styles.character}>{card.character}</span>
         </div>

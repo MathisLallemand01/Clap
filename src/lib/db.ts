@@ -77,6 +77,19 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Ce que fait un joueur (pour les missions) : open, rare, trade, trailer, recycle, sell, buy
+-- Sagas (collections TMDB) : les Rôles d'une saga portent le tag saga:<id>.
+CREATE TABLE IF NOT EXISTS sagas (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
+);
+-- Récompense versée une fois par saga complétée.
+CREATE TABLE IF NOT EXISTS saga_rewards (
+  player_id TEXT NOT NULL REFERENCES players (id),
+  saga_id INTEGER NOT NULL,
+  tickets INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, saga_id)
+);
 -- Extraits des musiques cultes (iTunes / Deezer), mis en cache : url vide = rien trouvé.
 CREATE TABLE IF NOT EXISTS theme_previews (
   key TEXT PRIMARY KEY,
@@ -203,6 +216,11 @@ export function upsertCards(db: DatabaseSync, cards: Card[]): void {
   });
 }
 
+export function upsertSagas(db: DatabaseSync, sagas: { id: number; name: string }[]): void {
+  const stmt = db.prepare('INSERT INTO sagas (id, name) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET name = excluded.name');
+  transaction(db, () => { for (const s of sagas) stmt.run(s.id, s.name); });
+}
+
 export function transaction<T>(db: DatabaseSync, fn: () => T): T {
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -229,6 +247,9 @@ function migrate(db: DatabaseSync): void {
     db.exec('ALTER TABLE users ADD COLUMN discord_id TEXT; ALTER TABLE users ADD COLUMN discord_name TEXT; ALTER TABLE users ADD COLUMN discord_avatar TEXT;');
     db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_discord ON users (discord_id)');
   }
+  // Raretés v2 : le cran Chef-d'œuvre disparaît ; ses cartes prennent le cran de même hauteur (Vedette)
+  // en attendant le prochain import, qui recalcule toutes les raretés.
+  db.exec("UPDATE cards SET rarity = 'vedette' WHERE rarity = 'chef'");
   const tradeColumns = new Set((db.prepare('PRAGMA table_info(trades)').all() as { name: string }[]).map((c) => c.name));
   // Cadeau : un échange à sens unique, conclu aussitôt.
   if (!tradeColumns.has('gift')) db.exec('ALTER TABLE trades ADD COLUMN gift INTEGER NOT NULL DEFAULT 0');

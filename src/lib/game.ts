@@ -16,10 +16,10 @@ export const REFERRAL_REWARD = 500;
 /** Le parrainage est validé quand le filleul a ouvert ce nombre de bobines. */
 export const REFERRAL_PULLS = 3;
 /** Bonus du parrain quand il atteint un nombre d'amis parrainés. */
-export const REFERRAL_TIERS: { friends: number; tickets?: number; card?: 'chef' }[] = [
+export const REFERRAL_TIERS: { friends: number; tickets?: number; card?: 'icone' }[] = [
   { friends: 3, tickets: 1200 },
   { friends: 5, tickets: 2000 },
-  { friends: 10, card: 'chef' },
+  { friends: 10, card: 'icone' },
 ];
 
 export type Player = {
@@ -119,12 +119,12 @@ function rewardReferral(db: DatabaseSync, playerId: string, now: number): void {
       notify(db, sponsor.id, 'referral', `Palier de parrainage ${tier.friends} amis : +${tier.tickets} tickets !`, '/parrainage', now);
     }
     if (tier?.card) {
-      const chef = getCatalog(db).filter((c) => c.rarity === tier.card);
-      const card = chef[Math.floor(Math.random() * chef.length)];
+      const pool = getCatalog(db).filter((c) => c.rarity === tier.card);
+      const card = pool[Math.floor(Math.random() * pool.length)];
       if (card) {
         const serial = (db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ?').get(card.id) as { n: number }).n + 1;
         db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, ?, NULL, ?)').run(sponsor.player_id, card.id, serial, now);
-        notify(db, sponsor.id, 'pull', `Palier de parrainage ${tier.friends} amis : ${card.first} ${card.last} dans ${card.film}, un Chef-d’œuvre !`, `/role/${encodeURIComponent(card.id)}`, now);
+        notify(db, sponsor.id, 'pull', `Palier de parrainage ${tier.friends} amis : ${card.first} ${card.last} dans ${card.film}, une carte Rôle · Icône !`, `/role/${encodeURIComponent(card.id)}`, now);
       }
     }
   }
@@ -220,7 +220,19 @@ export function ownedCopies(db: DatabaseSync, playerId: string, cardId: string):
     .map((r) => ({ ...r, listed: listed.has(r.id) }));
 }
 
-export type PlayerStats = { entries: number; unique: number; copies: number; pulls: number; duplicates: number };
+export type PlayerStats = { entries: number; unique: number; copies: number; pulls: number; duplicates: number; duos: number };
+
+/** Un duo (la carte Acteur et au moins un de ses Rôles) ajoute ces entrées au box-office. */
+export const DUO_BONUS = 2_000;
+
+/** Nombre de duos : personnes dont le joueur possède la carte Acteur et au moins une carte Rôle. */
+export function countDuos(db: DatabaseSync, playerId: string): number {
+  return (db.prepare(`
+    SELECT COUNT(DISTINCT a.person_id) AS n FROM owned oa JOIN cards a ON a.id = oa.card_id
+    WHERE oa.player_id = ? AND a.kind = 'actor' AND EXISTS (
+      SELECT 1 FROM owned orl JOIN cards r ON r.id = orl.card_id
+      WHERE orl.player_id = oa.player_id AND r.kind = 'role' AND r.person_id = a.person_id)`).get(playerId) as { n: number }).n;
+}
 
 /** Box-office personnel : la somme des entrées de tous les exemplaires possédés. */
 export function getStats(db: DatabaseSync, playerId: string): PlayerStats {
@@ -228,12 +240,14 @@ export function getStats(db: DatabaseSync, playerId: string): PlayerStats {
     .all(playerId) as { rarity: Card['rarity'] }[];
   const unique = (db.prepare('SELECT COUNT(DISTINCT card_id) AS n FROM owned WHERE player_id = ?').get(playerId) as { n: number }).n;
   const pulls = (db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(playerId) as { n: number }).n;
+  const duos = countDuos(db, playerId);
   return {
-    entries: owned.reduce((sum, o) => sum + RARITIES[o.rarity].entries, 0),
+    entries: owned.reduce((sum, o) => sum + RARITIES[o.rarity].entries, 0) + duos * DUO_BONUS,
     unique,
     copies: owned.length,
     pulls,
     duplicates: owned.length - unique,
+    duos,
   };
 }
 

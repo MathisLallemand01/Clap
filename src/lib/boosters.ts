@@ -41,42 +41,53 @@ export type BoosterDef = {
    * Réserve spéciale : `themes` = uniquement les Rôles principaux des films à musique culte ;
    * `famous` = uniquement les grands rôles (Culte et au-dessus) des films les plus vus.
    */
-  pool?: 'themes' | 'famous';
+  pool?: 'themes' | 'famous' | 'sagas' | 'acclaimed';
   slots: Slot[];
   theme: PackTheme;
 };
 
+/** Une bobine ne mélange jamais les familles : Casting = cartes Acteur, Film = cartes Rôle. */
+export type BoosterFamily = CardKind;
+export type Booster = BoosterDef & { family: BoosterFamily };
+
 export const ACTOR_ODDS: Odds<ActorRarity> = { figurant: 58, second: 26, premier: 11, tete: 4, legende: 1 };
-export const ROLE_ODDS: Odds<RoleRarity> = { serieb: 55, succes: 30, culte: 12, chef: 2.8, icone: 0.2 };
-const ICON_ODDS: Odds<RoleRarity> = { serieb: 30, succes: 38, culte: 23, chef: 8, icone: 1 };
-const THEME_ODDS: Odds<RoleRarity> = { serieb: 50, succes: 32, culte: 14, chef: 3.6, icone: 0.4 };
+/** Dernière case d'une bobine Avant-première : au moins un Premier rôle. */
+const ACTOR_PREMIUM_ODDS: Odds<ActorRarity> = { premier: 72, tete: 23, legende: 5 };
+const ACTOR_LEGEND_ODDS: Odds<ActorRarity> = { premier: 45, tete: 40, legende: 15 };
+export const ROLE_ODDS: Odds<RoleRarity> = { serieb: 52, succes: 30, culte: 12, vedette: 4.5, icone: 1.3, mythe: 0.2 };
+const ICON_ODDS: Odds<RoleRarity> = { serieb: 20, succes: 32, culte: 28, vedette: 12, icone: 7, mythe: 1 };
+const THEME_ODDS: Odds<RoleRarity> = { serieb: 50, succes: 31, culte: 13, vedette: 4.4, icone: 1.4, mythe: 0.2 };
 const SERIEB_ODDS: Odds<RoleRarity> = { serieb: 100 };
 
-const actors = (n: number): Slot[] => Array.from({ length: n }, () => ({ kind: 'actor', odds: ACTOR_ODDS }));
+const actors = (n: number, odds: Odds<ActorRarity> = ACTOR_ODDS): Slot[] => Array.from({ length: n }, () => ({ kind: 'actor', odds }));
 const roles = (n: number, odds: Odds<RoleRarity> = ROLE_ODDS): Slot[] =>
   Array.from({ length: n }, () => ({ kind: 'role', odds }));
-const mixed = (): Slot[] => [...actors(2), ...roles(3, THEME_ODDS)];
+/** Bobine Film à thème : cinq Rôles. */
+const themed = (): Slot[] => roles(5, THEME_ODDS);
 
 /** La réserve « Bande originale » est petite et déjà prestigieuse : les crans du bas y sont rares. */
-const SOUNDTRACK_ODDS: Odds<RoleRarity> = { serieb: 4, succes: 36, culte: 42, chef: 14, icone: 4 };
+const SOUNDTRACK_ODDS: Odds<RoleRarity> = { serieb: 4, succes: 30, culte: 38, vedette: 18, icone: 8, mythe: 2 };
 /** Panthéon : que du très rare, l'Icône n'y est pas une exception. */
-const PANTHEON_ODDS: Odds<RoleRarity> = { culte: 40, chef: 45, icone: 15 };
-const CINEMATHEQUE_ODDS: Odds<RoleRarity> = { chef: 94, icone: 6 };
+const PANTHEON_ODDS: Odds<RoleRarity> = { culte: 40, vedette: 35, icone: 20, mythe: 5 };
+/** Cinémathèque : les films acclamés par la critique. */
+const CINEMATHEQUE_ODDS: Odds<RoleRarity> = { culte: 60, vedette: 25, icone: 12, mythe: 3 };
+/** Sagas : les rôles principaux des sagas, donc beaucoup d'Icônes. */
+const SAGA_ODDS: Odds<RoleRarity> = { succes: 20, culte: 30, vedette: 20, icone: 27, mythe: 3 };
 
 type Spec = Omit<BoosterDef, 'code' | 'slots' | 'theme'> & { slots?: Slot[]; theme: PackTheme };
 const specs: Spec[] = [
-  { id: 'casting', name: 'Casting', group: 'permanent', price: 300,
-    description: 'Cinq cartes Acteur, du figurant à la légende.', slots: actors(5),
+  { id: 'casting', name: 'Tout Casting', group: 'permanent', price: 300,
+    description: 'Cinq cartes Acteur, de Figurant à Légende, parmi tous les acteurs.', slots: actors(5),
     theme: { hue: '#A9B8D0', base: '#1A2232', metal: '#2A3446', label: 'PERMANENTE', chance: ['LÉGENDE', '1 %'] } },
   { id: 'avant-premiere', name: 'Avant-première', group: 'permanent', price: 600,
-    description: 'Quatre Acteurs et un Rôle garanti.', slots: [...actors(4), ...roles(1)],
+    description: 'Cinq cartes Acteur, dont la dernière est au moins un Premier rôle.', slots: [...actors(4), ...actors(1, ACTOR_PREMIUM_ODDS)],
     theme: { hue: '#E2A28A', base: '#2E1714', metal: '#4A2620', label: 'PERMANENTE', title: 'Avant-\npremière', chance: ['GARANTI', '1 RÔLE'] } },
   { id: 'icones', name: 'Personnages iconiques', group: 'event', price: 1200,
-    description: 'Les rôles qui ont marqué l’histoire. Chances d’Icône ×5.', slots: roles(5, ICON_ODDS),
+    description: 'Les rôles qui ont marqué l’histoire. Chances d’Icône ×5, de Mythe ×5.', slots: roles(5, ICON_ODDS),
     theme: { hue: '#A88BFF', base: '#1E1640', metal: '#2E2458', label: 'ÉVÉNEMENT', title: 'Icônes', chance: ['ICÔNE', '×5'] } },
   { id: 'cinematheque', name: 'Cinémathèque', group: 'event', price: 1500,
-    description: 'Uniquement des chefs-d’œuvre : des rôles Chef-d’œuvre et Icône, rien d’autre.', slots: roles(5, CINEMATHEQUE_ODDS),
-    theme: { hue: '#E8DCC0', base: '#221F18', metal: '#38332A', label: 'ÉVÉNEMENT', title: 'Cinéma-\nthèque', chance: ['RANG', '4–5'] } },
+    description: 'Les films acclamés par la critique : uniquement des Rôles Culte et au-dessus.', pool: 'acclaimed', slots: roles(5, CINEMATHEQUE_ODDS),
+    theme: { hue: '#E8DCC0', base: '#221F18', metal: '#38332A', label: 'ÉVÉNEMENT', title: 'Cinéma-\nthèque', chance: ['CULTE', 'ET +'] } },
   { id: 'france', name: 'Cinéma français', group: 'country', price: 800, tags: ['country:FR'],
     description: 'Des grands classiques au cinéma d’auteur d’aujourd’hui.',
     theme: { hue: '#8EA6E8', base: '#141B38', metal: '#232D5A', label: 'PAYS', title: 'Cinéma\nfrançais' } },
@@ -123,7 +134,7 @@ const specs: Spec[] = [
     description: 'Les grands rôles dramatiques, ceux qui font les Oscars.',
     theme: { hue: '#C79BB8', base: '#24121F', metal: '#3A1E33', label: 'GENRE', title: 'Grands\ndrames' } },
   { id: 'western', name: 'Western', group: 'genre', price: 800, tags: ['genre:western'],
-    description: 'Duels au soleil, saloons et grands espaces.', slots: [...actors(1), ...roles(4, THEME_ODDS)],
+    description: 'Duels au soleil, saloons et grands espaces.',
     theme: { hue: '#CFA066', base: '#2A1A0C', metal: '#45301A', label: 'GENRE' } },
   { id: 'serie-b', name: 'Série B', group: 'genre', price: 400,
     description: 'Nanars, navets et films oubliés. Série B garantie.', slots: roles(5, SERIEB_ODDS),
@@ -150,17 +161,41 @@ const specs: Spec[] = [
     description: 'Les films sortis depuis 2020.',
     theme: { hue: '#8C9BFF', base: '#141A3E', metal: '#222A60', label: 'DEPUIS 2020' } },
   { id: 'tout-clap', name: 'Tout Clap', group: 'permanent', price: 500,
-    description: 'Tout le cinéma répertorié, sans thème : n’importe quel acteur, n’importe quel rôle.', slots: [...actors(2), ...roles(3)],
+    description: 'Tout le cinéma répertorié, sans thème : cinq Rôles pris dans tous les films.', slots: roles(5),
     theme: { hue: '#FF4A1C', base: '#2A0F08', metal: '#46190E', label: 'PERMANENTE', title: 'Tout\nClap', chance: ['TOUT LE', 'CINÉMA'] } },
   { id: 'bande-originale', name: 'Bande originale', group: 'event', price: 1000, pool: 'themes',
     description: 'Uniquement les acteurs principaux des films à musique culte : chaque carte lance sa musique.', slots: roles(5, SOUNDTRACK_ODDS),
     theme: { hue: '#F2C14E', base: '#2A2008', metal: '#463812', label: 'ÉVÉNEMENT', title: 'Bande\noriginale', chance: ['♪', 'MUSIQUE'] } },
   { id: 'pantheon', name: 'Panthéon', group: 'event', price: 2000, pool: 'famous',
-    description: 'Uniquement les films que tout le monde a vus, et leurs plus grands rôles : Culte, Chef-d’œuvre, Icône.', slots: roles(5, PANTHEON_ODDS),
-    theme: { hue: '#FFC83D', base: '#2A2008', metal: '#4A3A10', label: 'ÉVÉNEMENT', chance: ['ICÔNE', '15 %'] } },
+    description: 'Uniquement les films que tout le monde a vus, et leurs plus grands rôles : Culte, Vedette, Icône, Mythe.', slots: roles(5, PANTHEON_ODDS),
+    theme: { hue: '#FFC83D', base: '#2A2008', metal: '#4A3A10', label: 'ÉVÉNEMENT', chance: ['ICÔNE', '20 %'] } },
+  { id: 'sagas', name: 'Sagas', group: 'event', price: 1200, pool: 'sagas',
+    description: 'Les rôles principaux des sagas : Star Wars, Harry Potter, Fast & Furious, 007, Marvel…', slots: roles(5, SAGA_ODDS),
+    theme: { hue: '#FF2E93', base: '#2A0A1C', metal: '#46122E', label: 'ÉVÉNEMENT', chance: ['ICÔNE', '27 %'] } },
+  { id: 'casting-france', name: 'Casting France', group: 'country', price: 400, tags: ['country:FR'],
+    description: 'Cinq cartes Acteur du cinéma français, de Gabin à Omar Sy.', slots: actors(5),
+    theme: { hue: '#8EA6E8', base: '#141B38', metal: '#232D5A', label: 'CASTING · FRANCE', title: 'Casting\nFrance' } },
+  { id: 'casting-asie', name: 'Casting Asie', group: 'country', price: 400, tags: ['country:JP', 'country:KR', 'country:CN', 'country:HK', 'country:IN', 'country:TW'],
+    description: 'Cinq cartes Acteur du cinéma asiatique.', slots: actors(5),
+    theme: { hue: '#7FD1B9', base: '#0E241F', metal: '#183A32', label: 'CASTING · ASIE', title: 'Casting\nAsie' } },
+  { id: 'casting-age-dor', name: 'Casting Âge d’or', group: 'era', price: 400, tags: ['decade:1920', 'decade:1930', 'decade:1940', 'decade:1950', 'decade:1960'],
+    description: 'Cinq cartes Acteur des classiques : Bogart, Monroe, Gabin, Hepburn…', slots: actors(5),
+    theme: { hue: '#D8CFC0', base: '#22201C', metal: '#3A372F', label: 'CASTING · 1920 – 1969', title: 'Âge\nd’or' } },
+  { id: 'casting-legendes', name: 'Casting Légendes', group: 'event', price: 1200,
+    description: 'Cinq cartes Acteur, au moins Premier rôle : Légende 15 %.', slots: actors(5, ACTOR_LEGEND_ODDS),
+    theme: { hue: '#FFC83D', base: '#2A2008', metal: '#4A3A10', label: 'CASTING · ÉVÉNEMENT', title: 'Légendes', chance: ['LÉGENDE', '15 %'] } },
 ];
 
-export const BOOSTERS: BoosterDef[] = specs.map((s, i) => ({ ...s, code: String(i + 1).padStart(2, '0'), slots: s.slots ?? mixed() }));
+export const BOOSTERS: Booster[] = specs.map((s, i) => {
+  const slots = s.slots ?? themed();
+  return { ...s, code: String(i + 1).padStart(2, '0'), slots, family: slots[0].kind };
+});
+
+/** Les deux rayons de la page Bobines. */
+export const FAMILY_SHELVES: Record<BoosterFamily, { title: string; chip: string; description: string }> = {
+  actor: { title: 'Castings', chip: '5 ACTEURS', description: 'Uniquement des cartes Acteur : la personne, toute sa carrière. Pour compléter vos duos.' },
+  role: { title: 'Films', chip: '5 RÔLES', description: 'Uniquement des cartes Rôle : un acteur dans un film précis, du moins rare au plus rare.' },
+};
 
 /** L'ordre des catégories à l'écran : les événements d'abord. */
 export const GROUP_LABELS: Record<BoosterGroup, string> = {
@@ -171,7 +206,7 @@ export const GROUP_LABELS: Record<BoosterGroup, string> = {
   era: 'Époques',
 };
 
-export function getBooster(id: string): BoosterDef | undefined {
+export function getBooster(id: string): Booster | undefined {
   return BOOSTERS.find((b) => b.id === id);
 }
 
@@ -187,7 +222,7 @@ export const FREE_BOOSTER_EVERY_MS = 4 * 60 * 60 * 1000;
 export const FREE_BOOSTER_CAP = 3;
 
 /** Bobines arrivées avec la refonte : marquées « Nouveau » sur la page des bobines. */
-export const NEW_BOOSTERS = new Set(['pantheon', 'tout-clap', 'bande-originale', 'cinematheque', 'coree', 'bollywood', 'italie', 'espagne', 'drames', 'annees-70', 'annees-2010', 'nouveautes']);
+export const NEW_BOOSTERS = new Set(['sagas', 'casting-france', 'casting-asie', 'casting-age-dor', 'casting-legendes', 'pantheon', 'tout-clap', 'bande-originale', 'cinematheque', 'coree', 'bollywood', 'italie', 'espagne', 'drames', 'annees-70', 'annees-2010', 'nouveautes']);
 
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
@@ -195,13 +230,13 @@ const WEEK_MS = 7 * DAY_MS;
 const WEEK_ORIGIN = Date.UTC(2026, 0, 5);
 
 /** La bobine du jour : une bobine thématique différente chaque jour. */
-export function boosterOfTheDay(now = Date.now()): BoosterDef {
+export function boosterOfTheDay(now = Date.now()): Booster {
   const themed = BOOSTERS.filter((b) => b.group !== 'permanent' && b.group !== 'event');
   return themed[Math.floor(now / DAY_MS) % themed.length];
 }
 
 /** L'événement de la semaine (les bobines Événement tournent chaque lundi) et sa fin. */
-export function featuredEvent(now = Date.now()): { booster: BoosterDef; endsAt: number } {
+export function featuredEvent(now = Date.now()): { booster: Booster; endsAt: number } {
   const events = BOOSTERS.filter((b) => b.group === 'event');
   const week = Math.floor((now - WEEK_ORIGIN) / WEEK_MS);
   return { booster: events[((week % events.length) + events.length) % events.length], endsAt: WEEK_ORIGIN + (week + 1) * WEEK_MS };

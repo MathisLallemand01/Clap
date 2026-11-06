@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { BoosterDef } from '@/lib/boosters';
 import { formatNumber } from '@/lib/format';
+import { FAMILY, ladderOf, RARITIES, type Rarity } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import { BoosterPack } from './BoosterPack';
 import styles from './PackTile.module.css';
@@ -21,14 +22,24 @@ type Props = {
 /** Un paquet posé sur l'étagère : la bobine, son prix en ticket, la part de la collection déjà obtenue. */
 export function PackTile({ booster, cover, free, canAfford, owned, total, delay = 0, flag }: Props) {
   const pct = total ? Math.round(((owned ?? 0) / total) * 100) : null;
+  const family = booster.slots[0].kind;
+  // Les raretés qu'on peut tirer dans cette bobine, dans l'ordre de l'échelle.
+  const possible = ladderOf(family).filter((r) => booster.slots.some((sl) => ((sl.odds as Partial<Record<Rarity, number>>)[r] ?? 0) > 0));
   return (
     <article className={styles.tile} style={{ '--hue': booster.theme.hue } as CSSProperties}>
       <Link href={`/bobines/${booster.id}`} className={styles.art} aria-label={`Contenu de la bobine ${booster.name}`}>
         <BoosterPack booster={booster} cover={cover} width={200} float interactive style={{ animationDelay: `${delay}s` }} />
         {flag && <span className={styles.flag}>{flag}</span>}
+        <span className={`${styles.family} ${family === 'actor' ? styles.familyActor : styles.familyRole}`}>
+          {FAMILY[family].mark} {booster.slots.length} {FAMILY[family].plural.toUpperCase()}
+        </span>
       </Link>
       <span className={styles.shelf} aria-hidden="true" />
       <h3 className={styles.name}>{booster.name}</h3>
+      <div className={styles.possible} title={`Raretés possibles : ${possible.map((r) => RARITIES[r].label).join(', ')}`}>
+        {possible.map((r) => <i key={r} className={family === 'actor' ? styles.round : styles.diamond} style={{ background: RARITIES[r].color }} />)}
+        <span>{RARITIES[possible[0]].label} → {RARITIES[possible[possible.length - 1]].label}</span>
+      </div>
       <div className={styles.meta}>
         <span className={styles.price}>
           <b>{formatNumber(booster.price)} TK</b>

@@ -1,5 +1,5 @@
 // Catalogue de démarrage, utilisé tant que l'import TMDB n'a pas tourné.
-// Les raretés suivent les règles de src/lib/rarity.ts ; les Icônes sont choisies à la main.
+// Les raretés suivent les règles de src/lib/rarity.ts ; les Mythes sont choisis à la main.
 import type { ActorRarity, RoleRarity } from '../lib/rarity.ts';
 import type { Card } from '../lib/types.ts';
 
@@ -51,17 +51,17 @@ const ACTORS: ActorSeed[] = [
 ];
 
 const ROLES: RoleSeed[] = [
-  ['Heath Ledger', 'The Dark Knight', 2008, 'Le Joker', 'icone', ['country:US', 'blockbuster', 'genre:action']],
-  ['Al Pacino', 'Le Parrain', 1972, 'Michael Corleone', 'icone', ['country:US']],
+  ['Heath Ledger', 'The Dark Knight', 2008, 'Le Joker', 'mythe', ['country:US', 'blockbuster', 'genre:action']],
+  ['Al Pacino', 'Le Parrain', 1972, 'Michael Corleone', 'mythe', ['country:US']],
   ['Harrison Ford', 'La Guerre des étoiles', 1977, 'Han Solo', 'icone', ['country:US', 'genre:scifi', 'blockbuster']],
   ['Sigourney Weaver', 'Alien', 1979, 'Ripley', 'icone', ['country:US', 'country:GB', 'genre:scifi']],
   ['Jean-Paul Belmondo', 'À bout de souffle', 1960, 'Michel Poiccard', 'icone', ['country:FR']],
   ['Audrey Tautou', 'Le Fabuleux Destin d’Amélie Poulain', 2001, 'Amélie', 'icone', ['country:FR']],
-  ['Mahershala Ali', 'Moonlight', 2016, 'Juan', 'chef', ['country:US']],
-  ['Jean Gabin', 'La Grande Illusion', 1937, 'Maréchal', 'chef', ['country:FR']],
-  ['Isabelle Huppert', 'Elle', 2016, 'Michèle', 'chef', ['country:FR']],
-  ['Alain Delon', 'Le Samouraï', 1967, 'Jef Costello', 'chef', ['country:FR']],
-  ['Harrison Ford', 'Blade Runner', 1982, 'Rick Deckard', 'chef', ['country:US', 'genre:scifi']],
+  ['Mahershala Ali', 'Moonlight', 2016, 'Juan', 'vedette', ['country:US']],
+  ['Jean Gabin', 'La Grande Illusion', 1937, 'Maréchal', 'vedette', ['country:FR']],
+  ['Isabelle Huppert', 'Elle', 2016, 'Michèle', 'vedette', ['country:FR']],
+  ['Alain Delon', 'Le Samouraï', 1967, 'Jef Costello', 'vedette', ['country:FR']],
+  ['Harrison Ford', 'Blade Runner', 1982, 'Rick Deckard', 'vedette', ['country:US', 'genre:scifi']],
   ['Tom Cruise', 'Top Gun', 1986, 'Maverick', 'culte', ['country:US', 'blockbuster', 'genre:action']],
   ['Val Kilmer', 'Top Gun', 1986, 'Iceman', 'culte', ['country:US', 'blockbuster', 'genre:action']],
   ['Kelly McGillis', 'Top Gun', 1986, 'Charlie', 'culte', ['country:US', 'blockbuster', 'genre:action']],

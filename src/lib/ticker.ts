@@ -50,7 +50,7 @@ export function tickerDrops(db: DatabaseSync, limit = 24): TickerItem[] {
     if (items.length >= limit) break;
   }
   if (items.length < 8) {
-    for (const c of showcase(db, { count: 12 - items.length, rarities: ['icone', 'legende', 'chef'] })) {
+    for (const c of showcase(db, { count: 12 - items.length, rarities: ['mythe', 'icone', 'legende', 'vedette'] })) {
       items.push({ ...fromCard(c, `s${c.id}`), who: 'À gagner' });
     }
   }

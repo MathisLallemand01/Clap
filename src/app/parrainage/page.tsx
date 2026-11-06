@@ -16,7 +16,7 @@ const TIERS = [
   { n: 1, title: '1 ami', reward: `${REFERRAL_REWARD} tickets pour vous et pour lui, à chaque ami.` },
   { n: 3, title: '3 amis', reward: '+1 200 tickets : de quoi ouvrir une bobine Personnages iconiques.' },
   { n: 5, title: '5 amis', reward: '+2 000 tickets bonus.' },
-  { n: 10, title: '10 amis', reward: 'Une carte Rôle Chef-d’œuvre offerte.' },
+  { n: 10, title: '10 amis', reward: 'Une carte Rôle · Icône offerte.' },
 ];
 
 export default async function ReferralPage() {

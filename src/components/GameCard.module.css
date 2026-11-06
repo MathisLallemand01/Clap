@@ -61,8 +61,9 @@
 .actor .photo { border-radius: 0.5em; }
 .names { display: flex; flex-direction: column; gap: 0.1em; min-width: 0; }
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; }
-.meter { display: flex; gap: 0.2em; }
-.meter span { width: 1.1em; height: 0.32em; border-radius: 0.1em; background: #2a2a30; }
+.meter { display: flex; gap: 0.22em; }
+/* Carte Acteur : des ronds (la carte Rôle a des losanges). */
+.meter span { width: 0.5em; height: 0.5em; border-radius: 50%; background: #2a2a30; }
 .meter span.on { background: var(--rc); }
 .tag { font-family: var(--mono); font-size: 0.7em; color: var(--muted); white-space: nowrap; }
 
@@ -99,3 +100,25 @@
 .diamonds { display: flex; gap: 0.18em; padding-bottom: 0.2em; flex: none; }
 .diamonds span { width: 0.5em; height: 0.5em; transform: rotate(45deg); background: #2a2a30; }
 .diamonds span.on { background: var(--rc); }
+
+/* Famille écrite sur la photo, en haut à gauche : « ● ACTEUR » ou « ◆ RÔLE ». */
+.family {
+  position: absolute; left: 0.45em; top: 0.45em; z-index: 1;
+  padding: 0.18em 0.45em; border-radius: 0.3em;
+  font-family: var(--mono); font-size: 0.56em; font-weight: 700; letter-spacing: 0.12em; line-height: 1.3;
+  background: rgba(11, 11, 13, 0.78); color: var(--text); white-space: nowrap;
+}
+.familyActor { border: 1px solid rgba(255, 200, 61, 0.45); }
+.familyRole { border: 1px solid rgba(255, 46, 147, 0.45); }
+
+/* Mythe : fond rouge profond et contour multicolore qui tourne (au survol, ou en continu en vitrine). */
+@property --mythe-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.role.mythe {
+  border-color: transparent;
+  background:
+    linear-gradient(#1a0508, #1a0508) padding-box,
+    conic-gradient(from var(--mythe-angle), #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93, #ff2440) border-box;
+  box-shadow: 0 0 0 0.3em rgba(255, 36, 64, 0.16), 0 1.2em 3em rgba(255, 36, 64, 0.22);
+}
+.live.mythe, .mythe:hover { animation: mythe-turn 4s linear infinite; }
+@keyframes mythe-turn { to { --mythe-angle: 360deg; } }
