@@ -30,6 +30,12 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
  * l'un des tags ou s'il a au moins un Rôle qui en porte un (ex. un acteur d'un film des années 80).
  */
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
+  // Une bobine ne contient que sa famille : des Acteurs pour un Casting, des Rôles pour un Film.
+  const family = def.slots[0]?.kind;
+  return candidates(def, catalog).filter((c) => !family || c.kind === family);
+}
+
+function candidates(def: BoosterDef, catalog: Card[]): Card[] {
   // Séries et cinéma ne se mélangent pas : une bobine Séries ne donne que des séries, les autres que du cinéma.
   // Les cartes Acteur (une personne, toute sa carrière) restent communes aux deux.
   const series = def.media === 'tv';

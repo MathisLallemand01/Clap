@@ -133,12 +133,13 @@ test('musiques cultes : l’acteur principal du bon film, pas les suites ni les 
   assert.equal(themeFor({ kind: 'actor', first: 'Tom', last: 'Cruise', film: null, year: null }), null);
 });
 
-test('Bande originale : uniquement des Rôles à musique culte ; Tout Clap : tout le catalogue', () => {
+test('Bande originale : uniquement des Rôles à musique culte ; Tout Clap : tous les Rôles de cinéma', () => {
   const db = openDb(':memory:');
   const catalog = getCatalog(db);
   const soundtrack = getBooster('bande-originale')!;
   assert.ok(boosterPool(soundtrack, catalog).every((c) => themeFor(c)));
-  assert.equal(boosterPool(getBooster('tout-clap')!, catalog).length, catalog.length);
+  assert.equal(boosterPool(getBooster('tout-clap')!, catalog).length, catalog.filter((c) => c.kind === 'role' && !c.tags.includes('media:tv')).length);
+  assert.equal(boosterPool(getBooster('casting')!, catalog).length, catalog.filter((c) => c.kind === 'actor').length);
 });
 
 test('Panthéon : uniquement des grands rôles de films très vus', () => {
