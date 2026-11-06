@@ -9,6 +9,7 @@ import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from '
 import { claimSeasonReward } from './ranking';
 import { recordVisit } from './missions';
 import { listNotifications, notify, unreadCount, type Notification } from './notify';
+import { isHttpsHeaders } from './origin';
 
 export const SESSION_COOKIE = 'clap_session';
 /** Le joueur provisoire d'un visiteur qui a ouvert sa première bobine sans compte. */
@@ -27,8 +28,10 @@ export async function startSession(userId: string): Promise<void> {
   const db = getDb();
   const { token } = createSession(db, userId);
   const jar = await cookies();
+  // « Secure » seulement en HTTPS : servi en HTTP (réseau local, serveur sans certificat), le cookie serait ignoré
+  // et la connexion échouerait sans explication.
   jar.set(SESSION_COOKIE, token, {
-    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: SESSION_DAYS * 24 * 3600,
+    httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(await headers()), path: '/', maxAge: SESSION_DAYS * 24 * 3600,
   });
   const guest = jar.get(GUEST_COOKIE)?.value;
   const user = getUser(db, userId);
@@ -53,7 +56,7 @@ export async function signupOrigin(): Promise<SignupOrigin> {
   let device = jar.get(DEVICE_COOKIE)?.value ?? null;
   if (!device || !/^[\w-]{16,64}$/.test(device)) {
     device = randomBytes(18).toString('base64url');
-    jar.set(DEVICE_COOKIE, device, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 5 * 365 * 24 * 3600 });
+    jar.set(DEVICE_COOKIE, device, { httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(await headers()), path: '/', maxAge: 5 * 365 * 24 * 3600 });
   }
   const fp = jar.get(FINGERPRINT_COOKIE)?.value ?? null;
   const h = await headers();

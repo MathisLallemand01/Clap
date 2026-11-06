@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db';
 import { createPlayer, GameError, getPlayer, guestHasOpened, openBoosterFor } from '@/lib/game';
 import { clientIp, rateLimit, waitText } from '@/lib/security';
 import { currentUser, GUEST_COOKIE } from '@/lib/session';
+import { isHttpsHeaders } from '@/lib/origin';
 
 /**
  * Ouvre une bobine pour le joueur connecté et renvoie les cartes tirées.
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       const wait = rateLimit(`guest:ip:${clientIp(request.headers)}`, 3, 24 * 60 * 60_000);
       if (wait) return NextResponse.json({ error: `Créez un compte pour ouvrir d’autres bobines (réessayez dans ${waitText(wait)}).`, code: 'guest-used' }, { status: 429 });
       guestId = createPlayer(db).id;
-      jar.set(GUEST_COOKIE, guestId, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 30 * 24 * 3600 });
+      jar.set(GUEST_COOKIE, guestId, { httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(request.headers), path: '/', maxAge: 30 * 24 * 3600 });
     }
     return NextResponse.json({ ...openBoosterFor(db, guestId, body.boosterId, { topFirst: true, requestId }), guest: true });
   } catch (err) {

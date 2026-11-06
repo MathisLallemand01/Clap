@@ -97,7 +97,7 @@ export default async function RaritiesPage() {
               </span>
             ))}
           </div>
-          <p className="lead">Les cinq cartes défilent <b>de la moins rare à la plus rare</b>, comme dans un vrai paquet. Vous cliquez pour passer à la suivante ; plus la carte est rare, plus l’animation est grande. Le bandeau en bas de l’écran rappelle la famille de la bobine et son échelle.</p>
+          <p className="lead">On déchire le paquet en glissant sur la bande du haut, puis les cinq cartes se retournent <b>de la moins rare à la plus rare</b>, comme dans un vrai paquet. Une carte rare s’annonce : son dos s’allume à sa couleur et il faut maintenir le clic pour la retourner. Le bandeau en bas de l’écran rappelle la famille de la bobine et son échelle.</p>
         </section>
 
         <section id="duos" className={styles.section} aria-labelledby="t-duos">

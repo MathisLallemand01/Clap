@@ -14,10 +14,10 @@
 .p3 .winner { animation-delay: -3s; }
 .avatar {
   width: clamp(64px, 7vw, 96px); height: clamp(64px, 7vw, 96px); border-radius: 50%; color: var(--ink);
-  display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; font-size: clamp(24px, 2.6vw, 36px);
+  display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; font-size: clamp(22px, 2.2vw, 30px);
   box-shadow: 0 0 0 4px var(--ink), 0 0 0 7px var(--place), 0 20px 40px rgba(0, 0, 0, 0.5);
 }
-.p1 .avatar { width: clamp(80px, 9vw, 128px); height: clamp(80px, 9vw, 128px); font-size: clamp(30px, 3.4vw, 48px); }
+.p1 .avatar { width: clamp(80px, 9vw, 128px); height: clamp(80px, 9vw, 128px); font-size: clamp(26px, 2.8vw, 40px); }
 .who { font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
 .who em, .player em { font-style: normal; font-family: var(--mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: var(--ink); }
 .score { font-family: var(--mono); font-size: 14px; color: var(--place); display: inline-flex; align-items: center; gap: 4px; }
@@ -27,7 +27,7 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--place) 20%, transparent), transparent);
   border: 1px solid color-mix(in srgb, var(--place) 35%, transparent); border-bottom: 0;
 }
-.block span { font-stretch: 62%; font-weight: 900; font-size: clamp(64px, 7vw, 96px); line-height: 0.8; color: var(--place); }
+.block span { font-stretch: 62%; font-weight: 900; font-size: clamp(52px, 5.4vw, 76px); line-height: 0.8; color: var(--place); }
 .p1 { --place: var(--gold); }
 .p1 .block { height: clamp(150px, 16vw, 230px); }
 .p2 { --place: #c9c6bd; }

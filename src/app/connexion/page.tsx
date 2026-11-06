@@ -21,6 +21,9 @@ const GOOGLE_ERRORS: Record<string, string> = {
   'discord-config': 'La connexion Discord n’est pas encore activée sur ce serveur : renseignez DISCORD_CLIENT_ID et DISCORD_CLIENT_SECRET dans .env, puis redémarrez.',
   'discord-cle': 'Discord a refusé la connexion : vérifiez DISCORD_CLIENT_SECRET et que la redirection du portail Discord est exactement <adresse du site>/api/auth/discord/callback.',
   'discord-refus': 'Connexion annulée sur Discord.',
+  'discord-expire': 'La connexion Discord a expiré (ou a été ouverte depuis une autre adresse du site). Cliquez à nouveau sur « Continuer avec Discord ».',
+  'discord-lent': 'Discord ne répond pas pour le moment. Réessayez dans une minute.',
+  'discord-taken': 'Ce compte Discord est déjà lié à un autre joueur.',
   'device-taken': 'Un compte existe déjà sur cet appareil : connectez-vous avec celui-ci. Un seul compte par machine.',
   'ip-limit': 'Cette connexion a déjà servi à créer 5 comptes : c’est le maximum.',
 };

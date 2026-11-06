@@ -19,7 +19,7 @@
 
 .tier { display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 150px; }
 .tierHead { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-bottom: 16px; border-bottom: 2px solid; }
-.tierHead h2 { font-size: clamp(36px, 4vw, 48px); }
+.tierHead h2 { font-size: clamp(30px, 3vw, 40px); }
 .kind { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; }
 .spacer { flex: 1; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--muted); }
@@ -34,7 +34,7 @@
   transition: border-color 200ms ease, color 200ms ease;
 }
 .more:hover { border-color: var(--accent); color: var(--text); }
-.more strong { font-size: 44px; color: var(--text); }
+.more strong { font-size: 38px; color: var(--text); }
 
 .search { display: flex; flex-wrap: wrap; gap: 8px; }
 .search .input { flex: 1 1 260px; max-width: 420px; height: 44px; border-radius: 999px; }

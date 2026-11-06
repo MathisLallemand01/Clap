@@ -17,7 +17,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Le rideau de connexion se lève quand la session change (connexion, déconnexion).
   const signedIn = (await cookies()).has(SESSION_COOKIE);
   return (
-    <html lang="fr">
+    <html lang="fr" data-scroll-behavior="smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

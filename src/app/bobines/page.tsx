@@ -80,7 +80,7 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
                 {' · '}{tickets} tickets
               </span>
               <h1 className={`display ${styles.title}`}>Choisissez<br />votre <span className="accent">bobine.</span></h1>
-              <p className="lead">Déchirez le paquet, la pellicule se déroule, cinq cartes défilent. La dernière est toujours la plus rare.</p>
+              <p className="lead">Déchirez le paquet, puis retournez vos cinq cartes une à une. La dernière est toujours la plus rare.</p>
               <div className={styles.ctas}>
                 <Link href={`/ouvrir/${daily.id}`} className={`btn btn-primary btn-lg ${free ? styles.glow : ''}`}>
                   {free ? 'Ouvrir la bobine du jour' : `Bobine du jour · ${formatNumber(daily.price)} TK`} <ArrowIcon />

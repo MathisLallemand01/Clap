@@ -3,6 +3,7 @@ import { formatEntries, formatNumber } from '@/lib/format';
 import type { Context } from '@/lib/session';
 import { CelebrationHost } from './CelebrationHost';
 import { DiscordLogo } from './DiscordLogo';
+import { FreeBoosters } from './FreeBoosters';
 import { SeatIcon, TicketIcon } from './Icons';
 import { LogoutButton } from './LogoutButton';
 import { PendingBar } from './PendingBar';
@@ -50,7 +51,8 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
               ))}
             </nav>
             <div className={styles.right}>
-              <Link href="/collection" className={`pill ${styles.wallet}`} title="Box-office : la valeur de votre collection, en entrées">
+              <FreeBoosters stock={ctx.wallet.freeStock} nextFreeAt={ctx.wallet.nextFreeAt} />
+              <Link href="/collection" className={`pill ${styles.wallet} ${styles.entries}`} title="Box-office : la valeur de votre collection, en entrées">
                 <SeatIcon />{formatEntries(ctx.wallet.entries)}<span className="visually-hidden"> entrées</span>
               </Link>
               <Link href="/missions" id="wallet-tickets" className={`pill ${styles.wallet}`} title="Tickets à dépenser : bobines en plus, achats au Guichet">

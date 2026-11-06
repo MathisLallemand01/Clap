@@ -1,0 +1,11 @@
+/* Réserve de bobines offertes dans la barre du haut : « 3/10 · +1 dans 07:42 ». */
+.free { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+.free b { font-weight: 700; color: var(--text); }
+.icon { color: var(--accent); flex: none; }
+.cap { color: var(--muted); }
+.timer { margin-left: 4px; padding-left: 8px; border-left: 1px solid var(--line); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.timer time { color: #ffb38f; }
+.empty .icon { color: var(--muted); }
+.empty .timer time { color: var(--accent); }
+@media (max-width: 1279px) { .plus { display: none; } }
+@media (max-width: 559px) { .cap { display: none; } .timer { margin-left: 2px; padding-left: 6px; } }

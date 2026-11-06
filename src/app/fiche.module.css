@@ -6,7 +6,7 @@
 .heroCard { flex: 0 0 auto; margin: 0 auto; max-width: 100%; }
 .heroCard > div { max-width: calc(100vw - 2 * var(--gutter)); }
 .heroText { flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
-.heroText h1 { font-size: clamp(64px, 9vw, 150px); line-height: 0.82; }
+.heroText h1 { font-size: clamp(52px, 6.4vw, 108px); line-height: 0.82; }
 .rarityPill {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px;
   border: 1px solid; border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -30,7 +30,7 @@
   display: flex; align-items: center; justify-content: center; animation: pulse-ring 2s ease-out infinite;
 }
 .play:hover { background: var(--accent-hover); }
-.posterTitle { position: relative; font-size: clamp(28px, 4vw, 44px); text-align: center; padding: 0 16px; }
+.posterTitle { position: relative; font-size: clamp(24px, 3vw, 36px); text-align: center; padding: 0 16px; }
 .versions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted); }
 .empty { aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; background-size: cover; background-position: center; position: relative; }

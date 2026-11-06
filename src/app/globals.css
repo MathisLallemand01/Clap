@@ -48,7 +48,7 @@ optgroup { color: var(--muted); font-style: normal; }
 ::selection { background: var(--accent); color: var(--ink); }
 
 .container { width: 100%; max-width: calc(1360px + 2 * var(--gutter)); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
-.page { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(40px, 5vw, 56px); display: flex; flex-direction: column; gap: clamp(40px, 6vw, 72px); }
+.page { padding-top: clamp(28px, 3.6vw, 52px); padding-bottom: clamp(40px, 5vw, 56px); display: flex; flex-direction: column; gap: clamp(36px, 4.6vw, 60px); }
 
 /* Typographie */
 .display {
@@ -60,12 +60,12 @@ optgroup { color: var(--muted); font-style: normal; }
   margin: 0;
 }
 /* Les titres grandissent avec l'écran : 390 → 1440 px et au-delà. */
-.h1 { font-size: clamp(56px, 10vw, 168px); line-height: 0.82; }
-.h2 { font-size: clamp(42px, 6.2vw, 100px); line-height: 0.84; }
-.h3 { font-size: clamp(30px, 2.8vw, 44px); }
+.h1 { font-size: clamp(44px, 6.4vw, 108px); line-height: 0.82; }
+.h2 { font-size: clamp(34px, 4.4vw, 70px); line-height: 0.84; }
+.h3 { font-size: clamp(24px, 2.2vw, 34px); }
 .mono { font-family: var(--mono); letter-spacing: 0.06em; }
 .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
-.lead { font-size: clamp(17px, 1.45vw, 21px); line-height: 1.6; color: var(--text-2); margin: 0; max-width: 560px; }
+.lead { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.6; color: var(--text-2); margin: 0; max-width: 560px; }
 .accent { color: var(--accent); }
 .muted { color: var(--muted); }
 
@@ -114,7 +114,7 @@ optgroup { color: var(--muted); font-style: normal; }
 .btn-danger { border-color: #e0294f; color: #ff6b86; }
 .btn-danger:hover { background: #2a0d14; color: #ff8aa0; }
 .btn-sm { height: 44px; padding: 0 18px; font-size: 14px; }
-.btn-lg { height: 60px; padding: 0 32px; font-size: 17px; }
+.btn-lg { height: 54px; padding: 0 28px; font-size: 16px; }
 .btn-block { width: 100%; }
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 
@@ -168,7 +168,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .stat-row > div { padding: clamp(20px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; }
-.stat-row strong { font-stretch: 62%; font-weight: 900; font-size: clamp(44px, 4.4vw, 64px); line-height: 0.9; }
+.stat-row strong { font-stretch: 62%; font-weight: 900; font-size: clamp(34px, 3.2vw, 48px); line-height: 0.9; }
 .stat-row small { font-size: 14px; color: var(--muted); }
 
 .card-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(188px, 42vw), 1fr)); gap: 28px 18px; }
@@ -227,7 +227,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* Fenêtre modale sans JavaScript (rendue côté serveur via un paramètre d'URL). */
 .modal-backdrop { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: rgba(6, 6, 7, 0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade-up 200ms ease both; }
 .modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
-.modal h2 { font-size: 44px; }
+.modal h2 { font-size: clamp(30px, 3vw, 38px); }
 .modal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .modal .actions > * { flex: 1; }
 .list-rows { list-style: none; margin: 0; padding: 0; }
@@ -266,7 +266,7 @@ body::after {
 /* Ligne de scénario au-dessus des titres : « INT. SALLE — NUIT », très discrète. */
 .slug { margin: 0; display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--faint); text-transform: uppercase; }
 .slug span { white-space: nowrap; }
-.page > .slug { margin-bottom: calc(12px - clamp(40px, 6vw, 72px)); }
+.page > .slug { margin-bottom: calc(12px - clamp(36px, 4.6vw, 60px)); }
 
 /* Le compteur de tickets qui reçoit une récompense. */
 .ticket-bump { display: inline-block; color: var(--accent); animation: ticket-bump 900ms cubic-bezier(0.2, 1.4, 0.4, 1); }
