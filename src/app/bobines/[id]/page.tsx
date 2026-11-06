@@ -6,7 +6,7 @@ import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
-import { getBooster, GROUP_LABELS } from '@/lib/boosters';
+import { FAMILY_SHELVES, getBooster, GROUP_LABELS } from '@/lib/boosters';
 import { boosterCover, byValue, countByRarity, ownedCardIds, poolOf, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
@@ -58,7 +58,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
       <SideRails left="CLAP · CONTENU DE LA BOBINE" right="INVENTAIRE · DE LA PLUS RARE À LA PLUS COURANTE" />
       <main className="container page">
         <div className={styles.crumbs}>
-          <Link href="/bobines">BOBINES</Link><span>/</span><span>{GROUP_LABELS[booster.group].toUpperCase()}</span><span>/</span><span style={{ color: 'var(--text)' }}>{booster.name.toUpperCase()}</span>
+          <Link href="/bobines">BOBINES</Link><span>/</span><Link href={`/bobines?rayon=${booster.family === 'actor' ? 'castings' : 'films'}#rayons`}>{FAMILY_SHELVES[booster.family].title.toUpperCase()}</Link><span>/</span><span>{GROUP_LABELS[booster.group].toUpperCase()}</span><span>/</span><span style={{ color: 'var(--text)' }}>{booster.name.toUpperCase()}</span>
         </div>
 
         <header className={styles.hero}>
@@ -66,7 +66,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
             <BoosterPack booster={booster} cover={boosterCover(db, booster)} width={260} float interactive />
           </div>
           <div className={styles.heroText}>
-            <span className="eyebrow">Bobine {booster.code} · {GROUP_LABELS[booster.group]} · {booster.slots.length} cartes</span>
+            <span className="eyebrow">Bobine {FAMILY_SHELVES[booster.family].title.replace(/s$/, '')} · {GROUP_LABELS[booster.group]} · {booster.slots.length} cartes {booster.family === 'actor' ? 'Acteur' : 'Rôle'}, de la moins rare à la plus rare</span>
             <h1 className="display h1">{booster.name}</h1>
             <p className="lead">{booster.description}</p>
             <div className={styles.meter}>
@@ -85,6 +85,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
 
         <nav className={styles.jump} aria-label="Aller à une rareté">
           <span className="eyebrow">Aller à</span>
+          <Link href={`/raretes#${booster.family === 'actor' ? 'acteurs' : 'roles'}`} className="chip">? Les règles des raretés</Link>
           {tiers.map((r) => (
             <a key={r} href={focus ? `/bobines/${id}#${r}` : `#${r}`} className="chip">
               <span className="dot" style={{ background: RARITIES[r].color, borderRadius: RARITIES[r].kind === 'role' ? 2 : '50%' }} />{RARITIES[r].label}<small>{formatNumber(counts[r])}</small>
@@ -155,7 +156,7 @@ function TierHead({ rarity, rank, odds, count, have }: { rarity: Rarity; rank: n
     <div className={styles.tierHead} style={{ borderColor: r.color }}>
       <span className="mono muted">{String(rank).padStart(2, '0')}</span>
       <h2 className="display" style={{ color: r.color }}>{r.label}</h2>
-      <span className={styles.kind}>CARTE {r.kind === 'actor' ? 'ACTEUR' : 'RÔLE'}</span>
+      <span className={styles.kind}>CARTE {r.kind === 'actor' ? 'ACTEUR' : 'RÔLE'} · {r.rule}</span>
       <span className={styles.spacer} />
       <div className={styles.facts}>
         <span>CHANCE <b>{odds ? `${String(odds).replace('.', ',')} %` : '—'}</b></span>

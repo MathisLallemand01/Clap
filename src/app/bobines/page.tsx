@@ -49,9 +49,12 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
     .filter((f) => !shelf.family || shelf.family === f)
     .map((f) => ({
       family: f,
-      groups: (Object.keys(GROUP_LABELS) as BoosterGroup[])
-        .map((g) => ({ id: `${f === 'actor' ? 'casting' : 'film'}-${g}`, label: GROUP_LABELS[g], boosters: BOOSTERS.filter((b) => b.family === f && b.group === g) }))
-        .filter((g) => g.boosters.length > 0),
+      // Les Castings tiennent sur une étagère ; les Films sont rangés par catégorie.
+      groups: f === 'actor'
+        ? [{ id: 'castings', label: 'Toutes les bobines Casting', boosters: BOOSTERS.filter((b) => b.family === 'actor') }]
+        : (Object.keys(GROUP_LABELS) as BoosterGroup[])
+          .map((g) => ({ id: `film-${g}`, label: GROUP_LABELS[g], boosters: BOOSTERS.filter((b) => b.family === f && b.group === g) }))
+          .filter((g) => g.boosters.length > 0),
     }));
   const progress = (id: string) => {
     const pool = poolOf(db, getBooster(id)!);

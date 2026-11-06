@@ -81,7 +81,7 @@ const specs: Spec[] = [
     theme: { hue: '#A9B8D0', base: '#1A2232', metal: '#2A3446', label: 'PERMANENTE', chance: ['LÉGENDE', '1 %'] } },
   { id: 'avant-premiere', name: 'Avant-première', group: 'permanent', price: 600,
     description: 'Cinq cartes Acteur, dont la dernière est au moins un Premier rôle.', slots: [...actors(4), ...actors(1, ACTOR_PREMIUM_ODDS)],
-    theme: { hue: '#E2A28A', base: '#2E1714', metal: '#4A2620', label: 'PERMANENTE', title: 'Avant-\npremière', chance: ['GARANTI', '1 RÔLE'] } },
+    theme: { hue: '#E2A28A', base: '#2E1714', metal: '#4A2620', label: 'PERMANENTE', title: 'Avant-\npremière', chance: ['PREMIER RÔLE', 'GARANTI'] } },
   { id: 'icones', name: 'Personnages iconiques', group: 'event', price: 1200,
     description: 'Les rôles qui ont marqué l’histoire. Chances d’Icône ×5, de Mythe ×5.', slots: roles(5, ICON_ODDS),
     theme: { hue: '#A88BFF', base: '#1E1640', metal: '#2E2458', label: 'ÉVÉNEMENT', title: 'Icônes', chance: ['ICÔNE', '×5'] } },

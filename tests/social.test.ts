@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { discordAvatarUrl, getUser, getUserByDiscord, linkDiscord, logIn, signUp, unlinkDiscord, upsertDiscordUser, upsertGoogleUser } from '../src/lib/auth.ts';
+import { getCatalog, ownedCardIds } from '../src/lib/catalog.ts';
 import { markCelebrationSeen, nextCelebration } from '../src/lib/celebrations.ts';
+import { claimSaga, playerDuos, playerSagas } from '../src/lib/collections.ts';
 import { openDb } from '../src/lib/db.ts';
-import { GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
+import { DUO_BONUS, GameError, getCollection, getPlayer, getStats, openBoosterFor, recycleDuplicates, recyclePlan, REFERRAL_REWARD, STARTING_TICKETS } from '../src/lib/game.ts';
 import { buyListing, createListing, openListings, priceRange, sellerReceives } from '../src/lib/market.ts';
 import { claimMission, missionStates, periodStart, recordVisit } from '../src/lib/missions.ts';
 import { listNotifications } from '../src/lib/notify.ts';
+import { RARITIES } from '../src/lib/rarity.ts';
 import { acceptFriend, giftUnlockAt, listTrades, proposeTrade, respondTrade, sendFriendRequest, sendGift } from '../src/lib/social.ts';
 
 const isCode = (code: string) => (e: unknown) => e instanceof GameError && e.code === code;
@@ -181,4 +184,35 @@ test('cadeaux : 7 jours d’ancienneté (sauf compte illimité), transfert immé
   const c = await signUp(db, { name: 'Testeuse', email: 'te@exemple.fr', password: 'motdepasse' });
   db.prepare('UPDATE players SET unlimited = 1 WHERE id = ?').run(c.playerId);
   assert.equal(giftUnlockAt(db, c.id), null);
+});
+
+test('duos et sagas : bonus d’entrées, progression, récompense unique', async () => {
+  const db = openDb(':memory:');
+  const u = await signUp(db, { name: 'Sacha', email: 'sa@exemple.fr', password: 'motdepasse' });
+  // Une saga de deux films (posée avant la première lecture du catalogue, qui est mise en cache).
+  db.prepare("INSERT INTO sagas (id, name) VALUES (99, 'Saga test')").run();
+  const sagaRoles = db.prepare("SELECT id FROM cards WHERE kind = 'role' LIMIT 2").all() as { id: string }[];
+  sagaRoles.forEach((r, i) => db.prepare('UPDATE cards SET tags = ?, movie_id = ? WHERE id = ?').run(JSON.stringify(['saga:99']), 1000 + i, r.id));
+  const catalog = getCatalog(db);
+  const role = catalog.find((c) => c.kind === 'role' && catalog.some((a) => a.kind === 'actor' && a.personId === c.personId))!;
+  const actor = catalog.find((a) => a.kind === 'actor' && a.personId === role.personId)!;
+  const give = (id: string) => db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, 1, NULL, 0)').run(u.playerId, id);
+  give(actor.id);
+  assert.equal(getStats(db, u.playerId).duos, 0);
+  const before = getStats(db, u.playerId).entries;
+  give(role.id);
+  const stats = getStats(db, u.playerId);
+  assert.equal(stats.duos, 1);
+  assert.equal(stats.entries, before + RARITIES[role.rarity].entries + DUO_BONUS);
+  assert.equal(playerDuos(db, u.playerId)[0].personId, role.personId);
+
+  // La saga, complétée carte par carte.
+  const saga = () => playerSagas(db, u.playerId).find((s) => s.id === 99)!;
+  assert.ok(saga().total >= 2);
+  assert.throws(() => claimSaga(db, u.playerId, 99), isCode('incomplete'));
+  for (const m of saga().members) if (!ownedCardIds(db, u.playerId).has(m.id)) give(m.id);
+  const tickets = getPlayer(db, u.playerId)!.tickets;
+  const reward = claimSaga(db, u.playerId, 99);
+  assert.equal(getPlayer(db, u.playerId)!.tickets, tickets + reward);
+  assert.throws(() => claimSaga(db, u.playerId, 99), isCode('claimed'));
 });

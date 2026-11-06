@@ -39,7 +39,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
   const catalogOf = (k: CardKind) => getCatalog(db).filter((c) => c.kind === k).length;
   const duos = view === 'duos' ? playerDuos(db, ctx.player.id) : [];
   const sagas = view === 'sagas' ? playerSagas(db, ctx.player.id, { started: true }) : [];
-  const sagaCount = playerSagas(db, ctx.player.id).length;
+  const sagaCount = playerSagas(db, ctx.player.id, { started: true }).length;
   if (sp.tri === 'recent') visible = [...visible].sort((a, b) => b.obtainedAt - a.obtainedAt);
   if (sp.tri === 'doublons') visible = [...visible].sort((a, b) => b.copies - a.copies);
   const page = Math.max(1, Number(sp.page) || 1);
@@ -96,7 +96,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             <Link href="/collection" aria-current={view === 'acteurs' ? 'true' : undefined}><i className={styles.round} />Acteurs · {formatNumber(ownedOf('actor'))}<small> / {formatNumber(catalogOf('actor'))}</small></Link>
             <Link href="/collection?vue=roles" aria-current={view === 'roles' ? 'true' : undefined}><i className={styles.diamond} />Rôles · {formatNumber(ownedOf('role'))}<small> / {formatNumber(catalogOf('role'))}</small></Link>
             <Link href="/collection?vue=duos" aria-current={view === 'duos' ? 'true' : undefined} className={styles.tabDuo}>Duos · {formatNumber(ctx.stats.duos)}</Link>
-            <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)}</Link>
+            <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)} commencée{sagaCount > 1 ? 's' : ''}</Link>
           </nav>
           {(view === 'acteurs' || view === 'roles') && <form className={styles.search} role="search" action="/collection">
             {view === 'roles' && <input type="hidden" name="vue" value="roles" />}

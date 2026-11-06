@@ -5,15 +5,17 @@ import { Beam, Clapper, CropMarks, Dust, Leader, EventFrame, Rays, Reel, Scene, 
 import { GameCard } from '@/components/GameCard';
 import { ArrowIcon, SeatIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
+import { RarityLadder } from '@/components/RarityLadder';
 import { SideRails } from '@/components/SideRails';
 import { Reveal } from '@/components/Reveal';
 import { Ticker } from '@/components/Ticker';
 import { Tilt } from '@/components/Tilt';
-import { ACTOR_ODDS, BOOSTERS, getBooster, ROLE_ODDS } from '@/lib/boosters';
+import { ACTOR_ODDS, BOOSTERS, FAMILY_SHELVES, getBooster, ROLE_ODDS } from '@/lib/boosters';
 import { boosterCover, getCatalog, showcase } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
-import { ACTOR_LADDER, RARITIES, ROLE_LADDER, type Rarity } from '@/lib/rarity';
+import { DUO_BONUS } from '@/lib/game';
+import { ACTOR_LADDER, FAMILY, RARITIES, rarityName, ROLE_LADDER, type Rarity } from '@/lib/rarity';
 import { optionalContext } from '@/lib/session';
 import { tickerDrops } from '@/lib/ticker';
 import type { Card } from '@/lib/types';
@@ -32,7 +34,7 @@ export default async function LandingPage() {
 
   const one = (rarity: Rarity, skip = 0) => showcase(db, { count: skip + 1, rarities: [rarity], kind: RARITIES[rarity].kind })[skip];
   const fanLeft = one('legende');
-  const fanCenter = one('icone');
+  const fanCenter = one('mythe') ?? one('icone');
   const fanRight = one('culte', 2);
 
   // Une seule bande qui alterne Acteurs et Rôles, de la plus haute rareté à la plus commune.
@@ -48,12 +50,7 @@ export default async function LandingPage() {
     }
   }
 
-  const ladders = [
-    { title: 'Acteurs', basis: 'Notoriété de carrière', top: fanLeft, rows: [...ACTOR_LADDER].reverse() },
-    { title: 'Rôles', basis: 'Notoriété du film', top: fanCenter, rows: [...ROLE_LADDER].reverse() },
-  ];
-  const maxOdds = 58;
-  const packs = ['france', 'icones', 'scifi'].map((id) => getBooster(id)).filter((b) => b !== undefined);
+  const packs = ['casting', 'sagas', 'tout-clap'].map((id) => getBooster(id)).filter((b) => b !== undefined);
 
   return (
     <>
@@ -76,10 +73,10 @@ export default async function LandingPage() {
                 <span className="accent">carte</span> par<br />carte.
               </h1>
               <p className="lead">
-                Du figurant oublié à la légende d’Hollywood. Ouvrez des bobines, collectionnez les acteurs, puis traquez-les dans leurs plus grands rôles.
+                Deux familles de cartes : les <b>Acteurs</b>, du figurant à la légende, et leurs <b>Rôles</b>, de la série B au mythe. Ouvrez des bobines, formez des duos, complétez les sagas.
               </p>
               <div className={styles.ctas}>
-                <Link href={ctx ? '/bobines' : '/ouvrir/avant-premiere'} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Ouvrir ma bobine offerte'} <ArrowIcon /></Link>
+                <Link href={ctx ? '/bobines' : '/ouvrir/tout-clap'} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Ouvrir ma bobine offerte'} <ArrowIcon /></Link>
                 <Link href="#comment-jouer" className="btn btn-lg">Comment jouer</Link>
               </div>
               <dl className={styles.proof}>
@@ -100,7 +97,7 @@ export default async function LandingPage() {
               {fanCenter && (
                 <TicketStub
                   className={styles.ticket}
-                  top={`${RARITIES[fanCenter.rarity].label.toUpperCase()} · ${pct(ODDS[fanCenter.rarity])}`}
+                  top={`${rarityName(fanCenter.rarity).toUpperCase()} · ${pct(ODDS[fanCenter.rarity])}`}
                   big={formatEntries(RARITIES[fanCenter.rarity].entries)}
                   bottom="ENTRÉES"
                 />
@@ -137,9 +134,9 @@ export default async function LandingPage() {
           <h2 id="jouer" className={`display h2 ${styles.h2}`}>Comment jouer</h2>
           <div className={styles.steps}>
             {[
-              { t: 'Ouvrez une bobine', d: 'Une bobine offerte toutes les 4 heures, et des tickets pour en ouvrir plus. Le paquet se déchire, la pellicule se déroule.', art: <Leader size={150} /> },
-              { t: 'Suivez la bande', d: 'Cinq cartes défilent sur la pellicule, des moins connues aux plus célèbres. La dernière peut être une Icône.', art: <Reel size={150} reverse /> },
-              { t: 'Complétez le générique', d: 'Retrouvez chaque acteur dans ses grands rôles, échangez avec vos amis, vendez vos doublons au Guichet.', art: <TicketStub top="CLAP · SÉANCE 21:00" big="ENTRÉE" bottom="RANG F · PLACE 12" /> },
+              { t: 'Choisissez une bobine', d: 'Casting : cinq cartes Acteur. Film : cinq cartes Rôle. Une bobine offerte toutes les 4 heures, des tickets pour en ouvrir plus.', art: <Leader size={150} /> },
+              { t: 'Révélez les cartes', d: 'Cliquez pour faire défiler la pellicule : les cartes arrivent de la moins rare à la plus rare. La dernière peut être un Mythe.', art: <Reel size={150} reverse /> },
+              { t: 'Formez des duos', d: 'La carte Acteur + un de ses Rôles = un duo. Complétez les sagas, échangez avec vos amis, vendez vos doublons au Guichet.', art: <TicketStub top="CLAP · SÉANCE 21:00" big="DUO" bottom="ACTEUR + RÔLE" /> },
             ].map((s, i) => (
               <Reveal key={s.t} className={styles.step} delay={i * 120}>
                 <div className={styles.stepArt}>{s.art}</div>
@@ -154,34 +151,40 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* Raretés */}
+        {/* Deux familles */}
         <section className={`container ${styles.section}`} aria-labelledby="raretes">
-          <Scene n={3} label="Deux échelles, dix raretés" />
-          <h2 id="raretes" className={`display h2 ${styles.h2}`}>Du figurant<br />à l’icône</h2>
-          <div className={styles.ladders}>
-            {ladders.map((l, li) => (
-              <Reveal key={l.title} className={styles.ladder} delay={li * 120}>
-                {l.top && (
-                  <div className={styles.ladderCard}>
-                    <Rays color={`color-mix(in srgb, ${RARITIES[l.top.rarity].color} 30%, transparent)`} className={styles.ladderRays} />
-                    <CardLink card={l.top}><GameCard card={l.top} width={180} live /></CardLink>
-                  </div>
-                )}
-                <div className={styles.ladderRows}>
-                  <div className={styles.ladderHead}>
-                    <h3 className="display h3">{l.title}</h3>
-                    <span className="eyebrow">{l.basis}</span>
-                  </div>
-                  {l.rows.map((r) => (
-                    <div key={r} className={styles.ladderRow} style={{ ['--rc' as string]: RARITIES[r].color }}>
-                      <span className={styles.rowName}><i className={RARITIES[r].kind === 'role' ? styles.diamond : undefined} />{RARITIES[r].label}</span>
-                      <span className={styles.rowBar}><b style={{ width: `${Math.max(3, ((ODDS[r] ?? 0) / maxOdds) * 100)}%` }} /></span>
-                      <span className={styles.rowOdds}>{pct(ODDS[r])}</span>
+          <Scene n={3} label="Deux familles, onze raretés" />
+          <div className={styles.sectionTitle}>
+            <h2 id="raretes" className={`display h2 ${styles.h2}`}>Acteur<br />ou Rôle ?</h2>
+            <Link href="/raretes" className={styles.more}>Tout comprendre ▸</Link>
+          </div>
+          <div className={styles.families}>
+            {([['actor', fanLeft], ['role', fanCenter]] as const).map(([kind, card], i) => (
+              <Reveal key={kind} className={`${styles.familyPanel} ${kind === 'actor' ? styles.familyActor : styles.familyRole}`} delay={i * 120}>
+                <div className={styles.familyIntro}>
+                  {card && (
+                    <div className={styles.ladderCard}>
+                      <Rays color={`color-mix(in srgb, ${RARITIES[card.rarity].color} 30%, transparent)`} className={styles.ladderRays} />
+                      <CardLink card={card}><GameCard card={card} width={170} live /></CardLink>
                     </div>
-                  ))}
+                  )}
+                  <div className={styles.familyText}>
+                    <span className={styles.familyKicker}>{FAMILY[kind].mark} CARTE {FAMILY[kind].label.toUpperCase()}</span>
+                    <h3 className="display h3">{kind === 'actor' ? 'Une personne' : 'Un rôle dans un film'}</h3>
+                    <p>{kind === 'actor'
+                      ? 'Le portrait d’un acteur et toute sa carrière. Sa rareté dit à quel point il est célèbre.'
+                      : 'Un acteur dans un film précis, avec son personnage. Sa rareté dit à quel point le film et le rôle sont mythiques.'}</p>
+                    <span className={styles.familyWhere}>Dans les bobines <b>{FAMILY_SHELVES[kind].title}</b> · {kind === 'actor' ? 'marqueurs ronds' : 'marqueurs en losange'}</span>
+                  </div>
                 </div>
+                <RarityLadder kind={kind} />
               </Reveal>
             ))}
+          </div>
+          <div className={styles.links}>
+            <span className={styles.linkItem}><b>Duo</b> la carte Acteur + un de ses Rôles = +{formatNumber(DUO_BONUS)} entrées</span>
+            <span className={styles.linkItem}><b>Saga</b> tous les rôles d’une saga (Star Wars, Harry Potter…) = des tickets</span>
+            <span className={styles.linkItem}><b>Ordre</b> les cartes se révèlent de la moins rare à la plus rare</span>
           </div>
         </section>
 
@@ -200,6 +203,7 @@ export default async function LandingPage() {
                     <BoosterPack booster={b} cover={boosterCover(db, b)} width={i === 1 ? 260 : 210} float interactive style={{ animationDelay: `${-i * 1.3}s` }} />
                   </Link>
                   <span className={styles.packName}>{b.name}</span>
+                  <span className={`${styles.packFamily} ${b.family === 'actor' ? styles.familyActor : styles.familyRole}`}>{FAMILY[b.family].mark} {FAMILY_SHELVES[b.family].title} · {b.slots.length} cartes {FAMILY[b.family].label}</span>
                   <span className="eyebrow">{ctx ? `${b.price} tickets · ou offerte` : 'Première bobine offerte, sans compte'}</span>
                 </div>
               ))}
@@ -216,7 +220,7 @@ export default async function LandingPage() {
               <span className={styles.bgIcon} aria-hidden="true"><SeatIcon size={260} color="var(--gold)" /></span>
               <span className="eyebrow" style={{ color: 'var(--gold)' }}>Box-office</span>
               <span className={`display ${styles.currencyName}`}>Entrées</span>
-              <p>La valeur de votre collection. Chaque carte rapporte des entrées selon sa rareté : de {formatNumber(RARITIES.figurant.entries)} pour un figurant à {formatEntries(RARITIES.icone.entries)} pour une Icône.</p>
+              <p>La valeur de votre collection. Chaque carte rapporte des entrées selon sa rareté : de {formatNumber(RARITIES.figurant.entries)} pour un Figurant à {formatEntries(RARITIES.mythe.entries)} pour un Mythe, et chaque duo en ajoute {formatNumber(DUO_BONUS)}.</p>
             </Reveal>
             <Reveal className={styles.tickets} delay={120}>
               <span className={styles.perf} aria-hidden="true" />

@@ -116,6 +116,9 @@ function Sparks({ level }: { level: number }) {
   );
 }
 
+/** Le guide de première ouverture n'est montré qu'une fois par navigateur. */
+const GUIDE_KEY = 'clap:guide-v2';
+
 export function Projection({ booster, cover, guest = false }: { booster: BoosterDef; cover: Card | null; guest?: boolean }) {
   const [layoutName, setLayoutName] = useState<keyof typeof LAYOUTS>('landscape');
   const [scale, setScale] = useState(1);
@@ -140,6 +143,10 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const [keepOpen, setKeepOpen] = useState(false);
   // Le mode d'emploi ne s'affiche qu'une fois, avant la première carte.
   const [hintSeen, setHintSeen] = useState(false);
+  // Première ouverture : trois écrans courts (Acteur ou Rôle, ordre de révélation, duos), une seule fois.
+  const [guide, setGuide] = useState<number | null>(null);
+  const guideOpen = useRef(false);
+  guideOpen.current = guide !== null;
 
   const layout = LAYOUTS[layoutName];
   /** Une bobine ne contient qu'une famille : Casting = Acteurs, Film = Rôles. */
@@ -192,6 +199,11 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     const on = soundPreference();
     setSound(on);
     setVolume(volumePreference());
+    try {
+      if (!localStorage.getItem(GUIDE_KEY)) setGuide(0);
+    } catch {
+      // Stockage indisponible : pas de guide, la consigne « Cliquez pour révéler » suffit.
+    }
     soundRef.current = on;
     projector.current = createProjector(on);
     themes.current = createThemePlayer(setNowPlaying);
@@ -290,6 +302,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('button, a, input')) return;
+      if (guideOpen.current) return;
       if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
         e.preventDefault();
         advance();
@@ -394,6 +407,16 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
     saveSoundPreference(next);
     projector.current?.setEnabled(next);
     if (!next) themes.current?.stop();
+  };
+
+  const finishGuide = (reveal: boolean) => {
+    try {
+      localStorage.setItem(GUIDE_KEY, '1');
+    } catch {
+      // Voir plus haut : le guide reviendra à la prochaine ouverture, tant pis.
+    }
+    setGuide(null);
+    if (reveal) advance();
   };
 
   const changeVolume = (v: number) => {
@@ -542,7 +565,48 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
         </div>
       )}
 
-      {awaiting && !hintSeen && !calm && (
+      {awaiting && guide !== null && !calm && (
+        <div className={styles.guideBackdrop} role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(e) => e.stopPropagation()}>
+          <div className={styles.guide}>
+            <span className={styles.guideStep}>{guide + 1} / 3</span>
+            {guide === 0 && (
+              <>
+                <h2 id="guide-title" className="display">{family === 'actor' ? 'Une bobine Casting' : 'Une bobine Film'}</h2>
+                <p>Cette bobine contient <b>{booster.slots.length} cartes {FAMILY[family].label}</b>. {family === 'actor'
+                  ? 'Une carte Acteur, c’est une personne et toute sa carrière : marqueurs ronds, de Figurant à Légende.'
+                  : 'Une carte Rôle, c’est un acteur dans un film précis : marqueurs en losange, de Série B à Mythe.'}</p>
+                <p className={styles.guideMuted}>Les bobines Casting ne donnent que des Acteurs, les bobines Film que des Rôles.</p>
+              </>
+            )}
+            {guide === 1 && (
+              <>
+                <h2 id="guide-title" className="display">La meilleure en dernier</h2>
+                <p>Les cartes arrivent <b>de la moins rare à la plus rare</b>. Cliquez n’importe où (ou Espace) pour faire passer la suivante.</p>
+                <div className={styles.guideScale}>
+                  {ladderOf(family).map((id) => (
+                    <span key={id}><i className={family === 'actor' ? styles.markRound : styles.markDiamond} style={{ background: RARITIES[id].color }} />{RARITIES[id].label}</span>
+                  ))}
+                </div>
+              </>
+            )}
+            {guide === 2 && (
+              <>
+                <h2 id="guide-title" className="display">Formez des duos</h2>
+                <p>La <b>carte Acteur</b> d’une personne + <b>un de ses Rôles</b> = un duo, qui ajoute des entrées à votre box-office. Les sagas (Star Wars, Harry Potter…) se complètent de la même façon.</p>
+                <p className={styles.guideMuted}>Tout est expliqué sur la page « Raretés et règles », accessible depuis le menu.</p>
+              </>
+            )}
+            <div className={styles.guideActions}>
+              <button type="button" className="btn btn-sm" onClick={() => finishGuide(false)}>Passer</button>
+              {guide < 2
+                ? <button type="button" className="btn btn-sm btn-primary" onClick={() => setGuide(guide + 1)}>Suivant</button>
+                : <button type="button" className="btn btn-sm btn-primary" onClick={() => finishGuide(true)}>Révéler la première carte</button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {awaiting && !hintSeen && guide === null && !calm && (
         <div className={styles.hint} role="status">
           <span className={styles.hintRing}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>

@@ -5,7 +5,7 @@ import { getCard, getCatalog, poolOf } from './catalog.ts';
 import { rowToCard, transaction, type CardRow } from './db.ts';
 import { logEvent, notify, notifyPlayer } from './notify.ts';
 import { openBooster, type Rng } from './pull.ts';
-import { RARITIES, suggestedTickets } from './rarity.ts';
+import { RARITIES, rarityName, suggestedTickets } from './rarity.ts';
 import type { Card, OwnedCard } from './types.ts';
 
 export { getCatalog };
@@ -187,7 +187,7 @@ export function openBoosterFor(
     const rare = cards.filter((c) => RARITIES[c.rarity].tier >= 3).length;
     if (rare) logEvent(db, playerId, 'rare', rare, now);
     for (const c of cards.filter((c) => c.rarity === 'icone' || c.rarity === 'legende')) {
-      notifyPlayer(db, playerId, 'pull', `Vous avez tiré ${c.first} ${c.last}${c.character ? ` (${c.character})` : ''} : ${RARITIES[c.rarity].label} !`, c.kind === 'role' ? `/role/${encodeURIComponent(c.id)}` : `/acteur/${c.personId}`, now);
+      notifyPlayer(db, playerId, 'pull', `Vous avez tiré ${c.first} ${c.last}${c.character ? ` (${c.character})` : ''} : ${rarityName(c.rarity)} !`, c.kind === 'role' ? `/role/${encodeURIComponent(c.id)}` : `/acteur/${c.personId}`, now);
     }
     rewardReferral(db, playerId, now);
     const fresh = db.prepare('SELECT tickets FROM players WHERE id = ?').get(playerId) as { tickets: number };

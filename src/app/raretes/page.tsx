@@ -34,7 +34,9 @@ export default async function RaritiesPage() {
   const duoRole = duoActor && catalog
     .filter((c): c is Card => c.kind === 'role' && c.personId === duoActor.personId)
     .sort((a, b) => RARITIES[b.rarity].tier - RARITIES[a.rarity].tier)[0];
-  const sagas = playerSagas(db, ctx?.player.id ?? '').sort((a, b) => b.total - a.total).slice(0, 12);
+  // Les sagas les plus vues d'abord (votes TMDB cumulés de leurs films).
+  const votes = (m: Card[]) => m.reduce((n, c) => n + (c.kind === 'role' ? c.votes ?? 0 : 0), 0);
+  const sagas = playerSagas(db, ctx?.player.id ?? '').sort((a, b) => votes(b.members) - votes(a.members)).slice(0, 12);
   const castings = BOOSTERS.filter((b) => b.family === 'actor');
   const films = BOOSTERS.filter((b) => b.family === 'role');
 

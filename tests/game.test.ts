@@ -4,7 +4,7 @@ import { BOOSTERS, FREE_BOOSTER_CAP, FREE_BOOSTER_EVERY_MS, getBooster } from '.
 import { openDb } from '../src/lib/db.ts';
 import { createPlayer, GameError, getCatalog, getCollection, getPlayer, getStats, openBoosterFor, STARTING_TICKETS } from '../src/lib/game.ts';
 import { boosterPool, openBooster, rollRarity } from '../src/lib/pull.ts';
-import { RARITIES } from '../src/lib/rarity.ts';
+import { RARITIES, roleRarity } from '../src/lib/rarity.ts';
 import { themeFor } from '../src/lib/themes.ts';
 
 /** Générateur pseudo-aléatoire reproductible (mulberry32). */
@@ -145,4 +145,24 @@ test('Panthéon : uniquement des grands rôles de films très vus', () => {
   const db = openDb(':memory:');
   const pool = boosterPool(getBooster('pantheon')!, getCatalog(db));
   assert.ok(pool.every((c) => c.kind === 'role' && (c.votes ?? 0) >= 15_000 && RARITIES[c.rarity].tier >= 3));
+});
+
+test('raretés v2 : la première règle qui correspond l’emporte, du Mythe à la Série B', () => {
+  const base = { votes: 0, average: 6, revenue: 0, order: 3, saga: false, actorRank: 5_000, mythe: false };
+  assert.equal(roleRarity({ ...base, mythe: true }), 'mythe');
+  assert.equal(roleRarity({ ...base, votes: 9_000, order: 0, saga: true }), 'icone');
+  assert.equal(roleRarity({ ...base, votes: 9_000, order: 3, saga: true }), 'culte');
+  assert.equal(roleRarity({ ...base, votes: 6_000, order: 0, revenue: 900_000_000 }), 'icone');
+  assert.equal(roleRarity({ ...base, votes: 4_000, order: 0, actorRank: 12 }), 'vedette');
+  assert.equal(roleRarity({ ...base, votes: 4_000, order: 0, actorRank: 900 }), 'succes');
+  assert.equal(roleRarity({ ...base, votes: 2_500, average: 8 }), 'culte');
+  assert.equal(roleRarity({ ...base, votes: 1_200 }), 'succes');
+  assert.equal(roleRarity({ ...base, votes: 200 }), 'serieb');
+});
+
+test('une bobine ne mélange jamais les familles : Casting = Acteurs, Film = Rôles', () => {
+  for (const b of BOOSTERS) {
+    assert.ok(b.slots.every((s) => s.kind === b.family), b.id);
+  }
+  assert.ok(BOOSTERS.some((b) => b.family === 'actor') && BOOSTERS.some((b) => b.family === 'role'));
 });

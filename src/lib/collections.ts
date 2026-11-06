@@ -84,7 +84,8 @@ export function playerSagas(db: DatabaseSync, playerId: string, { started = fals
     if (started && have === 0) continue;
     list.push({ id, name: names.get(id) ?? `Saga ${id}`, members, owned: have, total: members.length, reward: sagaReward(members.length), claimed: claimed.has(id) });
   }
-  return list.sort((a, b) => b.owned / b.total - a.owned / a.total || b.total - a.total);
+  // Les sagas les plus avancées d'abord (en nombre de cartes), puis les plus grandes.
+  return list.sort((a, b) => b.owned - a.owned || b.owned / b.total - a.owned / a.total || b.total - a.total);
 }
 
 /** Verse la récompense d'une saga complétée (une seule fois). */

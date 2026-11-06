@@ -57,6 +57,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
                   <nav className={styles.mobileLinks} aria-label="Navigation">
                     {NAV_LINKS.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
                   </nav>
+                  <Link href="/raretes">Raretés et règles</Link>
                   <Link href="/parrainage">Parrainage</Link>
                   <Link href="/parametres">Paramètres</Link>
                   <LogoutButton />
@@ -66,7 +67,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
           </>
         ) : (
           <div className={styles.right}>
-            <Link href="/#comment-jouer" className={styles.ghostLink}>Comment jouer</Link>
+            <Link href="/raretes" className={styles.ghostLink}>Comment jouer</Link>
             <Link href="/connexion" className={`btn btn-sm ${styles.login}`}>Se connecter</Link>
             <Link href="/connexion?mode=inscription" className="btn btn-sm btn-primary">Jouer gratuitement</Link>
           </div>
@@ -83,6 +84,7 @@ export function Footer() {
       <div className="container footer-inner">
         <span>© Clap · Gratuit, sans achat intégré. Les entrées et les tickets n’ont aucune valeur réelle.</span>
         <nav aria-label="Liens de bas de page">
+          <Link href="/raretes">Raretés et règles</Link>
           <Link href="/bobines">Bobines</Link>
           <Link href="/guichet">Le Guichet</Link>
           <Link href="/parrainage">Parrainage</Link>

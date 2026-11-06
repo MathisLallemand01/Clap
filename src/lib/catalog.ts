@@ -11,7 +11,9 @@ const cache = new WeakMap<DatabaseSync, { version: string; cards: Card[]; byId: 
 
 function version(db: DatabaseSync): string {
   const { n, m } = db.prepare('SELECT COUNT(*) AS n, MAX(rowid) AS m FROM cards').get() as { n: number; m: number | null };
-  return `${n}:${m}`;
+  // data_version change quand un autre processus écrit dans la base (un import pendant que le site tourne).
+  const { data_version: d } = db.prepare('PRAGMA data_version').get() as { data_version: number };
+  return `${n}:${m}:${d}`;
 }
 
 function load(db: DatabaseSync) {

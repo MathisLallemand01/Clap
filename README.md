@@ -21,15 +21,25 @@ La base SQLite est créée au premier lancement dans `data/clap.db`, avec un cat
 
 ```bash
 cp .env.example .env   # puis renseigner TMDB_API_KEY
-npm run import:tmdb    # ~8 800 acteurs et ~26 000 rôles, environ 15 minutes
-TMDB_PAGES=25 npm run import:tmdb   # essai rapide : ~450 acteurs
+npm run import:tmdb    # ~13 000 acteurs, ~45 000 rôles, ~1 800 sagas : environ 30 minutes
+TMDB_PAGES=25 TMDB_FILM_PAGES=25 npm run import:tmdb   # essai rapide
 ```
 
-Le script récupère les acteurs (avec portrait) par ordre de popularité, classe leur rareté selon la
-notoriété de leur carrière (votes cumulés de leurs rôles principaux), garde leurs 6 rôles principaux
-les plus vus, calcule la rareté des rôles (`src/lib/rarity.ts`) et les tags des bobines thématiques
-(pays, genre, décennie, blockbuster). Les rôles de doublage et les dessins animés sont écartés : une
-carte Rôle doit montrer l’acteur à l’image. Les Icônes sont une liste choisie à la main dans le script.
+Le script part de deux sources : les **5 000 films les plus vus** (avec leurs 4 premiers rôles au
+générique) et les **acteurs populaires** (avec leurs 10 rôles principaux les plus vus). Aucun grand
+film ne manque, et les stars de l’âge d’or arrivent par leurs films. Les rôles de doublage et les
+dessins animés sont écartés : une carte Rôle doit montrer l’acteur à l’image.
+
+Deux familles de cartes, deux échelles (`src/lib/rarity.ts`, expliquées sur la page `/raretes`) :
+
+- **Acteurs** (bobines Casting) : Figurant, Second rôle, Premier rôle, Tête d’affiche, Légende, selon
+  la notoriété de la carrière ; une liste de monstres sacrés est placée d’office en Légende.
+- **Rôles** (bobines Film) : Série B, Succès, Culte, Vedette (une star en tête d’affiche), Icône (la
+  tête d’affiche d’une saga ou d’un best-seller), Mythe (une centaine de personnages choisis à la main
+  dans le script).
+
+Les sagas viennent des collections TMDB. On peut relancer l’import à tout moment : les cartes déjà
+possédées gardent leur numéro et prennent leur nouvelle rareté.
 
 ## Connexion Google
 

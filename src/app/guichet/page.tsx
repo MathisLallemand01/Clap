@@ -11,7 +11,7 @@ import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { getCollection, ownedCopies } from '@/lib/game';
 import { byDeal, getListing, LISTING_DAYS, MARKET_FEE, openListings, playerListings, priceRange, type Listing } from '@/lib/market';
-import { RARITIES, RARITIES_BY_VALUE, type Rarity } from '@/lib/rarity';
+import { RARITIES, RARITIES_BY_VALUE, rarityName, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { tickerSales } from '@/lib/ticker';
 import { buyAction, cancelAction } from './actions';
@@ -95,7 +95,11 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
                 </label>
                 <select name="rarete" defaultValue={rarity ?? ''} className="input" aria-label="Rareté">
                   <option value="">Toutes les raretés</option>
-                  {RARITIES_BY_VALUE.map((r) => <option key={r} value={r}>{RARITIES[r].label}</option>)}
+                  {(['actor', 'role'] as const).map((k) => (
+                    <optgroup key={k} label={k === 'actor' ? '● Cartes Acteur' : '◆ Cartes Rôle'}>
+                      {RARITIES_BY_VALUE.filter((r) => RARITIES[r].kind === k).map((r) => <option key={r} value={r}>{rarityName(r)}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
                 <select name="tri" defaultValue={sp.tri ?? ''} className="input" aria-label="Tri">
                   <option value="">Meilleure affaire</option>

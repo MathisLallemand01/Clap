@@ -116,3 +116,23 @@
 @keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes marquee { to { transform: translateX(-50%); } }
+
+/* Deux familles : Acteur (or, ronds) et Rôle (rose, losanges), chacune avec son échelle. */
+.families { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 24px; }
+.familyPanel { display: flex; flex-direction: column; gap: 20px; padding: 24px; border-radius: 26px; background: #0f0f12; border: 1px solid var(--line); }
+.familyActor { border-top: 3px solid #FFC83D; }
+.familyRole { border-top: 3px solid #FF2E93; }
+.familyIntro { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
+.familyText { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 220px; }
+.familyText p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.familyKicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; }
+.familyActor .familyKicker { color: #FFC83D; }
+.familyRole .familyKicker { color: #FF7AB8; }
+.familyWhere { font-size: 13px; color: var(--muted); }
+.familyWhere b { color: var(--text); }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.linkItem { display: inline-flex; gap: 10px; align-items: baseline; padding: 12px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); font-size: 14px; color: var(--text-2); }
+.linkItem b { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.packFamily { padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid; }
+.packFamily.familyActor { color: #FFC83D; border-color: #FFC83D88; border-top-width: 1px; }
+.packFamily.familyRole { color: #FF7AB8; border-color: #FF2E9388; border-top-width: 1px; }
