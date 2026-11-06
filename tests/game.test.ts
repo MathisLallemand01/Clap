@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BOOSTERS, FREE_BOOSTER_CAP, FREE_BOOSTER_EVERY_MS, getBooster } from '../src/lib/boosters.ts';
 import { openDb } from '../src/lib/db.ts';
+import { pointsBoard } from '../src/lib/ranking.ts';
 import { createPlayer, GameError, getCatalog, getCollection, getPlayer, getStats, openBoosterFor, STARTING_TICKETS } from '../src/lib/game.ts';
 import { boosterPool, openBooster, rollRarity } from '../src/lib/pull.ts';
 import { RARITIES, roleRarity } from '../src/lib/rarity.ts';
@@ -113,7 +114,10 @@ test('collection, numéros de série et box-office', () => {
 
   const stats = getStats(db, a.id);
   assert.equal(stats.copies, 5);
-  assert.equal(stats.points, pulled.reduce((s, c) => s + RARITIES[c.rarity].points, 0));
+  // Les points du joueur sont ceux du classement : une fois par carte différente, doublons exclus.
+  const distinct = new Map(pulled.map((c) => [c.id, c]));
+  assert.equal(stats.points, [...distinct.values()].reduce((s, c) => s + RARITIES[c.rarity].points, 0));
+  assert.equal(stats.points, pointsBoard(db).find((r) => r.playerId === a.id)?.points ?? stats.points);
   const collection = getCollection(db, a.id);
   assert.equal(collection.reduce((s, c) => s + c.copies, 0), 5);
   for (let i = 1; i < collection.length; i++) {

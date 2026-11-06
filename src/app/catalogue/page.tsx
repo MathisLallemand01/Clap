@@ -213,7 +213,7 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
             <div className={styles.resultsHead}>
               <h2 id="resultats" className={styles.count}>
                 <b>{formatNumber(cards.length)}</b> carte{cards.length > 1 ? 's' : ''}
-                {ctx && cards.length > 0 && <span> · vous en avez {formatNumber(have)} ({Math.floor((have / cards.length) * 100)} %)</span>}
+                {ctx && cards.length > 0 && <span> · vous en avez {formatNumber(have)} ({have && have < cards.length ? `${((have / cards.length) * 100 < 10 ? Math.floor((have / cards.length) * 1000) / 10 : Math.floor((have / cards.length) * 100)).toLocaleString('fr-FR')} %` : have ? '100 %' : '0 %'})</span>}
               </h2>
               {active.length > 0 && (
                 <div className={styles.active} aria-label="Filtres actifs">

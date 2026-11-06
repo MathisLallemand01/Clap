@@ -8,10 +8,10 @@
 @media (min-width: 1100px) { .links { display: flex; } }
 
 .right { display: flex; align-items: center; gap: 8px; }
-.wallet { display: none; }
-@media (min-width: 560px) { .wallet { display: inline-flex; } }
+.right .wallet { display: none; }
+@media (min-width: 560px) { .right .wallet { display: inline-flex; } }
 /* Quand le menu complet est affiché, le box-office laisse la place à la réserve de bobines (il reste dans le menu du compte). */
-@media (min-width: 1100px) and (max-width: 1439px) { .entries { display: none; } }
+@media (min-width: 1100px) and (max-width: 1439px) { .right .entries { display: none; } }
 .ghostLink { display: none; font-size: 15px; font-weight: 600; color: var(--text-2); padding: 0 10px; }
 .ghostLink:hover { color: var(--text); }
 @media (min-width: 760px) { .ghostLink { display: inline; } }
@@ -43,8 +43,9 @@
 .mobileLinks { display: flex; flex-direction: column; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 6px; }
 @media (min-width: 1100px) { .mobileLinks { display: none; } }
 
-.login { display: none; }
-@media (min-width: 520px) { .login { display: inline-flex; } }
+.right .login { display: none; }
+@media (min-width: 520px) { .right .login { display: inline-flex; } }
+@media (max-width: 400px) { .right { gap: 6px; } .inner { gap: 10px; } }
 
 /* Récompenses de missions à récupérer : pastille verte qui pulse doucement. */
 .ready {

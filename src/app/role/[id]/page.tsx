@@ -73,7 +73,7 @@ export default async function RolePage({ params }: Props) {
             </div>
             {info?.overview && <p className="lead">{info.overview}</p>}
             <div className="stat-row">
-              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pts</strong><small>au classement · {formatNumber(suggestedSeats(card.rarity))} sièges conseillés</small></div>
+              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pt{rarity.points > 1 ? "s" : ""}</strong><small>au classement · {formatNumber(suggestedSeats(card.rarity))} sièges conseillés</small></div>
               <div><span className="eyebrow">Exemplaires</span><strong>×{copies.length}</strong><small>{copies.length ? `Meilleur n° ${String(copies[0].serial).padStart(4, '0')}` : 'Pas encore obtenue'}</small></div>
               <div><span className="eyebrow">Votes TMDB</span><strong>{formatNumber(card.votes ?? 0)}</strong><small>notoriété du film</small></div>
             </div>

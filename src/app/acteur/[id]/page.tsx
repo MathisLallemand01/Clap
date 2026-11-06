@@ -75,13 +75,14 @@ export default async function ActorPage({ params }: Props) {
             )}
             <div className="stat-row">
               <div><span className="eyebrow">Exemplaires</span><strong>×{copies.length}</strong><small>{copies.length ? `Meilleur n° ${String(copies[0].serial).padStart(4, '0')}` : 'Pas encore obtenue'}</small></div>
-              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pts</strong><small>au classement · {formatNumber(suggestedSeats(actor.rarity))} sièges conseillés</small></div>
+              <div><span className="eyebrow">Valeur</span><strong>{formatNumber(rarity.points)} pt{rarity.points > 1 ? "s" : ""}</strong><small>au classement · {formatNumber(suggestedSeats(actor.rarity))} sièges conseillés</small></div>
               <div><span className="eyebrow">Rôles</span><strong>{formatNumber(roles.filter((r) => owned.has(r.id)).length)} / {formatNumber(roles.length)}</strong><small>obtenus</small></div>
             </div>
           </div>
         </section>
 
-        <section className={`${styles.duoBox} ${hasActor && ownedRoleCount > 0 ? styles.duoDone : ''}`} aria-label="Duo">
+        {/* Sans Rôle au catalogue, pas de duo possible : on n'affiche pas d'objectif irréalisable. */}
+        {roles.length > 0 && <section className={`${styles.duoBox} ${hasActor && ownedRoleCount > 0 ? styles.duoDone : ''}`} aria-label="Duo">
           <span className={styles.duoKicker}>{hasActor && ownedRoleCount > 0 ? `DUO COMPLET · +${formatNumber(DUO_BONUS)} POINTS` : 'DUO À FORMER'}</span>
           <div className={styles.duoSteps}>
             <span className={hasActor ? styles.stepOk : styles.stepTodo}>{hasActor ? '✓' : '1'} Sa carte Acteur <small>bobines Casting</small></span>
@@ -93,7 +94,7 @@ export default async function ActorPage({ params }: Props) {
               {hasActor ? 'Trouver un de ses Rôles' : 'Trouver sa carte Acteur'}
             </Link>
           )}
-        </section>
+        </section>}
 
         {roles.length > 0 && (
           <section className={styles.section}>

@@ -1,0 +1,11 @@
+.wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; min-height: 60vh; }
+.wrap h1 { margin: 0; text-transform: uppercase; }
+.wrap .lead { max-width: 52ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.clap { width: 176px; margin: 22px 0 4px 6px; display: flex; flex-direction: column; rotate: -4deg; }
+.top { height: 26px; border-radius: 6px 6px 0 0; transform-origin: 0 100%; rotate: -14deg;
+  background: repeating-linear-gradient(-45deg, var(--text) 0 14px, #0b0b0d 14px 28px); }
+.board { display: flex; justify-content: space-between; padding: 14px 12px; border-radius: 0 0 8px 8px; background: #1b1b20; border: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--text-2); white-space: nowrap; gap: 10px; }
+.board b { color: var(--accent); font-weight: 600; }
+.board i { font-style: normal; }

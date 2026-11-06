@@ -12,17 +12,17 @@
 .dailyName { font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
 .glow { animation: cta-glow 2s ease-out infinite; }
 @keyframes cta-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 74, 28, 0.55), 0 18px 40px rgba(255, 74, 28, 0.25); } 60% { box-shadow: 0 0 0 14px rgba(255, 74, 28, 0), 0 18px 40px rgba(255, 74, 28, 0.25); } }
-.reserve { display: flex; align-items: center; gap: 8px; }
-.reserve span { width: 64px; height: 10px; border-radius: 3px; background: var(--line); }
+.reserve { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.reserve span { flex: 0 1 64px; min-width: 10px; width: 64px; height: 10px; border-radius: 3px; background: var(--line); }
 .reserve span.full { background: var(--accent); box-shadow: 0 0 12px rgba(255, 74, 28, 0.6); }
-.reserve small { margin-left: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); }
+.reserve small { white-space: nowrap; margin-left: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); }
 
 .fan { position: relative; height: 560px; }
 .rays { width: 720px; height: 720px; margin: -360px 0 0 -360px; -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 46%); mask-image: radial-gradient(circle, #000 8%, transparent 46%); }
 .fanPack { position: absolute; left: 50%; }
 /* Éventail : les paquets latéraux sont assez écartés pour que leur titre (en bas à gauche) ne passe plus
    sous le paquet du milieu — celui de droite était caché. Sur les écrans moyens, l'éventail se réduit un peu. */
-.fan0 { top: 96px; margin-left: -330px; rotate: -12deg; }
+.fan0 { top: 96px; margin-left: -352px; rotate: -12deg; }
 .fan1 { top: 40px; margin-left: -135px; z-index: 2; }
 .fan2 { top: 96px; margin-left: 132px; rotate: 10deg; }
 @media (min-width: 701px) and (max-width: 1399px) { .fan { scale: 0.86; transform-origin: 50% 40%; } }
@@ -46,6 +46,8 @@
 .eventArt { flex: 0 1 320px; display: flex; justify-content: center; margin: 0 auto; }
 .eventText { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .eventText h2 { font-size: clamp(44px, 5vw, 80px); }
+/* Texte en dégradé : sans marge intérieure, le fond s'arrête à la ligne et coupe les accents des capitales (PANTHÉON). */
+.eventText h2 { padding-top: 0.14em; margin-top: -0.14em; }
 /* Édition limitée : titre, pastille et bouton aux reflets multicolores. */
 .eventText h2, .badge { background: linear-gradient(120deg, #ff9ad5, #b59bff 30%, #8fd3ff 55%, #9cf0c8 75%, #ffe38f); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .badge {
@@ -99,3 +101,5 @@
 .pityRainbow { background: linear-gradient(90deg, #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93); }
 .pityLeft { text-align: right; white-space: nowrap; }
 @media (max-width: 560px) { .pityGauge { grid-template-columns: 1fr 90px; } .pityBar { grid-column: 1 / -1; grid-row: 2; } }
+
+@media (max-width: 700px) { .reserve { gap: 5px; } .reserve span { flex: 1 1 0; width: auto; } .reserve small { flex-basis: 100%; margin: 4px 0 0; } }

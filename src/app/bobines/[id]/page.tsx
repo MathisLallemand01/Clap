@@ -26,6 +26,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const PREVIEW = 12;
 const PAGE = 96;
 
+/** Avancement lisible : « 0,2 % » plutôt qu'un « 0 % » trompeur dès la première carte. */
+function pct(have: number, total: number): string {
+  if (!total || !have) return '0 %';
+  const v = (have / total) * 100;
+  if (v >= 100) return '100 %';
+  return `${(v < 10 ? Math.floor(v * 10) / 10 : Math.floor(v)).toLocaleString('fr-FR')} %`;
+}
+
 export default async function BoosterContentPage({ params, searchParams }: Props) {
   const { id } = await params;
   const sp = await searchParams;
@@ -75,7 +83,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
             <h1 className="display h1">{booster.name}</h1>
             <p className="lead">{booster.description}</p>
             <div className={styles.meter}>
-              <div className={styles.meterHead}><span><b>{formatNumber(have)}</b> / {formatNumber(pool.length)} cartes obtenues</span><b>{pool.length ? Math.floor((have / pool.length) * 100) : 0} %</b></div>
+              <div className={styles.meterHead}><span><b>{formatNumber(have)}</b> / {formatNumber(pool.length)} cartes obtenues</span><b>{pct(have, pool.length)}</b></div>
               <div className={styles.meterBar} aria-hidden="true">
                 {tiers.map((r) => <span key={r} style={{ flex: Math.max(counts[r], pool.length / 120), background: RARITIES[r].color }} />)}
               </div>

@@ -313,15 +313,18 @@ export function countDuos(db: DatabaseSync, playerId: string): number {
       WHERE orl.player_id = oa.player_id AND r.kind = 'role' AND r.person_id = a.person_id)`).get(playerId) as { n: number }).n;
 }
 
-/** Box-office personnel : la somme des entrées de tous les exemplaires possédés. */
+/** Statistiques du joueur ; « points » est son score au classement (cartes différentes + duos). */
 export function getStats(db: DatabaseSync, playerId: string): PlayerStats {
   const owned = db.prepare('SELECT c.rarity AS rarity FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.player_id = ?')
     .all(playerId) as { rarity: Card['rarity'] }[];
   const unique = (db.prepare('SELECT COUNT(DISTINCT card_id) AS n FROM owned WHERE player_id = ?').get(playerId) as { n: number }).n;
   const pulls = (db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(playerId) as { n: number }).n;
   const duos = countDuos(db, playerId);
+  // Comme au classement : chaque carte différente compte une fois, les doublons ne rapportent rien.
+  const distinct = db.prepare('SELECT c.rarity AS rarity FROM cards c WHERE c.id IN (SELECT DISTINCT card_id FROM owned WHERE player_id = ?)')
+    .all(playerId) as { rarity: Card['rarity'] }[];
   return {
-    points: owned.reduce((sum, o) => sum + RARITIES[o.rarity].points, 0) + duos * DUO_BONUS,
+    points: distinct.reduce((sum, o) => sum + RARITIES[o.rarity].points, 0) + duos * DUO_BONUS,
     unique,
     copies: owned.length,
     pulls,

@@ -17,7 +17,8 @@ const GROUPS: { scope: MissionScope; title: string }[] = [
   { scope: 'weekly', title: 'Cette semaine' },
   { scope: 'saga', title: 'Sagas' },
 ];
-const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+// La série compte des jours d'affilée, pas des jours de la semaine : J1 à J7, puis elle recommence.
+const DAYS = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7'];
 
 function show(scope: MissionScope, id: string, n: number): string {
   return formatNumber(n);
