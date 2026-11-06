@@ -284,6 +284,8 @@ body::after {
 ::view-transition { pointer-events: none; }
 /* Rideau de connexion levé : pas de transition de page (elle se dessinerait par-dessus le rideau). */
 html[data-curtain]::view-transition { display: none; }
+/* …et la page cachée dessous met ses animations en pause : tout le navigateur est pour le décompte. */
+html[data-curtain] body :not([data-curtain-root], [data-curtain-root] *) { animation-play-state: paused !important; }
 ::view-transition-group(site-header) { animation: none; z-index: 100; }
 ::view-transition-old(site-header) { display: none; }
 ::view-transition-new(site-header) { animation: none; }

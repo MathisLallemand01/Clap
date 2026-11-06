@@ -4,9 +4,11 @@
   /* Opaque dès la première image : la page de départ ne se voit jamais à travers. */
   background-color: #0b0b0d;
   background-image: radial-gradient(ellipse 60% 70% at 50% 50%, #17130F, #0B0B0D 60%, #060607);
+  /* Isolé du reste de la page : la page qui se construit dessous ne force aucun recalcul ici. */
+  contain: strict; will-change: opacity;
 }
-.leaving { animation: curtain-out 450ms ease both; }
-.beam { position: absolute; left: 50%; top: -10%; width: 760px; height: 120%; margin-left: -380px; background: radial-gradient(ellipse 50% 60% at 50% 45%, rgba(255, 200, 140, 0.1), rgba(255, 200, 140, 0) 70%); animation: beam 3s ease-in-out infinite; }
+.leaving { animation: curtain-out 450ms ease both; pointer-events: none; }
+.beam { position: absolute; left: 50%; top: -10%; width: 760px; height: 120%; margin-left: -380px; background: radial-gradient(ellipse 50% 60% at 50% 45%, rgba(255, 200, 140, 0.1), rgba(255, 200, 140, 0) 70%); animation: beam 3s ease-in-out infinite; will-change: opacity; }
 
 .film { position: absolute; left: 0; right: 0; height: 64px; overflow: hidden; opacity: 0.9; }
 .filmTop { top: 34px; }
@@ -18,7 +20,7 @@
     repeating-linear-gradient(90deg, transparent 0 14px, #2E2E35 14px 28px, transparent 28px 40px) 0 8px / 120px 9px repeat-x,
     repeating-linear-gradient(90deg, transparent 0 14px, #2E2E35 14px 28px, transparent 28px 40px) 0 47px / 120px 9px repeat-x,
     linear-gradient(90deg, #111114 118px, #060607 118px) 0 0 / 120px 64px repeat-x;
-  animation: film-left 1.2s linear infinite;
+  animation: film-left 1.2s linear infinite; will-change: transform;
 }
 .filmBottom i { animation-name: film-right; }
 
@@ -37,27 +39,33 @@
 .ringIn { inset: 8.5%; border: 1px solid #f2efe855; }
 .crossV { position: absolute; left: 50%; top: -9%; bottom: -9%; width: 1px; background: #f2efe855; }
 .crossH { position: absolute; top: 50%; left: -9%; right: -9%; height: 1px; background: #f2efe855; }
-.sweep { inset: 4px; background: conic-gradient(from 0deg, rgba(255, 74, 28, 0) 0deg, rgba(255, 74, 28, 0) 250deg, rgba(255, 74, 28, 0.55) 350deg, var(--accent) 360deg); animation: sweep 0.6s linear infinite; animation-delay: var(--delay, 0ms); }
+.sweep { inset: 4px; background: conic-gradient(from 0deg, rgba(255, 74, 28, 0) 0deg, rgba(255, 74, 28, 0) 250deg, rgba(255, 74, 28, 0.55) 350deg, var(--accent) 360deg); animation: sweep 0.6s linear infinite; animation-delay: var(--delay, 0ms); will-change: transform; }
 .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-stretch: 62%; font-weight: 900; font-size: clamp(110px, 14vw, 168px); line-height: 1; color: var(--text); }
-/* 3, 2, 1 : une fois, une seconde de cadence cinéma par chiffre (0,6 s), puis le « 1 » reste jusqu'au lever du rideau. */
-.count::after { content: '3'; animation: count var(--count-ms, 1800ms) linear forwards; animation-delay: var(--delay, 0ms); }
+/* 3, 2, 1 : trois chiffres superposés qui s'allument tour à tour (opacité seulement : animé par la carte graphique,
+   sans à-coup même pendant le chargement de la page), puis le « 1 » reste jusqu'au lever du rideau. */
+.count span { position: absolute; opacity: 0; will-change: opacity; animation: var(--count-ms, 1800ms) linear var(--delay, 0ms) both; }
+.count .d3 { animation-name: digit-3; }
+.count .d2 { animation-name: digit-2; }
+.count .d1 { animation-name: digit-1; }
 .title { font-size: clamp(34px, 4.6vw, 46px); line-height: 0.9; text-transform: uppercase; }
 .sub { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; color: var(--muted); }
 .bar { width: min(320px, 80%); height: 4px; margin-top: 16px; border-radius: 4px; background: #1f1f24; overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); transform-origin: left; animation: bar var(--count-ms, 1800ms) linear both; animation-delay: var(--delay, 0ms); }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); transform-origin: left; animation: bar var(--count-ms, 1800ms) linear both; animation-delay: var(--delay, 0ms); will-change: transform; }
 .brand { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; font-stretch: 62%; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; }
 .brand b { display: inline-flex; flex-direction: column; gap: 3px; }
 .brand i { width: 6px; height: 6px; border-radius: 1px; background: var(--accent); }
 
 @keyframes curtain-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes curtain-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@keyframes curtain-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes flicker { 0%, 100% { opacity: 0; } 47% { opacity: 0.12; } 50% { opacity: 0; } 53% { opacity: 0.08; } }
 @keyframes beam { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.85; } }
 @keyframes film-left { from { transform: translateX(0); } to { transform: translateX(-120px); } }
 @keyframes film-right { from { transform: translateX(-120px); } to { transform: translateX(0); } }
 @keyframes rec { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
 @keyframes sweep { to { transform: rotate(360deg); } }
-@keyframes count { 0%, 33.32% { content: '3'; } 33.33%, 66.65% { content: '2'; } 66.66%, 100% { content: '1'; } }
+@keyframes digit-3 { 0%, 33.3% { opacity: 1; } 33.4%, 100% { opacity: 0; } }
+@keyframes digit-2 { 0%, 33.3% { opacity: 0; } 33.4%, 66.6% { opacity: 1; } 66.7%, 100% { opacity: 0; } }
+@keyframes digit-1 { 0%, 66.6% { opacity: 0; } 66.7%, 100% { opacity: 1; } }
 @keyframes bar { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
 
 @media (max-width: 719px) { .rec, .tc, .sideA, .sideB { display: none; } .brand { bottom: 116px; } }

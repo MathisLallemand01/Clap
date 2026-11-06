@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Curtain.module.css';
 
 export type CurtainKind = 'connexion' | 'inscription' | 'deconnexion';
@@ -103,15 +103,23 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Le décompte reprend là où il en est (délai négatif) : il ne repart jamais de 3 au milieu d'une connexion.
+  // Calculé une fois par rideau : un nouveau rendu ne doit pas recaler (et donc faire sauter) les animations.
+  const timing = useMemo(() => (shown ? {
+    '--count-ms': `${COUNT_MS}ms`,
+    '--delay': `${-Math.max(0, Math.min(COUNT_MS, Date.now() - shown.at))}ms`,
+    tc: `00:00:0${Math.floor((shown.at / 1000) % 10)}:14`,
+  } : null), [shown]);
+
   // Le rideau est peint : le masque d'attente (posé avant React) peut partir sans laisser voir la page.
   // Tant qu'il est levé, les transitions de page sont coupées (voir globals.css).
   useEffect(() => {
     const html = document.documentElement;
-    if (shown) {
+    if (shown && !leaving) {
       html.classList.remove('curtain-pending');
       html.setAttribute('data-curtain', '');
     } else html.removeAttribute('data-curtain');
-  }, [shown]);
+  }, [shown, leaving]);
 
   // Navigation côté client (server action qui redirige) : la page ou la session a changé, on lève le rideau.
   useEffect(() => {
@@ -124,15 +132,14 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
 
   if (!shown) return null;
   const [title, sub] = TEXT[shown.kind];
-  // Le décompte reprend là où il en est (délai négatif) : il ne repart jamais de 3 au milieu d'une connexion.
-  const vars = { '--count-ms': `${COUNT_MS}ms`, '--delay': `${-Math.max(0, Math.min(COUNT_MS, Date.now() - shown.at))}ms` } as React.CSSProperties;
+  const vars = timing!;
   return (
-    <div className={`${styles.curtain} ${leaving ? styles.leaving : ''}`} style={vars} role="status" aria-live="polite" aria-label={title}>
+    <div data-curtain-root="" className={`${styles.curtain} ${leaving ? styles.leaving : ''}`} style={{ '--count-ms': vars['--count-ms'], '--delay': vars['--delay'] } as React.CSSProperties} role="status" aria-live="polite" aria-label={title}>
       <span className={styles.beam} aria-hidden="true" />
       <div className={`${styles.film} ${styles.filmTop}`} aria-hidden="true"><i /></div>
       <div className={`${styles.film} ${styles.filmBottom}`} aria-hidden="true"><i /></div>
       <span className={styles.rec} aria-hidden="true"><i />REC</span>
-      <span className={styles.tc} aria-hidden="true">00:00:0{Math.floor((Date.now() / 1000) % 10)}:14</span>
+      <span className={styles.tc} aria-hidden="true">{timing!.tc}</span>
       <span className={styles.sideA} aria-hidden="true">CLAP · AMORCE SMPTE · 35 MM</span>
       <span className={styles.sideB} aria-hidden="true">SALLE 7 · 24 IM/S</span>
       <div className={styles.center}>
@@ -142,7 +149,7 @@ export function Curtain({ signedIn }: { signedIn: boolean }) {
           <span className={styles.crossV} />
           <span className={styles.crossH} />
           <span className={styles.sweep} />
-          <span className={styles.count} />
+          <span className={styles.count}><span className={styles.d3}>3</span><span className={styles.d2}>2</span><span className={styles.d1}>1</span></span>
         </div>
         <strong className={`display ${styles.title}`}>{title}</strong>
         <span className={styles.sub}>{sub}</span>
