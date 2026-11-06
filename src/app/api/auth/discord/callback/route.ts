@@ -4,6 +4,7 @@ import { publicOrigin } from '@/lib/origin';
 import { linkDiscord, upsertDiscordUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
+import { safePath } from '@/lib/security';
 import { currentUser, startSession } from '@/lib/session';
 
 type Pending = { state: string; next: string; referral?: string };
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
 
   const db = getDb();
   const name = profile.global_name || profile.username;
-  const safeNext = (fallback: string) => (pending.next.startsWith('/') && !pending.next.startsWith('//') ? pending.next : fallback);
+  const safeNext = (fallback: string) => safePath(pending.next, fallback);
   if (!user) {
     const signed = upsertDiscordUser(db, { id: profile.id, name, avatar: profile.avatar ?? null, email: profile.verified ? (profile.email ?? null) : null }, pending.referral || undefined);
     await startSession(signed.id);

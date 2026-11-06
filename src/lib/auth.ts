@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { transaction } from './db.ts';
@@ -232,21 +232,29 @@ export function getUserByName(db: DatabaseSync, name: string): User | null {
   return row ? toUser(row) : null;
 }
 
+/**
+ * La base ne garde que l'empreinte (SHA-256) du jeton de session : une copie de la base ne permet pas
+ * de se faire passer pour un joueur. Le jeton lui-même ne vit que dans le cookie du navigateur.
+ */
+const sessionKey = (token: string) => createHash('sha256').update(token).digest('base64url');
+
 export function createSession(db: DatabaseSync, userId: string, now = Date.now()): { token: string; expiresAt: number } {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = now + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, expiresAt);
+  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
+  db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(sessionKey(token), userId, expiresAt);
   return { token, expiresAt };
 }
 
 export function userForSession(db: DatabaseSync, token: string, now = Date.now()): User | null {
-  const row = db.prepare('SELECT user_id, expires_at FROM sessions WHERE token = ?').get(token) as { user_id: string; expires_at: number } | undefined;
+  if (token.length > 100) return null;
+  const row = db.prepare('SELECT user_id, expires_at FROM sessions WHERE token = ?').get(sessionKey(token)) as { user_id: string; expires_at: number } | undefined;
   if (!row || row.expires_at < now) return null;
   return getUser(db, row.user_id);
 }
 
 export function deleteSession(db: DatabaseSync, token: string): void {
-  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(sessionKey(token));
 }
 
 export function updateProfile(db: DatabaseSync, userId: string, fields: { name?: string; publicProfile?: boolean; notify?: Record<string, boolean> }): void {

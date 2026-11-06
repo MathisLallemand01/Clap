@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { publicOrigin } from '@/lib/origin';
 import { upsertGoogleUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
+import { safePath } from '@/lib/security';
 import { startSession } from '@/lib/session';
 
 type Pending = { state: string; next: string; referral: string };
@@ -49,6 +50,6 @@ export async function GET(request: NextRequest) {
   } catch {
     return fail();
   }
-  const next = pending.next.startsWith('/') && !pending.next.startsWith('//') ? pending.next : '/bobines';
+  const next = safePath(pending.next);
   return NextResponse.redirect(new URL(next, origin));
 }

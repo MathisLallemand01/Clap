@@ -216,3 +216,18 @@ test('duos et sagas : bonus d’entrées, progression, récompense unique', asyn
   assert.equal(getPlayer(db, u.playerId)!.tickets, tickets + reward);
   assert.throws(() => claimSaga(db, u.playerId, 99), isCode('claimed'));
 });
+
+test('sécurité : redirections internes uniquement, limitation des tentatives, sessions non stockées en clair', async () => {
+  const { safePath, rateLimit } = await import('../src/lib/security.ts');
+  assert.equal(safePath('/collection?vue=duos'), '/collection?vue=duos');
+  for (const bad of ['//evil.com', '/\\evil.com', 'https://evil.com', '/ok\nx', 42, '']) assert.equal(safePath(bad), '/bobines');
+  const key = `test:${Math.random()}`;
+  for (let i = 0; i < 3; i++) assert.equal(rateLimit(key, 3, 60_000), 0);
+  assert.ok(rateLimit(key, 3, 60_000) > 0);
+  const db = openDb(':memory:');
+  const u = await signUp(db, { name: 'Iris', email: 'iris@exemple.fr', password: 'motdepasse' });
+  const { createSession, userForSession } = await import('../src/lib/auth.ts');
+  const { token } = createSession(db, u.id);
+  assert.equal(userForSession(db, token)?.id, u.id);
+  assert.equal((db.prepare('SELECT COUNT(*) AS n FROM sessions WHERE token = ?').get(token) as { n: number }).n, 0);
+});

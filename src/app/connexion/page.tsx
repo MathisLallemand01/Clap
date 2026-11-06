@@ -7,6 +7,7 @@ import { Mark } from '@/components/Mark';
 import { getCatalog, showcase } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
+import { safePath } from '@/lib/security';
 import { currentUser } from '@/lib/session';
 import { AuthForm } from './AuthForm';
 import styles from './connexion.module.css';
@@ -26,7 +27,7 @@ type Search = { mode?: string; suite?: string; parrain?: string; erreur?: string
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
-  const next = sp.suite?.startsWith('/') && !sp.suite.startsWith('//') ? sp.suite : '/bobines';
+  const next = safePath(sp.suite);
   if (await currentUser()) redirect(next);
   const referral = sp.parrain ?? (await cookies()).get('clap_ref')?.value ?? '';
   const mode = sp.mode === 'inscription' || referral ? 'inscription' : 'connexion';

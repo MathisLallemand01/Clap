@@ -100,6 +100,10 @@ function side(db: DatabaseSync, ownedIds: number[], tickets: number): TradeSide 
   return { cards, tickets, value: cards.reduce((s, c) => s + suggestedTickets(c.rarity), 0) + tickets };
 }
 
+/** Bornes d'un échange ou d'un cadeau (contre les requêtes démesurées). */
+const MAX_CARDS = 30;
+const MAX_TICKETS = 10_000_000;
+
 export function proposeTrade(
   db: DatabaseSync,
   fromId: string,
@@ -109,7 +113,8 @@ export function proposeTrade(
 ): number {
   if (!areFriends(db, fromId, toId)) throw new GameError('not-friends', 'Vous ne pouvez échanger qu’avec vos amis.');
   if (!offer.give.length && !offer.take.length) throw new GameError('empty', 'Choisissez au moins une carte.');
-  if (![offer.giveTickets, offer.takeTickets].every((t) => Number.isInteger(t) && t >= 0)) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
+  if (![offer.giveTickets, offer.takeTickets].every((t) => Number.isInteger(t) && t >= 0 && t <= MAX_TICKETS)) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
+  if (offer.give.length + offer.take.length > MAX_CARDS) throw new GameError('too-many', `${MAX_CARDS} cartes au plus par échange.`);
   const from = getUser(db, fromId)!;
   const to = getUser(db, toId)!;
   return transaction(db, () => {
@@ -218,7 +223,8 @@ export function giftUnlockAt(db: DatabaseSync, userId: string, now = Date.now())
 export function sendGift(db: DatabaseSync, fromId: string, toId: string, gift: { cards: string[]; tickets: number }, now = Date.now()): number {
   if (!areFriends(db, fromId, toId)) throw new GameError('not-friends', 'Vous ne pouvez faire de cadeau qu’à vos amis.');
   if (giftUnlockAt(db, fromId, now)) throw new GameError('too-young', `Les cadeaux s’ouvrent après ${GIFT_MIN_AGE_DAYS} jours d’ancienneté.`);
-  if (!Number.isInteger(gift.tickets) || gift.tickets < 0) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
+  if (!Number.isInteger(gift.tickets) || gift.tickets < 0 || gift.tickets > MAX_TICKETS) throw new GameError('bad-tickets', 'Nombre de tickets invalide.');
+  if (gift.cards.length > MAX_CARDS) throw new GameError('too-many', `${MAX_CARDS} cartes au plus par cadeau.`);
   if (!gift.cards.length && !gift.tickets) throw new GameError('empty', 'Choisissez au moins une carte ou des tickets à offrir.');
   const from = getUser(db, fromId)!;
   const to = getUser(db, toId)!;
