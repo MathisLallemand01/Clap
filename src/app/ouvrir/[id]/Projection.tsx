@@ -402,7 +402,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
    * « Tout révéler » : toutes les cartes en dessous d'Icône (cran 5) sont rangées d'un coup ; il ne reste
    * sur la table que les meilleures (Icône, Légende, Mythe), que le joueur retourne lui-même, avec leur annonce.
    */
-  const revealAll = useCallback(() => {
+  const revealAll = useCallback((everything = false) => {
     cancelHold();
     const s = g.current;
     if (s.phase !== 'stack' || !s.pull) return;
@@ -410,7 +410,8 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
     autoStore.current = null;
     const cards = s.pull.cards;
     // La pile est triée de la moins rare à la plus rare : on range tout jusqu'à la première meilleure carte.
-    const firstBest = cards.findIndex((c, i) => i >= s.index && tierOf(c) >= BEST_TIER);
+    // « Tout ranger » (everything) : les meilleures aussi, sans les retourner une à une.
+    const firstBest = everything ? -1 : cards.findIndex((c, i) => i >= s.index && tierOf(c) >= BEST_TIER);
     const until = firstBest === -1 ? cards.length : firstBest;
     const already = s.shown !== null ? 1 : 0;
     const count = until - s.index + already;
@@ -551,7 +552,7 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
   const remaining = s.phase === 'stack' ? cards.slice(s.index) : [];
   const restBest = remaining.filter((c) => tierOf(c) >= BEST_TIER).length;
   const restBelow = remaining.length - restBest + (s.shown !== null && shownTier < BEST_TIER ? 1 : 0);
-  // ×1, ×5, ×10, puis « Tout » : tout ce que la réserve et les tickets permettent (50 au plus).
+  // ×1, ×5, ×10, puis « Tout » : tout ce que la réserve et les tickets permettent (25 au plus).
   const pickOptions = [...COUNTS.map((k) => ({ k: k as number, label: `×${k}` })), ...(avail > 1 ? [{ k: avail, label: `Tout · ${avail}` }] : [])];
   // Générique : 5 cartes de même taille (la meilleure un peu plus grande), qui tiennent en largeur et en hauteur.
   const summaryW = Math.floor(Math.max(52, Math.min(cw * 0.62, (dims.tw - 32 - (shownInSummary.length - 1) * (dims.tw < 560 ? 8 : 12)) / (shownInSummary.length + 0.08), (dims.th - 150) / 1.4 / 1.08)));
@@ -814,8 +815,14 @@ export function Projection({ booster, cover, guest = false, firstOpen = false, i
           </div>
           <div className={`${styles.actions} ${s.phase === 'summary' ? styles.actionsEnd : ''}`}>
             {s.phase === 'stack' && restBelow > 0 && (
-              <button type="button" className="btn btn-sm" onClick={revealAll} title="Range d’un coup toutes les cartes en dessous d’Icône ; vous retournez vous-même les meilleures.">
+              <button type="button" className="btn btn-sm" onClick={() => revealAll()} title="Range d’un coup toutes les cartes en dessous d’Icône ; vous retournez vous-même les meilleures.">
                 {restBest > 0 ? `Tout révéler · ${restBelow} carte${restBelow > 1 ? 's' : ''}, garder les ${restBest} meilleure${restBest > 1 ? 's' : ''}` : `Tout révéler · ${restBelow}`}
+              </button>
+            )}
+            {s.phase === 'stack' && restBest > 0 && (
+              // Pour qui veut aller vite : tout ranger d'un coup, les meilleures comprises.
+              <button type="button" className="btn btn-sm" onClick={() => revealAll(true)} title="Range toutes les cartes restantes d’un coup, les meilleures comprises.">
+                Tout ranger · {remaining.length + (s.shown !== null ? 1 : 0)}
               </button>
             )}
             {s.phase === 'summary' && guest && (
