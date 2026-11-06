@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isHttpsHeaders, publicOrigin } from '@/lib/origin';
+import { cleanReferral, safePath } from '@/lib/security';
 
 // Connexion Google (OpenID Connect, flux « authorization code »).
 // Il faut GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET (console Google Cloud > Identifiants),
@@ -13,8 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/connexion?erreur=google-config', origin));
   }
   const state = randomBytes(24).toString('base64url');
-  const next = request.nextUrl.searchParams.get('suite') ?? '/bobines';
-  const referral = request.nextUrl.searchParams.get('parrain') ?? '';
+  const next = safePath(request.nextUrl.searchParams.get('suite'), '/bobines');
+  const referral = cleanReferral(request.nextUrl.searchParams.get('parrain'));
   (await cookies()).set('clap_oauth', JSON.stringify({ state, next, referral }), {
     httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(request.headers, request.url), path: '/', maxAge: 600,
   });

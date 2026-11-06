@@ -5,12 +5,15 @@ import { updateProfile } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { markAllRead, markRead, REGIE_CATEGORIES } from '@/lib/notify';
+import { safePath, tooFast } from '@/lib/security';
 import { currentUser } from '@/lib/session';
 import { removeWatch, setWatch, toggleWatch, type WatchCond } from '@/lib/watch';
 
 async function me() {
   const user = await currentUser();
   if (!user) redirect('/connexion?suite=/regie');
+  const slow = tooFast('regie', user.playerId, 40);
+  if (slow) redirect(`/regie?erreur=${encodeURIComponent(slow)}`);
   return user;
 }
 
@@ -25,8 +28,8 @@ export async function markAllAction(form: FormData): Promise<void> {
 export async function openNotificationAction(form: FormData): Promise<void> {
   const user = await me();
   markRead(getDb(), user.id, Number(form.get('id')));
-  const href = String(form.get('href') ?? '');
-  redirect(href.startsWith('/') && !href.startsWith('//') ? href : '/regie');
+  // Seulement un chemin du site (refuse //autre-site, /\\autre-site, javascript:…).
+  redirect(safePath(form.get('href'), '/regie'));
 }
 
 export async function watchAction(form: FormData): Promise<void> {

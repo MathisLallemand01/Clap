@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
+import { tooFast } from '@/lib/security';
 import { currentUser } from '@/lib/session';
 import { moveShowcaseSlot, setShowcaseSlot } from '@/lib/showcase';
 import { sendFriendRequest } from '@/lib/social';
@@ -10,6 +11,8 @@ import { sendFriendRequest } from '@/lib/social';
 async function me() {
   const user = await currentUser();
   if (!user) redirect('/connexion');
+  const slow = tooFast('vitrine', user.playerId, 40);
+  if (slow) redirect(`/v/${encodeURIComponent(user.name)}?erreur=${encodeURIComponent(slow)}`);
   return user;
 }
 const back = (name: string, extra = '') => `/v/${encodeURIComponent(name)}${extra}`;

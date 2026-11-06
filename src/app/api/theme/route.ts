@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getCard } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
+import { safeExternalUrl } from '@/lib/security';
 import { themeFor, type Theme } from '@/lib/themes';
 
 type Preview = { url: string; link: string | null };
+const MEDIA_HOSTS = /(^|\.)(itunes\.apple\.com|mzstatic\.com|dzcdn\.net|deezer\.com)$/;
+const LINK_HOSTS = /(^|\.)(apple\.com|deezer\.com)$/;
 const DAY = 86_400_000;
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -49,5 +52,6 @@ export async function GET(request: NextRequest) {
       preview = null;
     }
   }
-  return NextResponse.json({ theme: { ...theme, url: preview?.url || null, link: preview?.link ?? null } });
+  // Une réponse d'API tierce ne doit jamais devenir un lien javascript: ou une source audio quelconque.
+  return NextResponse.json({ theme: { ...theme, url: safeExternalUrl(preview?.url, MEDIA_HOSTS), link: safeExternalUrl(preview?.link, LINK_HOSTS) } });
 }

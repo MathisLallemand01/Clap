@@ -20,9 +20,11 @@
 .art { position: absolute; left: 0; right: 0; top: 4.6em; height: 17em; overflow: hidden;
 }
 /* Le bas du portrait se fond dans le paquet : plus de coupure nette sous le visage. */
-.art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 52%, rgba(9, 9, 11, 0.55) 78%, #09090b 100%); }
-.art img, .ink { position: absolute; inset: 0; width: 100%; height: 100%; }
-.art img { object-fit: cover; object-position: center 8%; }
+.art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 64%, rgba(9, 9, 11, 0.5) 84%, #09090b 100%); }
+.ink { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Le portrait (2:3) occupe une part de la largeur (--zoom) ; --y descend la fenêtre dans la photo. */
+.art img { position: absolute; left: calc((1 - var(--zoom, 0.84)) * 50%); width: calc(var(--zoom, 0.84) * 100%); height: auto; aspect-ratio: 2 / 3; object-fit: cover;
+  top: calc(min(0em, 17em - var(--zoom, 0.84) * 30em) * var(--y, 6) / 100); }
 .dots {
   filter: grayscale(1) contrast(1.6) brightness(1.05);
   -webkit-mask-image: radial-gradient(circle, #000 0.13em, transparent 0.15em), radial-gradient(ellipse 48% 62% at 50% 36%, #000 60%, transparent 100%);

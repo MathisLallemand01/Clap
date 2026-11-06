@@ -4,11 +4,14 @@ import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { acceptFriend, cancelTrade, proposeTrade, removeFriend, respondTrade, sendFriendRequest, sendGift } from '@/lib/social';
+import { tooFast } from '@/lib/security';
 import { currentUser } from '@/lib/session';
 
 async function userId(): Promise<string> {
   const user = await currentUser();
   if (!user) redirect('/connexion?suite=/echanges');
+  const slow = tooFast('social', user.playerId, 20);
+  if (slow) redirect(`/echanges?erreur=${encodeURIComponent(slow)}`);
   return user.id;
 }
 

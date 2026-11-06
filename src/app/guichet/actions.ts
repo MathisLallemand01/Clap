@@ -5,11 +5,14 @@ import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { cancelAuction, createAuction, placeBid } from '@/lib/auctions';
 import { buyListing, cancelListing, createListing } from '@/lib/market';
+import { tooFast } from '@/lib/security';
 import { currentUser } from '@/lib/session';
 
-async function playerId(): Promise<string> {
+async function playerId(kind = 'guichet', back = '/guichet'): Promise<string> {
   const user = await currentUser();
   if (!user) redirect('/connexion?suite=/guichet');
+  const slow = tooFast(kind, user.playerId);
+  if (slow) redirect(`${back}${back.includes('?') ? '&' : '?'}erreur=${encodeURIComponent(slow)}`);
   return user.playerId;
 }
 

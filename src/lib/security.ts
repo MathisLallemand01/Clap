@@ -48,3 +48,28 @@ export function clientIp(headers: Headers): string {
 export function waitText(seconds: number): string {
   return seconds >= 90 ? `${Math.ceil(seconds / 60)} minutes` : `${seconds} secondes`;
 }
+
+/** Code de parrainage tel qu'on le génère (« CA-7K4Q ») : tout le reste est ignoré. */
+export function cleanReferral(value: unknown): string {
+  return typeof value === 'string' && /^[A-Za-z0-9-]{2,16}$/.test(value) ? value.toUpperCase() : '';
+}
+
+/** N'accepte qu'une adresse https:// d'un des hôtes attendus (lecteurs audio, liens externes). */
+export function safeExternalUrl(value: unknown, hosts: RegExp): string | null {
+  if (typeof value !== 'string' || value.length > 1024) return null;
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && hosts.test(u.hostname) ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Freine les actions répétées d'un joueur (enchères, ventes, échanges, demandes d'ami…) : au plus `limit`
+ * par minute. Renvoie le message d'attente, ou null si l'action est permise.
+ */
+export function tooFast(kind: string, playerId: string, limit = 30, windowMs = 60_000): string | null {
+  const wait = rateLimit(`act:${kind}:${playerId}`, limit, windowMs);
+  return wait ? `Doucement : trop d’actions d’affilée. Réessayez dans ${waitText(wait)}.` : null;
+}

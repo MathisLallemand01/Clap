@@ -44,7 +44,7 @@ export function Trailer({ videos, title, backdrop }: { videos: Video[]; title: s
             {playing ? (
               <iframe
                 key={video.key}
-                src={`https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0&modestbranding=1&hl=fr`}
+                src={`https://www.youtube-nocookie.com/embed/${/^[\w-]{6,20}$/.test(video.key) ? video.key : ''}?autoplay=1&rel=0&modestbranding=1&hl=fr`}
                 title={`${title} : ${video.name}`}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen

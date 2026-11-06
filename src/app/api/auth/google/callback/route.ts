@@ -35,12 +35,14 @@ export async function GET(request: NextRequest) {
         redirect_uri: `${origin}/api/auth/google/callback`,
         grant_type: 'authorization_code',
       }),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!tokenRes.ok) return fail();
     const { access_token } = (await tokenRes.json()) as { access_token: string };
-    const infoRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${access_token}` } });
+    const infoRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${access_token}` }, signal: AbortSignal.timeout(10_000) });
     if (!infoRes.ok) return fail();
     const info = (await infoRes.json()) as { sub: string; email?: string; email_verified?: boolean; name?: string; given_name?: string; picture?: string };
+    if (typeof info.sub !== 'string' || !info.sub) return fail();
     const user = upsertGoogleUser(getDb(), {
       sub: info.sub,
       email: info.email_verified ? (info.email ?? null) : null,

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isHttpsHeaders, publicOrigin } from '@/lib/origin';
+import { cleanReferral, safePath } from '@/lib/security';
 
 // Discord (OAuth2, flux « authorization code », portées « identify email » : pseudo, photo et e-mail vérifié).
 // Il faut DISCORD_CLIENT_ID et DISCORD_CLIENT_SECRET (discord.com/developers > Applications > OAuth2),
@@ -25,8 +26,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(again);
   }
   const state = randomBytes(24).toString('base64url');
-  const next = params.get('suite') ?? '';
-  const referral = params.get('parrain') ?? '';
+  const next = safePath(params.get('suite'), '');
+  const referral = cleanReferral(params.get('parrain'));
   (await cookies()).set('clap_discord', JSON.stringify({ state, next, referral }), {
     // « Secure » seulement si cette page est réellement servie en HTTPS (sinon le cookie serait ignoré).
     httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(request.headers, request.url), path: '/', maxAge: 600,

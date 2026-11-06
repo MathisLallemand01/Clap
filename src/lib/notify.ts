@@ -47,7 +47,7 @@ function discordDm(discordId: string, text: string, href: string | null): void {
       const { id } = (await ch.json()) as { id: string };
       await fetch(`https://discord.com/api/v10/channels/${id}/messages`, {
         method: 'POST', headers, signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({ content: `🎬 **La Régie de Clap** · ${text}${href && base ? `\n${base}${href}` : ''}` }),
+        body: JSON.stringify({ content: `🎬 **La Régie de Clap** · ${text}${href && base ? `\n${base}${href}` : ''}`.slice(0, 1900), allowed_mentions: { parse: [] } }),
       });
     } catch {
       // Discord injoignable : la notification reste dans la cloche.

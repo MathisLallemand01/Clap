@@ -61,6 +61,31 @@ const CLIP_TORN = (() => {
   return `polygon(${[...top, ...bottom].join(', ')})`;
 })();
 
+/**
+ * Cadrage du portrait. Par défaut la photo est légèrement dézoomée et calée en haut : toute la tête tient au-dessus
+ * du titre. Certaines photos ont le visage placé bas (beaucoup de ciel ou de cheveux au-dessus) : on descend la
+ * fenêtre (`y`, en % de la marge) et on dézoome un peu plus (`zoom`, part de la largeur du paquet).
+ * Réglages jugés à l'œil sur chaque paquet.
+ */
+const FRAMING: Record<string, { zoom?: number; y?: number }> = {
+  'casting-france': { zoom: 0.76, y: 4 },
+  'casting-asie': { zoom: 0.78, y: 12 },
+  'casting-age-dor': { zoom: 0.76, y: 4 },
+  'age-dor': { zoom: 0.76, y: 18 },
+  'essai-tapis-rouge': { zoom: 0.78, y: 0 },
+  'casting-legendes': { zoom: 0.8, y: 6 },
+  'avant-premiere': { zoom: 0.82, y: 6 },
+  'annees-70': { zoom: 0.8, y: 0 },
+  'annees-80': { zoom: 0.8, y: 2 },
+  'annees-2000': { zoom: 0.78, y: 6 },
+  'annees-2010': { zoom: 0.78, y: 10 },
+  nouveautes: { zoom: 0.8, y: 10 },
+  espagne: { zoom: 0.8, y: 12 },
+  series: { zoom: 0.8, y: 8 },
+  coree: { zoom: 0.82, y: 6 },
+};
+const DEFAULT_FRAMING = { zoom: 0.84, y: 6 };
+
 function contents(booster: BoosterDef): string {
   const { actor, role } = slotKinds(booster);
   if (!role) return `${actor} ACTEURS`;
@@ -89,7 +114,7 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
     <div className={classes} style={vars} role="img" aria-label={`Bobine ${booster.name}`}>
       <div className={styles.body} style={{ clipPath: torn ? CLIP_TORN : CLIP }}>
         {image && (
-          <div className={styles.art}>
+          <div className={styles.art} style={{ '--zoom': FRAMING[booster.id]?.zoom ?? DEFAULT_FRAMING.zoom, '--y': FRAMING[booster.id]?.y ?? DEFAULT_FRAMING.y } as CSSProperties}>
             <img className={styles.dots} src={image} alt="" loading="lazy" decoding="async" />
             <span className={styles.ink} />
             <img className={styles.ghost} src={image} alt="" loading="lazy" decoding="async" />

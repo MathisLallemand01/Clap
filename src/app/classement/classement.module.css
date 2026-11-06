@@ -7,7 +7,7 @@
 .headText strong { color: var(--text); }
 .season { font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; color: var(--gold); }
 
-.podium { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: clamp(8px, 2vw, 28px); margin-top: clamp(72px, 7vw, 110px); }
+.podium { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: clamp(8px, 2vw, 28px); padding-top: clamp(64px, 6vw, 96px); }
 .step { flex: 0 1 300px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
 .winner { display: flex; flex-direction: column; align-items: center; gap: 10px; animation: float 4.5s ease-in-out infinite; text-align: center; }
 .p2 .winner { animation-delay: -1.5s; }
@@ -74,7 +74,7 @@
 .names small { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: #8f97ff; font-weight: 400; }
 
 /* Les cinq catégories, en tickets de cinéma (encoches sur les côtés). */
-.stubs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; position: relative; z-index: 2; margin-top: 28px; }
+.stubs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; position: relative; z-index: 2; padding-top: 28px; }
 @media (max-width: 1000px) { .stubs { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
 .stub { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 12px; background: #131317; border: 1px solid #26262c; overflow: hidden; transition: border-color 160ms ease, transform 160ms ease; }
 .stub:hover { border-color: var(--line-2); transform: translateY(-2px); }
