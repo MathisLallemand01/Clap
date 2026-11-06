@@ -63,11 +63,11 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
               return (
                 <div key={place} className={`${styles.step} ${styles[`p${place}`]}`}>
                   {r ? (
-                    <div className={styles.winner}>
+                    <div key={`${board.id}-${r.playerId}`} className={`${styles.winner} ${styles.winnerIn}`}>
                       <span className={styles.avatar} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span>
                       <span className={styles.who}>{r.name}{r.playerId === ctx.player.id && <em>VOUS</em>}</span>
                       {r.discord && <span className={styles.discord}><DiscordLogo size={11} />{r.discord}</span>}
-                      <span className={styles.score}>{fmt(r.points)} {unit}</span>
+                      <span key={board.id} className={`${styles.score} ${styles.scoreIn}`}>{fmt(r.points)} {unit}</span>
                     </div>
                   ) : <span className={styles.empty}>Place libre</span>}
                   <div className={styles.block}><span>{place}</span></div>
@@ -88,9 +88,9 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                 <thead>
                   <tr><th>Rang</th><th>Joueur</th><th className={styles.opt}>{board.id === 'points' ? 'Cartes' : board.id === 'filmotheque' ? 'Mythes' : board.id === 'mythes' ? 'Lég./Icônes' : board.id === 'integrales' ? 'Cartes' : 'Distinctions'}</th><th className={styles.opt}>Semaine</th><th className={styles.num}>{board.col}</th></tr>
                 </thead>
-                <tbody>
-                  {[...list, ...(meOutside ? [me] : [])].map((r) => (
-                    <tr key={r.playerId} className={r.playerId === ctx.player.id ? styles.mine : undefined}>
+                <tbody key={board.id} className={styles.rowsIn}>
+                  {[...list, ...(meOutside ? [me] : [])].map((r, i) => (
+                    <tr key={r.playerId} className={r.playerId === ctx.player.id ? styles.mine : undefined} style={{ '--i': Math.min(i, 14) } as React.CSSProperties}>
                       <td className={styles.rank}>{r.rank}</td>
                       <td><Link href={`/v/${encodeURIComponent(r.name)}`} className={styles.player}><span className={styles.mini} style={{ background: avatarColor(r.name) }}>{r.avatar ? <img src={r.avatar} alt="" referrerPolicy="no-referrer" /> : r.name.slice(0, 2).toUpperCase()}</span><span className={styles.names}>{r.name}{r.discord && <small><DiscordLogo size={10} />{r.discord}</small>}</span>{r.playerId === ctx.player.id && <em>VOUS</em>}</Link></td>
                       <td className={styles.opt}>{formatNumber(r.secondary)}</td>

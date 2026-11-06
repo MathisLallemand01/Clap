@@ -82,13 +82,13 @@ export default async function RegiePage({ searchParams }: { searchParams: Promis
 
         <div className={styles.layout}>
           <nav className={`panel ${styles.side}`} aria-label="Catégories">
-            <Link href="/regie" aria-current={!cat ? 'page' : undefined}>Tout <span>{total ? `● ${total}` : '0'}</span></Link>
+            <Link href="/regie" scroll={false} aria-current={!cat ? 'page' : undefined}>Tout <span>{total ? `● ${total}` : '0'}</span></Link>
             {REGIE_CATEGORIES.map((c) => (
-              <Link key={c.id} href={`/regie?cat=${c.id}`} aria-current={cat?.id === c.id ? 'page' : undefined}>{c.label} <span>{unreadOf(c.kinds)}</span></Link>
+              <Link key={c.id} href={`/regie?cat=${c.id}`} scroll={false} aria-current={cat?.id === c.id ? 'page' : undefined}>{c.label} <span>{unreadOf(c.kinds)}</span></Link>
             ))}
           </nav>
 
-          <section className={`panel ${styles.feed}`} aria-label="Notifications">
+          <section key={cat?.id ?? 'tout'} className={`panel ${styles.feed} stagger-in`} aria-label="Notifications">
             <div className={styles.feedHead}><span className="eyebrow" style={{ color: 'var(--text)' }}><span style={{ color: 'var(--accent)' }}>● REC</span> · {unreadOf(cat?.kinds ?? [...unread.keys()])} non vue{unreadOf(cat?.kinds ?? [...unread.keys()]) > 1 ? 's' : ''}</span><span className="eyebrow">{cat?.label ?? 'Tout'}</span></div>
             {items.length === 0 && <p className="muted" style={{ margin: 0, padding: 22 }}>Rien en régie pour l’instant.</p>}
             {items.map((n) => {
@@ -101,7 +101,7 @@ export default async function RegiePage({ searchParams }: { searchParams: Promis
                     <span className={styles.kind} style={{ color: c.color }}>{c.label.toUpperCase()}{n.urgent ? ' · TÉLÉGRAMME' : ''}</span> <span className={styles.when}>· {ago(n.createdAt)}</span>
                     <p>{n.text}</p>
                   </div>
-                  {n.href && <button type="submit" className={`btn btn-sm ${n.read ? '' : 'btn-light'}`}>Ouvrir</button>}
+                  {n.href && <button type="submit" className={`btn btn-sm ${n.read ? '' : styles.openNew}`}>Ouvrir</button>}
                 </form>
               );
             })}

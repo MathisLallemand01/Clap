@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
-import { claimMission } from '@/lib/missions';
+import { claimAllMissions, claimMission } from '@/lib/missions';
 import { currentUser } from '@/lib/session';
 
 export async function claimAction(form: FormData): Promise<void> {
@@ -29,4 +29,19 @@ export async function claimMissionNow(missionId: string): Promise<{ reward?: num
     if (err instanceof GameError) return { error: err.message };
     throw err;
   }
+}
+
+export async function claimAllAction(): Promise<void> {
+  const user = await currentUser();
+  if (!user) redirect('/connexion?suite=/missions');
+  const { total } = claimAllMissions(getDb(), user.playerId);
+  redirect(`/missions?gain=${total}`);
+}
+
+/** « Tout récupérer » sans rechargement : la somme de toutes les récompenses prêtes. */
+export async function claimAllNow(): Promise<{ reward?: number; count?: number; error?: string }> {
+  const user = await currentUser();
+  if (!user) return { error: 'Connectez-vous pour récupérer vos récompenses.' };
+  const { total, count } = claimAllMissions(getDb(), user.playerId);
+  return total > 0 ? { reward: total, count } : { error: 'Aucune récompense à récupérer.' };
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LiveFilters } from '@/components/LiveFilters';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
@@ -104,6 +105,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
           {view === 'acheter' && (
             <>
               <form className={styles.filters} action="/guichet">
+                <LiveFilters />
                 <label className={styles.searchBox}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                   <span className="visually-hidden">Rechercher</span>

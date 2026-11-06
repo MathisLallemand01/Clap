@@ -43,7 +43,7 @@ export function AuctionsView({ ctx, lot, offre, nouveau }: { ctx: Context; lot?:
       {lots.length > 0 && (
         <section className={styles.room}>
           <div className="section-head"><h2 className="display h2">Lots en salle</h2><span className="rule" /><span className="eyebrow">Bientôt adjugés d’abord · en rouge : moins de 5 min</span></div>
-          <ul className={styles.lots}>
+          <ul className={`${styles.lots} stagger-in`}>
             {lots.map((a) => {
               const d = vsCote(a.currentBid ?? a.startPrice, cote.get(a.card.id));
               return (

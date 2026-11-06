@@ -1,6 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { transaction } from './db.ts';
 import { addTickets, GameError, getStats } from './game.ts';
+import { ownedCardIds } from './catalog.ts';
+import { completedSagaCount } from './collections.ts';
 import { countEvents, logEvent } from './notify.ts';
 
 export type MissionScope = 'daily' | 'weekly' | 'saga';
@@ -25,15 +27,29 @@ export const MISSIONS: MissionDef[] = [
   { id: 'daily-open', scope: 'daily', title: 'Ouvrir 2 bobines', goal: 2, reward: 60, glyph: '▶', progress: { event: 'open' } },
   { id: 'daily-rare', scope: 'daily', title: 'Révéler une carte rare (3 crans ou plus)', goal: 1, reward: 120, glyph: '◆', progress: { event: 'rare' } },
   { id: 'daily-trailer', scope: 'daily', title: 'Regarder une bande-annonce', goal: 1, reward: 30, glyph: '▷', progress: { event: 'trailer' } },
+  { id: 'daily-open5', scope: 'daily', title: 'Ouvrir 5 bobines', goal: 5, reward: 150, glyph: '▶', progress: { event: 'open' } },
+  { id: 'daily-recycle', scope: 'daily', title: 'Recycler 5 doublons', goal: 5, reward: 60, glyph: '♻', progress: { event: 'recycle' } },
+  { id: 'daily-bid', scope: 'daily', title: 'Poser une enchère à la Salle des ventes', goal: 1, reward: 80, glyph: '⚒', progress: { event: 'bid' } },
   { id: 'weekly-open', scope: 'weekly', title: 'Ouvrir 15 bobines', goal: 15, reward: 400, glyph: '▶', progress: { event: 'open' } },
   { id: 'weekly-recycle', scope: 'weekly', title: 'Recycler 20 doublons', goal: 20, reward: 200, glyph: '♻', progress: { event: 'recycle' } },
   { id: 'weekly-sell', scope: 'weekly', title: 'Vendre 3 cartes au Guichet', goal: 3, reward: 300, glyph: 'TK', progress: { event: 'sell' } },
   { id: 'weekly-trade', scope: 'weekly', title: 'Conclure un échange avec un ami', goal: 1, reward: 250, glyph: '⇄', progress: { event: 'trade' } },
+  { id: 'weekly-visit', scope: 'weekly', title: 'Passer en salle 5 jours cette semaine', goal: 5, reward: 300, glyph: '◉', progress: { event: 'visit' } },
+  { id: 'weekly-rare', scope: 'weekly', title: 'Révéler 5 cartes rares', goal: 5, reward: 350, glyph: '◆', progress: { event: 'rare' } },
+  { id: 'weekly-buy', scope: 'weekly', title: 'Acheter 2 cartes au Guichet', goal: 2, reward: 200, glyph: '⇣', progress: { event: 'buy' } },
+  { id: 'weekly-auction', scope: 'weekly', title: 'Remporter une enchère', goal: 1, reward: 300, glyph: '⚒', progress: { event: 'auction-won' } },
+  { id: 'weekly-trailers', scope: 'weekly', title: 'Regarder 5 bandes-annonces', goal: 5, reward: 150, glyph: '▷', progress: { event: 'trailer' } },
   { id: 'weekly-themes', scope: 'weekly', title: 'Ouvrir une bobine Pays, Genre et Époque', goal: 3, reward: 250, glyph: '◎', progress: { distinct: ['open:country', 'open:genre', 'open:era'] } },
   { id: 'saga-unique-100', scope: 'saga', title: 'Posséder 100 cartes différentes', goal: 100, reward: 1000, glyph: '▤', progress: { stat: (db, p) => getStats(db, p).unique } },
   { id: 'saga-entries', scope: 'saga', title: 'Atteindre 1 000 points au classement', goal: 1_000, reward: 1500, glyph: '★', progress: { stat: (db, p) => getStats(db, p).points } },
   { id: 'saga-legends', scope: 'saga', title: 'Posséder 10 Légendes', goal: 10, reward: 2000, glyph: '★', progress: {
     stat: (db, p) => (db.prepare("SELECT COUNT(DISTINCT o.card_id) AS n FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.player_id = ? AND c.rarity = 'legende'").get(p) as { n: number }).n,
+  } },
+  { id: 'saga-unique-500', scope: 'saga', title: 'Posséder 500 cartes différentes', goal: 500, reward: 3000, glyph: '▤', progress: { stat: (db, p) => getStats(db, p).unique } },
+  { id: 'saga-duos', scope: 'saga', title: 'Former 10 duos Acteur + Rôle', goal: 10, reward: 1500, glyph: '⚭', progress: { stat: (db, p) => getStats(db, p).duos } },
+  { id: 'saga-saga', scope: 'saga', title: 'Compléter une saga', goal: 1, reward: 1500, glyph: '◎', progress: { stat: (db, p) => completedSagaCount(db, ownedCardIds(db, p)) } },
+  { id: 'saga-badges', scope: 'saga', title: 'Décrocher 5 distinctions au palmarès', goal: 5, reward: 1000, glyph: '✦', progress: {
+    stat: (db, p) => (db.prepare('SELECT COUNT(*) AS n FROM badges WHERE player_id = ?').get(p) as { n: number }).n,
   } },
   { id: 'saga-icon', scope: 'saga', title: 'Tirer votre première Icône', goal: 1, reward: 1500, glyph: '◆', progress: {
     stat: (db, p) => (db.prepare("SELECT COUNT(*) AS n FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.player_id = ? AND c.rarity = 'icone'").get(p) as { n: number }).n,
@@ -119,3 +135,19 @@ export function visitStreak(db: DatabaseSync, playerId: string, now = Date.now()
 
 export const STREAK_BONUS = 500;
 export const STREAK_DAYS = 7;
+
+/** Récupère d'un coup toutes les récompenses prêtes. */
+export function claimAllMissions(db: DatabaseSync, playerId: string, now = Date.now()): { total: number; count: number } {
+  let total = 0;
+  let count = 0;
+  for (const m of missionStates(db, playerId, now)) {
+    if (!m.done || m.claimed) continue;
+    try {
+      total += claimMission(db, playerId, m.id, now);
+      count++;
+    } catch (err) {
+      if (!(err instanceof GameError)) throw err;
+    }
+  }
+  return { total, count };
+}

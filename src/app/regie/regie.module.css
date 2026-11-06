@@ -46,3 +46,4 @@
 .conds input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
 .maxField { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); max-width: 260px; }
 .maxField input { height: 44px; }
+.openNew { border-color: var(--accent) !important; color: var(--text); }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LiveFilters } from '@/components/LiveFilters';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
@@ -60,7 +61,8 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
     const s = p.toString();
     return s ? `/collection?${s}` : '/collection';
   };
-  const plan = sp.recycler ? recyclePlan(db, ctx.player.id) : null;
+  const fullPlan = ctx.stats.duplicates > 0 ? recyclePlan(db, ctx.player.id) : null;
+  const plan = sp.recycler ? fullPlan : null;
   const [recycledCards, recycledSeats] = (sp.recycle ?? '').split('-').map(Number);
 
   return (
@@ -82,7 +84,10 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             <div className={styles.headActions}>
               <Link href="/catalogue?possession=manquantes" className="btn btn-sm">Voir les cartes qui me manquent</Link>
               {ctx.stats.duplicates > 0 && (
-                <Link href={href({ recycler: '1' })} className="btn btn-sm" scroll={false}>♻ Recycler les doublons</Link>
+                <Link href={href({ recycler: '1' })} className={`btn ${styles.recycleBtn}`} scroll={false}>
+                  <span>♻ Recycler les doublons</span>
+                  {fullPlan && <small>{fullPlan.cards > 0 ? `+${formatNumber(fullPlan.seats)} sièges · ${formatNumber(fullPlan.cards)} carte${fullPlan.cards > 1 ? 's' : ''}` : 'doublons en vente : rien à recycler'}</small>}
+                </Link>
               )}
             </div>
           </div>
@@ -115,6 +120,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             <Link href="/collection?vue=sagas" aria-current={view === 'sagas' ? 'true' : undefined} className={styles.tabSaga}>Sagas · {formatNumber(sagaCount)} commencée{sagaCount > 1 ? 's' : ''}<PendingBar /></Link>
           </nav>
           {cardsView && <form className={styles.search} role="search" action="/collection">
+            <LiveFilters />
             {view !== 'tout' && <input type="hidden" name="vue" value={view} />}
             {rarity && <input type="hidden" name="rarete" value={rarity} />}
             <label className={styles.searchBox}>

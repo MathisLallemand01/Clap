@@ -7,7 +7,7 @@ import { TicketIcon } from '@/components/Icons';
 import { formatNumber } from '@/lib/format';
 import { broadcastChange } from '@/components/TabSync';
 import { createProjector, soundPreference } from '@/lib/sound';
-import { claimAction, claimMissionNow } from './actions';
+import { claimAction, claimAllAction, claimAllNow, claimMissionNow } from './actions';
 import styles from './ClaimButton.module.css';
 
 type Show = { amount: number; phase: 'pop' | 'fly'; target: { x: number; y: number } };
@@ -17,7 +17,7 @@ type Show = { amount: number; phase: 'pop' | 'fly'; target: { x: number; y: numb
  * assombri, puis file se ranger dans le compteur de tickets de la navigation, qui s'anime.
  * Sans JavaScript, le formulaire classique prend le relais.
  */
-export function ClaimButton({ missionId }: { missionId: string }) {
+export function ClaimButton({ missionId, all = false, count = 0 }: { missionId?: string; all?: boolean; count?: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState<Show | null>(null);
@@ -28,7 +28,7 @@ export function ClaimButton({ missionId }: { missionId: string }) {
     setBusy(true);
     // Le son est préparé pendant le clic : les navigateurs n'autorisent l'audio qu'après un geste.
     const projector = createProjector(soundPreference());
-    const res = await claimMissionNow(missionId);
+    const res = all ? await claimAllNow() : await claimMissionNow(missionId!);
     if (!res.reward) {
       setBusy(false);
       projector.dispose();
@@ -56,9 +56,9 @@ export function ClaimButton({ missionId }: { missionId: string }) {
 
   return (
     <>
-      <form action={claimAction} onSubmit={claim}>
-        <input type="hidden" name="mission" value={missionId} />
-        <button type="submit" className="btn btn-sm btn-primary" disabled={busy}>Récupérer</button>
+      <form action={all ? claimAllAction : claimAction} onSubmit={claim}>
+        {!all && <input type="hidden" name="mission" value={missionId} />}
+        <button type="submit" className={`btn ${all ? 'btn-lg' : 'btn-sm'} btn-primary`} disabled={busy}>{all ? `Tout récupérer · ${count} récompense${count > 1 ? 's' : ''}` : 'Récupérer'}</button>
       </form>
       {show && createPortal(
         <div className={`${styles.overlay} ${show.phase === 'fly' ? styles.flying : ''}`} role="status" aria-live="assertive">
@@ -68,7 +68,7 @@ export function ClaimButton({ missionId }: { missionId: string }) {
             className={styles.ticket}
             style={{ '--tx': `${show.target.x}px`, '--ty': `${show.target.y}px` } as CSSProperties}
           >
-            <span className={styles.label}>Récompense de mission</span>
+            <span className={styles.label}>{all ? 'Toutes les récompenses' : 'Récompense de mission'}</span>
             <strong className="display">+{formatNumber(show.amount)}</strong>
             <span className={styles.unit}><TicketIcon size={22} color="var(--ink)" /> TICKETS</span>
           </div>

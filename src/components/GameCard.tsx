@@ -27,11 +27,14 @@ function sized(url: string, kind: Card['kind'], width: number, poster: boolean):
   return url.replace(/\/t\/p\/\w+\//, `/t/p/${size}/`);
 }
 
+// Reflets des cartes rares : un éventail de rayons symétrique, qui part du haut de la carte comme le faisceau d'un
+// projecteur (le rayon central tombe droit : rien ne penche d'un côté).
+const fan = (colors: string) => `repeating-conic-gradient(from 175deg at 50% -35%, transparent 0deg 3.6deg, ${colors}, transparent 6.4deg 10deg)`;
 const FOILS: Record<string, string> = {
-  legende: 'repeating-linear-gradient(115deg, transparent 0 1.4em, rgba(255,200,61,0.18) 1.4em 1.55em, rgba(140,210,255,0.14) 1.55em 1.7em, transparent 1.7em 3.4em)',
-  vedette: 'repeating-linear-gradient(65deg, transparent 0 1.3em, rgba(255,181,71,0.18) 1.3em 1.45em, rgba(255,240,200,0.12) 1.45em 1.6em, transparent 1.6em 3.2em)',
-  mythe: 'repeating-linear-gradient(65deg, transparent 0 0.9em, rgba(255,36,64,0.24) 0.9em 1.05em, rgba(255,230,0,0.14) 1.05em 1.2em, rgba(46,230,214,0.14) 1.2em 1.35em, rgba(181,123,255,0.14) 1.35em 1.5em, transparent 1.5em 2.8em)',
-  icone: 'repeating-linear-gradient(65deg, transparent 0 1em, rgba(255,46,147,0.24) 1em 1.15em, rgba(255,200,230,0.16) 1.15em 1.3em, transparent 1.3em 2.6em)',
+  legende: fan('rgba(255,200,61,0.16) 3.6deg 5deg, rgba(140,210,255,0.12) 5deg 6.4deg'),
+  vedette: fan('rgba(255,181,71,0.16) 3.6deg 5deg, rgba(255,240,200,0.11) 5deg 6.4deg'),
+  mythe: fan('rgba(255,36,64,0.2) 3.6deg 4.3deg, rgba(255,230,0,0.13) 4.3deg 5deg, rgba(46,230,214,0.13) 5deg 5.7deg, rgba(181,123,255,0.13) 5.7deg 6.4deg'),
+  icone: fan('rgba(255,46,147,0.2) 3.6deg 5deg, rgba(255,200,230,0.14) 5deg 6.4deg'),
 };
 
 /** Une carte Acteur (portrait) ou Rôle (photogramme), dessinée comme dans la maquette. */

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LiveFilters } from '@/components/LiveFilters';
 import { notFound } from 'next/navigation';
 import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
@@ -141,6 +142,7 @@ export default async function ShowcasePage({ params, searchParams }: Props) {
           <section id="tiroir" className={`panel ${styles.drawer}`}>
             <div className="section-head"><h2 className="display h3">Case {picking + 1} : choisissez une carte</h2><span className="rule" /><Link href={`/v/${encodeURIComponent(owner.name)}?montage=1`} className="btn btn-sm">Fermer</Link></div>
             <form className={styles.search} action={`/v/${encodeURIComponent(owner.name)}#tiroir`}>
+              <LiveFilters />
               <input type="hidden" name="montage" value="1" /><input type="hidden" name="case" value={picking} />
               <input type="search" name="q" defaultValue={sp.q} placeholder="Acteur, film, personnage…" aria-label="Rechercher dans ma collection" className="input" />
               <button type="submit" className="btn btn-sm">Chercher</button>

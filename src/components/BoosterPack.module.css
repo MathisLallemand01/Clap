@@ -17,9 +17,12 @@
 }
 
 /* La vedette sérigraphiée : le portrait tramé en points, imprimé dans la teinte du thème. */
-.art { position: absolute; left: 0; right: 0; top: 4.6em; height: 17em; overflow: hidden; }
+.art { position: absolute; left: 0; right: 0; top: 4.6em; height: 17em; overflow: hidden;
+}
+/* Le bas du portrait se fond dans le paquet : plus de coupure nette sous le visage. */
+.art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 52%, rgba(9, 9, 11, 0.55) 78%, #09090b 100%); }
 .art img, .ink { position: absolute; inset: 0; width: 100%; height: 100%; }
-.art img { object-fit: cover; object-position: center 12%; }
+.art img { object-fit: cover; object-position: center 8%; }
 .dots {
   filter: grayscale(1) contrast(1.6) brightness(1.05);
   -webkit-mask-image: radial-gradient(circle, #000 0.13em, transparent 0.15em), radial-gradient(ellipse 48% 62% at 50% 36%, #000 60%, transparent 100%);

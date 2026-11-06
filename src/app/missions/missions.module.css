@@ -25,3 +25,8 @@
 .reward { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .amount { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 15px; color: var(--accent); white-space: nowrap; }
 .got { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--ok); height: 44px; display: flex; align-items: center; }
+
+/* « Tout récupérer » : un bandeau vert avec le total. */
+.claimAll { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding: 16px 20px; border-radius: 16px; border: 1px solid #1d5a3f; background: linear-gradient(90deg, rgba(61, 220, 151, 0.1), transparent 70%); }
+.claimAll p { margin: 0; color: var(--text-2); }
+.claimAll b { color: var(--ok); }

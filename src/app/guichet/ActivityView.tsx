@@ -89,7 +89,7 @@ export function ActivityView({ ctx, type }: { ctx: Context; type?: string }) {
         </section>
       )}
 
-      <section className={`panel ${styles.journal}`}>
+      <section key={filter} className={`panel ${styles.journal} stagger-in`}>
         {entries.length === 0 && <p className="muted" style={{ margin: 0, padding: '18px 0' }}>Rien au journal pour l’instant. Vendez, achetez, enchérissez ou échangez : tout s’inscrira ici.</p>}
         {[...groups].map(([day, list]) => (
           <div key={day}>

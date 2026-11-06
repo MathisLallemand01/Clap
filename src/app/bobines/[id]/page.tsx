@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LiveFilters } from '@/components/LiveFilters';
 import { notFound } from 'next/navigation';
 import { BoosterPack } from '@/components/BoosterPack';
 import { CardLink } from '@/components/CardLink';
@@ -124,6 +125,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
           <section className={styles.tier}>
             <TierHead rarity={focus} rank={tiers.indexOf(focus) + 1} odds={odds[focus]} count={counts[focus]} have={pool.filter((c) => c.rarity === focus && owned.has(c.id)).length} />
             <form className={styles.search} action={`/bobines/${id}`}>
+              <LiveFilters />
               <input type="hidden" name="rarete" value={focus} />
               {missingOnly && <input type="hidden" name="voir" value="manquantes" />}
               <input className="input" type="search" name="q" defaultValue={sp.q} placeholder="Chercher un acteur, un film…" aria-label="Chercher dans cette rareté" />

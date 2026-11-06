@@ -12,7 +12,7 @@ import { formatNumber } from '@/lib/format';
 import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
 import { optionalContext } from '@/lib/session';
 import type { Card } from '@/lib/types';
-import { AutoSubmit } from './AutoSubmit';
+import { LiveFilters } from '@/components/LiveFilters';
 import styles from './catalogue.module.css';
 
 export const metadata: Metadata = {
@@ -117,7 +117,7 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
 
         <div className={styles.layout}>
           <form className={styles.filters} action="/catalogue" aria-label="Filtres">
-            <AutoSubmit />
+            <LiveFilters />
             <label className={styles.searchBox}>
               <span className="visually-hidden">Rechercher</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -142,9 +142,10 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
               </div>
             </fieldset>
 
+            <div className={styles.selects}>
             <label className={styles.field}>Rareté
               <select name="rarete" defaultValue={rarete ?? ''} className="input">
-                <option value="">Toutes les raretés</option>
+                <option value="">Toutes</option>
                 {(['actor', 'role'] as const).map((k) => (
                   <optgroup key={k} label={`${FAMILY[k].mark} Cartes ${FAMILY[k].label}`}>
                     {[...ladderOf(k)].reverse().map((r) => <option key={r} value={r}>{FAMILY[k].label} · {RARITIES[r].label}</option>)}
@@ -155,7 +156,7 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
 
             <label className={styles.field}>Bobine
               <select name="bobine" defaultValue={booster?.id ?? ''} className="input">
-                <option value="">Toutes les bobines</option>
+                <option value="">Toutes</option>
                 {(['actor', 'role'] as const).map((k) => (
                   <optgroup key={k} label={k === 'actor' ? 'Castings (cartes Acteur)' : 'Films & séries (cartes Rôle)'}>
                     {BOOSTERS.filter((b) => b.family === k).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -166,24 +167,30 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
 
             <label className={styles.field}>Genre
               <select name="genre" defaultValue={sp.genre ?? ''} className="input">
-                <option value="">Tous les genres</option>
+                <option value="">Tous</option>
                 {GENRES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
 
             <label className={styles.field}>Époque
               <select name="epoque" defaultValue={decade ?? ''} className="input">
-                <option value="">Toutes les époques</option>
+                <option value="">Toutes</option>
                 {DECADES.map((d) => <option key={d} value={d}>Années {d}</option>)}
               </select>
             </label>
 
             <label className={styles.field}>Pays
               <select name="pays" defaultValue={sp.pays ?? ''} className="input">
-                <option value="">Tous les pays</option>
+                <option value="">Tous</option>
                 {COUNTRIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
+            <label className={styles.field}>Tri
+              <select name="tri" defaultValue={tri} className="input">
+                {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            </div>
 
             {ctx && (
               <fieldset className={styles.group}>
@@ -196,15 +203,11 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
               </fieldset>
             )}
 
-            <label className={styles.field}>Trier par
-              <select name="tri" defaultValue={tri} className="input">
-                {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </label>
+
 
             <div className={styles.formActions}>
               <button type="submit" className="btn btn-sm btn-primary">Appliquer</button>
-              <Link href="/catalogue" className="btn btn-sm">Réinitialiser</Link>
+              <Link href="/catalogue" className="btn btn-sm" scroll={false}>Réinitialiser les filtres</Link>
             </div>
           </form>
 

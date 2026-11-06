@@ -1,18 +1,21 @@
 .titleBlock { display: flex; flex-direction: column; gap: 14px; max-width: 720px; }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
-@media (min-width: 1000px) { .layout { grid-template-columns: 290px minmax(0, 1fr); } }
+@media (min-width: 1000px) { .layout { grid-template-columns: 320px minmax(0, 1fr); } }
 
 /* Filtres : une colonne fixe à gauche sur grand écran. */
-.filters { display: flex; flex-direction: column; gap: 18px; padding: 20px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); }
-@media (min-width: 1000px) { .filters { position: sticky; top: 92px; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3a42 transparent; overscroll-behavior: contain; } }
+.filters { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); }
+/* Fixe à gauche pendant qu'on parcourt les résultats, sans barre de défilement : tout tient à l'écran.
+   Sur un écran trop bas pour tout montrer, la colonne défile simplement avec la page. */
+@media (min-width: 1000px) and (min-height: 760px) { .filters { position: sticky; top: 88px; } }
+.selects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
 .searchBox { height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); display: flex; align-items: center; gap: 10px; color: var(--muted); background: var(--ink); }
 .searchBox:focus-within { border-color: var(--accent); }
 .searchBox input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-size: 15px; }
 .group { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
 .group legend, .field { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.group legend { margin-bottom: 8px; }
+.group legend { margin-bottom: 6px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
-.field select { height: 42px; border-radius: 12px; font-family: var(--display); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--text); }
+.field select { height: 40px; padding-right: 26px; text-overflow: ellipsis; border-radius: 12px; font-family: var(--display); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--text); }
 .radios { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--ink); border: 1px solid var(--line); }
 .radio { flex: 1; position: relative; }
 .radio input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
