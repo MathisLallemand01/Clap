@@ -79,6 +79,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
             <div className={styles.ctas}>
               <Link href={`/ouvrir/${booster.id}`} className="btn btn-primary btn-lg">{free ? 'Ouvrir · offerte' : `Ouvrir · ${formatNumber(booster.price)} TK`}</Link>
               <Link href={missingOnly ? `/bobines/${id}` : `/bobines/${id}?voir=manquantes`} className="btn btn-lg">{missingOnly ? 'Tout afficher' : 'Voir les manquantes'}</Link>
+              <Link href={`/catalogue?bobine=${booster.id}`} className="btn btn-lg">Filtrer dans le catalogue</Link>
             </div>
           </div>
         </header>

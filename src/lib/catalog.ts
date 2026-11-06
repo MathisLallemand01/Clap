@@ -125,3 +125,26 @@ export function poolOf(db: DatabaseSync, def: BoosterDef): Card[] {
 export function ownedCardIds(db: DatabaseSync, playerId: string): Set<string> {
   return new Set((db.prepare('SELECT DISTINCT card_id FROM owned WHERE player_id = ?').all(playerId) as { card_id: string }[]).map((r) => r.card_id));
 }
+
+const boosterIndex = new WeakMap<DatabaseSync, { version: string; byCard: Map<string, string[]> }>();
+
+/** Les bobines où l'on peut tirer chaque carte, la plus ciblée d'abord (calculé une fois par version du catalogue). */
+export function boostersOfCard(db: DatabaseSync, cardId: string): string[] {
+  const { version: v } = load(db);
+  let entry = boosterIndex.get(db);
+  if (!entry || entry.version !== v) {
+    const byCard = new Map<string, string[]>();
+    for (const b of BOOSTERS) {
+      // Seulement les bobines qui peuvent vraiment donner cette rareté (une Série B ne donne pas de Mythe).
+      const possible = new Set(b.slots.flatMap((sl) => Object.entries(sl.odds).filter(([, w]) => (w ?? 0) > 0).map(([r]) => r)));
+      const pool = poolOf(db, b);
+      for (const c of pool) if (possible.has(c.rarity)) byCard.set(c.id, [...(byCard.get(c.id) ?? []), b.id]);
+    }
+    // La bobine la plus ciblée (la plus petite réserve) d'abord : c'est là qu'on a le plus de chances de la tirer.
+    const size = new Map(BOOSTERS.map((b) => [b.id, poolOf(db, b).length]));
+    for (const list of byCard.values()) list.sort((a, b) => size.get(a)! - size.get(b)!);
+    entry = { version: v, byCard };
+    boosterIndex.set(db, entry);
+  }
+  return entry.byCard.get(cardId) ?? [];
+}

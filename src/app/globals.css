@@ -90,7 +90,9 @@ optgroup { color: var(--muted); font-style: normal; }
   padding: 0 26px;
   border-radius: 999px;
   border: 1px solid var(--line-2);
-  background: transparent;
+  /* Couleur et fond propres au bouton : il n'hérite jamais d'un texte foncé de son conteneur. */
+  background: rgba(20, 20, 23, 0.72);
+  color: var(--text);
   font-size: 16px;
   font-weight: 600;
   display: inline-flex;
@@ -102,13 +104,15 @@ optgroup { color: var(--muted); font-style: normal; }
   white-space: nowrap;
   text-align: center;
 }
-.btn:hover { border-color: var(--muted); }
+/* :where() garde ce survol au plus bas niveau de priorité : les variantes (primaire, clair, Discord…) gardent le leur. */
+.btn:where(:hover) { border-color: var(--muted); background: var(--panel-2); }
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--ink); font-weight: 700; }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--ink); }
 .btn-light { background: var(--text); border-color: var(--text); color: var(--ink); font-weight: 700; }
-.btn-light:hover { background: #fff; border-color: #fff; }
+.btn-light:hover { background: #fff; border-color: #fff; color: var(--ink); }
 .btn-danger { border-color: #e0294f; color: #ff6b86; }
+.btn-danger:hover { background: #2a0d14; color: #ff8aa0; }
 .btn-sm { height: 44px; padding: 0 18px; font-size: 14px; }
 .btn-lg { height: 60px; padding: 0 32px; font-size: 17px; }
 .btn-block { width: 100%; }
@@ -167,7 +171,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .stat-row small { font-size: 14px; color: var(--muted); }
 
 .card-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(188px, 42vw), 1fr)); gap: 28px 18px; }
-.card-grid > li { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; content-visibility: auto; contain-intrinsic-size: auto 300px; }
+/* content-visibility découpe ce qui dépasse de la case : on garde de la marge pour la carte soulevée au survol et son ombre. */
+.card-grid > li { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; content-visibility: auto; contain-intrinsic-size: auto 330px; padding: 12px 6px 18px; }
 
 .sprockets {
   height: 16px;
@@ -207,7 +212,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 }
 
 .card-link { display: block; border-radius: 12px; transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 260ms ease; }
-.card-link:hover { transform: translateY(-6px); filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.5)); }
+.card-link:hover { transform: translateY(-6px); filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.5)); }
 .missing { opacity: 0.4; transition: opacity 200ms ease; }
 .missing img { filter: grayscale(1); }
 .missing:hover { opacity: 0.75; }
@@ -269,3 +274,26 @@ body::after {
    même un instant pendant les animations d'entrée. */
 .modal, .modal-backdrop { scrollbar-width: none; }
 .modal::-webkit-scrollbar, .modal-backdrop::-webkit-scrollbar { display: none; }
+
+/* Transitions entre les pages (React ViewTransition, voir app/template.tsx). */
+::view-transition { pointer-events: none; }
+::view-transition-group(site-header) { animation: none; z-index: 100; }
+::view-transition-old(site-header) { display: none; }
+::view-transition-new(site-header) { animation: none; }
+::view-transition-old(.nav-forward) { --slide-offset: -60px; animation: 150ms ease-in both vt-fade reverse, 380ms cubic-bezier(0.4, 0, 0.2, 1) both vt-slide reverse; }
+::view-transition-new(.nav-forward) { --slide-offset: 60px; animation: 220ms ease-out 120ms both vt-fade, 380ms cubic-bezier(0.4, 0, 0.2, 1) both vt-slide; }
+::view-transition-old(.nav-back) { --slide-offset: 60px; animation: 150ms ease-in both vt-fade reverse, 380ms cubic-bezier(0.4, 0, 0.2, 1) both vt-slide reverse; }
+::view-transition-new(.nav-back) { --slide-offset: -60px; animation: 220ms ease-out 120ms both vt-fade, 380ms cubic-bezier(0.4, 0, 0.2, 1) both vt-slide; }
+::view-transition-old(.page-fade) { animation: 160ms ease-in both vt-fade reverse; }
+::view-transition-new(.page-fade) { animation: 260ms ease-out 80ms both vt-fade, 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both vt-rise; }
+/* Onglets d'une même page (Collection, Bobines, Guichet…) : fondu enchaîné du contenu seulement. */
+::view-transition-group(tab-content) { animation-duration: 280ms; }
+@keyframes vt-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-slide { from { translate: var(--slide-offset) 0; } to { translate: 0 0; } }
+@keyframes vt-rise { from { translate: 0 14px; } to { translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) { animation-duration: 0s !important; animation-delay: 0s !important; }
+}
+
+/* Le contenu d'un onglet garde l'espacement de la page qui le contient. */
+.tab-content { display: flex; flex-direction: column; gap: inherit; min-width: 0; }

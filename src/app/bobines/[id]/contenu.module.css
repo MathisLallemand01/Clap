@@ -25,7 +25,7 @@
 .facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--muted); }
 .facts b { color: var(--text); font-weight: 600; }
 
-.row { display: flex; gap: 16px; overflow-x: auto; padding: 8px 2px 16px; scrollbar-width: thin; }
+.row { display: flex; gap: 16px; overflow-x: auto; padding: 14px 4px 22px; scrollbar-width: thin; }
 .item { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none; }
 .state { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; }
 .more {

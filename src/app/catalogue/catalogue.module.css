@@ -1,0 +1,42 @@
+.titleBlock { display: flex; flex-direction: column; gap: 14px; max-width: 720px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (min-width: 1000px) { .layout { grid-template-columns: 290px minmax(0, 1fr); } }
+
+/* Filtres : une colonne fixe à gauche sur grand écran. */
+.filters { display: flex; flex-direction: column; gap: 18px; padding: 20px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); }
+@media (min-width: 1000px) { .filters { position: sticky; top: 92px; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: none; } }
+.searchBox { height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); display: flex; align-items: center; gap: 10px; color: var(--muted); background: var(--ink); }
+.searchBox:focus-within { border-color: var(--accent); }
+.searchBox input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-size: 15px; }
+.group { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.group legend, .field { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.group legend { margin-bottom: 8px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field select { height: 42px; border-radius: 12px; font-family: var(--display); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--text); }
+.radios { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--ink); border: 1px solid var(--line); }
+.radio { flex: 1; position: relative; }
+.radio input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.radio span { display: block; padding: 8px 6px; border-radius: 999px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.radio input:checked + span { background: var(--text); color: var(--ink); }
+.radio input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.formActions { display: flex; gap: 8px; }
+.formActions > * { flex: 1; }
+
+.results { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.resultsHead { display: flex; flex-direction: column; gap: 12px; }
+.count { margin: 0; font-size: 20px; font-weight: 500; color: var(--text-2); }
+.count b { color: var(--text); font-weight: 800; }
+.count span { font-size: 15px; color: var(--muted); }
+.active { display: flex; flex-wrap: wrap; gap: 8px; }
+.activeChip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line-2); font-size: 13px; font-weight: 600; color: var(--text); }
+.activeChip span { color: var(--muted); font-size: 16px; line-height: 1; }
+.activeChip:hover { border-color: var(--accent); }
+.where { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; }
+.where a { color: var(--text-2); text-decoration: underline; text-underline-offset: 2px; }
+.where a:hover { color: var(--text); }
+.ok { color: var(--ok); font-weight: 600; }
+.no { color: var(--faint); font-weight: 600; }
+.more { display: flex; justify-content: center; }
+/* Carte pas encore obtenue : un peu atténuée, mais on la voit encore bien. */
+.notOwned :global(.card-link) { filter: saturate(0.45) brightness(0.8); }
+.notOwned :global(.card-link):hover { filter: none; }

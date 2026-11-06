@@ -8,6 +8,7 @@ import { ArrowIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
 import { PackTile } from '@/components/PackTile';
 import { SideRails } from '@/components/SideRails';
+import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
 import { BOOSTERS, boosterOfTheDay, FAMILY_SHELVES, featuredEvent, FREE_BOOSTER_CAP, getBooster, GROUP_LABELS, NEW_BOOSTERS, type BoosterFamily, type BoosterGroup } from '@/lib/boosters';
 import { boosterCover, ownedCardIds, poolOf } from '@/lib/catalog';
@@ -137,9 +138,13 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
               </Link>
             ))}
           </div>
-          <Link href="/raretes" className={styles.help}>Acteur ou Rôle ? Comment ça marche</Link>
+          <div className={styles.shelfLinks}>
+            <Link href="/catalogue" className="btn btn-sm">Voir toutes les cartes</Link>
+            <Link href="/raretes" className={styles.help}>Acteur ou Rôle ? Comment ça marche</Link>
+          </div>
         </nav>
 
+        <TabContent tab={shelf.id}>
         {families.map(({ family, groups }, fi) => (
           <section key={family} id={fi === 0 ? 'rayons' : undefined} className={`${styles.familyShelf} ${family === 'actor' ? styles.shelfActor : styles.shelfRole}`} aria-labelledby={`rayon-${family}`}>
             <div className={`container ${styles.familyHead}`}>
@@ -184,6 +189,7 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
             ))}
           </section>
         ))}
+        </TabContent>
       </main>
       <Footer />
     </>

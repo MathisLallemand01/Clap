@@ -81,3 +81,4 @@
 .familyLegend > span:first-child { width: 100%; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--muted); }
 .legendStep { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; }
 .legendStep i { display: inline-block; width: 9px; height: 9px; }
+.shelfLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }

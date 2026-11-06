@@ -5,6 +5,7 @@ import { GameCard } from '@/components/GameCard';
 import { TicketIcon } from '@/components/Icons';
 import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
+import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
 import { getCard, ownedCardIds, searchCards } from '@/lib/catalog';
 import { getDb } from '@/lib/db';
@@ -78,6 +79,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
           </header>
         </div>
 
+        <TabContent tab={view}>
         <div className="container page no-glow" style={{ paddingTop: 0 }}>
           {sp.erreur && <p className="alert alert-error" role="alert">{sp.erreur}</p>}
           {bought && bought.status === 'sold' && bought.sellerId !== ctx.player.id && (
@@ -165,6 +167,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
 
           {view === 'mes-annonces' && <MyListings playerId={ctx.player.id} />}
         </div>
+        </TabContent>
       </main>
       <Footer />
     </>

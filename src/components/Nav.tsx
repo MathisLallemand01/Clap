@@ -10,20 +10,31 @@ import { NotificationBell } from './NotificationBell';
 import { TicketCounter } from './TicketCounter';
 import styles from './Nav.module.css';
 
+/**
+ * Le menu suit le parcours du joueur : obtenir des cartes (Bobines), les consulter (Collection, Catalogue),
+ * les échanger (Échanges, Guichet), puis progresser (Missions, Classement).
+ */
 export const NAV_LINKS = [
   { href: '/bobines', label: 'Bobines' },
   { href: '/collection', label: 'Collection' },
+  { href: '/catalogue', label: 'Catalogue' },
+  { href: '/echanges', label: 'Échanges' },
   { href: '/guichet', label: 'Le Guichet' },
   { href: '/missions', label: 'Missions' },
   { href: '/classement', label: 'Classement' },
-  { href: '/echanges', label: 'Échanges' },
 ] as const;
+
+/** Sens de la transition : vers un onglet à droite, la page glisse vers la gauche, et inversement. */
+function direction(target: number, current: number): string[] {
+  if (current < 0 || target === current) return ['nav-fade'];
+  return [target > current ? 'nav-forward' : 'nav-back'];
+}
 
 export type NavKey = (typeof NAV_LINKS)[number]['href'];
 
 export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey }) {
   return (
-    <header className={styles.nav}>
+    <header className={styles.nav} style={{ viewTransitionName: 'site-header' }}>
       <div className={`container ${styles.inner}`}>
         <Link href="/" className={styles.brand} aria-label="Clap, accueil">
           <Wordmark />
@@ -32,8 +43,9 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
         {ctx ? (
           <>
             <nav className={styles.links} aria-label="Navigation principale">
-              {NAV_LINKS.map((l) => (
-                <Link key={l.href} href={l.href} aria-current={current === l.href ? 'page' : undefined}>{l.label}</Link>
+              {NAV_LINKS.map((l, i) => (
+                <Link key={l.href} href={l.href} aria-current={current === l.href ? 'page' : undefined}
+                  transitionTypes={direction(i, NAV_LINKS.findIndex((x) => x.href === current))}>{l.label}</Link>
               ))}
             </nav>
             <div className={styles.right}>
@@ -67,6 +79,7 @@ export function Nav({ ctx, current }: { ctx: Context | null; current?: NavKey })
           </>
         ) : (
           <div className={styles.right}>
+            <Link href="/catalogue" className={styles.ghostLink}>Catalogue</Link>
             <Link href="/raretes" className={styles.ghostLink}>Comment jouer</Link>
             <Link href="/connexion" className={`btn btn-sm ${styles.login}`}>Se connecter</Link>
             <Link href="/connexion?mode=inscription" className="btn btn-sm btn-primary">Jouer gratuitement</Link>
@@ -85,6 +98,7 @@ export function Footer() {
         <span>© Clap · Gratuit, sans achat intégré. Les entrées et les tickets n’ont aucune valeur réelle.</span>
         <nav aria-label="Liens de bas de page">
           <Link href="/raretes">Raretés et règles</Link>
+          <Link href="/catalogue">Catalogue</Link>
           <Link href="/bobines">Bobines</Link>
           <Link href="/guichet">Le Guichet</Link>
           <Link href="/parrainage">Parrainage</Link>

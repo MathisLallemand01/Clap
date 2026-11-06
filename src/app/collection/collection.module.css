@@ -58,3 +58,4 @@
 .missing { display: block; filter: grayscale(1) brightness(0.45); opacity: 0.7; }
 .missing:hover { filter: grayscale(0.4) brightness(0.8); opacity: 1; }
 .more { font-family: var(--mono); font-size: 13px; color: var(--muted); padding: 0 8px; }
+.headActions { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -4,6 +4,7 @@ import { CardLink } from '@/components/CardLink';
 import { GameCard } from '@/components/GameCard';
 import { Footer, Nav } from '@/components/Nav';
 import { SideRails } from '@/components/SideRails';
+import { TabContent } from '@/components/TabContent';
 import { Ticker } from '@/components/Ticker';
 import { countByRarity, getCatalog, searchCards } from '@/lib/catalog';
 import { playerDuos, playerSagas } from '@/lib/collections';
@@ -71,9 +72,12 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
               <span><b>{formatNumber(ctx.stats.duos)}</b> duo{ctx.stats.duos > 1 ? 's' : ''}</span>
               <span><b>{formatNumber(ctx.stats.duplicates)}</b> doublons</span>
             </div>
-            {ctx.stats.duplicates > 0 && (
-              <Link href={href({ recycler: '1' })} className="btn btn-sm" scroll={false}>♻ Recycler les doublons</Link>
-            )}
+            <div className={styles.headActions}>
+              <Link href="/catalogue?possession=manquantes" className="btn btn-sm">Voir les cartes qui me manquent</Link>
+              {ctx.stats.duplicates > 0 && (
+                <Link href={href({ recycler: '1' })} className="btn btn-sm" scroll={false}>♻ Recycler les doublons</Link>
+              )}
+            </div>
           </div>
           {(view === 'acteurs' || view === 'roles') && <ul className={styles.progress} aria-label={`Complétion des cartes ${FAMILY[type].label} par rareté`}>
             <li className={styles.progressHead}>{FAMILY[type].mark} CARTES {FAMILY[type].label.toUpperCase()} · DE LA PLUS RARE À LA PLUS COMMUNE</li>
@@ -115,6 +119,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
           </form>}
         </div>
 
+        <TabContent tab={view}>
         {view === 'duos' && (
           <section className={styles.explain} aria-label="Les duos">
             <p className="lead"><b>Un duo = la carte Acteur d’une personne + au moins un de ses Rôles.</b> Chaque duo ajoute <b>{formatNumber(DUO_BONUS)} entrées</b> à votre box-office. Les cartes Acteur viennent des bobines Casting, les Rôles des bobines Film.</p>
@@ -204,6 +209,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             )}
           </>
         )}
+        </TabContent>
       </main>
       <Footer />
 

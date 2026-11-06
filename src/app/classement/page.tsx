@@ -4,6 +4,7 @@ import { Scene, Searchlights } from '@/components/Decor';
 import { Footer, Nav } from '@/components/Nav';
 import { DiscordLogo } from '@/components/DiscordLogo';
 import { SideRails } from '@/components/SideRails';
+import { TabContent } from '@/components/TabContent';
 import { getDb } from '@/lib/db';
 import { formatEntries, formatNumber } from '@/lib/format';
 import { periodStart } from '@/lib/missions';
@@ -88,6 +89,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
 
+        <TabContent tab={view} name="tab-board">
         <div className={`container ${styles.layout}`}>
           <section className={styles.board} aria-labelledby="tableau">
             <Scene n={1} label={`${formatNumber(rows.length)} joueur${rows.length > 1 ? 's' : ''} classé${rows.length > 1 ? 's' : ''}`} />
@@ -134,6 +136,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
             </div>
           </aside>
         </div>
+        </TabContent>
       </main>
       <Footer />
     </>
