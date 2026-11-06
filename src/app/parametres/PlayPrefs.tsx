@@ -43,15 +43,15 @@ export function PlayPrefs() {
         </label>
       </div>
       <div className={styles.row}>
-        <div><strong>Vitesse de la bande</strong><span>Le rythme de la pellicule à l’ouverture.</span></div>
-        <div className="segmented" role="radiogroup" aria-label="Vitesse de la bande">
+        <div><strong>Vitesse d’ouverture</strong><span>La vitesse des retournements et du rangement des cartes.</span></div>
+        <div className="segmented" role="radiogroup" aria-label="Vitesse d’ouverture">
           {([['normal', 'Normale'], ['rapide', 'Rapide'], ['instant', 'Instantanée']] as const).map(([v, l]) => (
             <button key={v} type="button" role="radio" aria-checked={speed === v} aria-selected={speed === v} onClick={() => { setSpeed(v); saveSpeedPreference(v); }}>{l}</button>
           ))}
         </div>
       </div>
       <div className={styles.row}>
-        <div><strong>Réduire les animations</strong><span>Bande immobile, cartes en fondu. Suit aussi le réglage de votre appareil.</span></div>
+        <div><strong>Réduire les animations</strong><span>Paquet ouvert d’un toucher, cartes sans rotation ni effets. Suit aussi le réglage de votre appareil.</span></div>
         <Switch on={calm} label="Réduire les animations" onChange={(v) => { setCalm(v); saveCalmPreference(v); }} />
       </div>
     </div>

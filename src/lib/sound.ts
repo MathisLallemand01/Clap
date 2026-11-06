@@ -61,6 +61,22 @@ export type Projector = {
   rip(): void;
   /** Ronron du projecteur pendant que la bande avance. */
   hum(on: boolean): void;
+  /** Papier qui se déchire, en continu pendant le geste : `speed` (0 à 1) monte le grain et le volume. */
+  tear(speed: number): void;
+  /** Fin du geste : arraché (true) ou relâché trop tôt (false, petit froissement). */
+  tearEnd(done: boolean): void;
+  /** Le paquet s'ouvre : pop de carton, souffle et accord grave qui monte. */
+  pop(): void;
+  /** Une carte se retourne : claquement + une note qui monte à chaque carte (`step` 0, 1, 2…). */
+  flip(step: number, tier: number): void;
+  /** La carte part se ranger : léger glissement. */
+  slide(): void;
+  /** Suspense d'une carte rare qu'on maintient : roulement de cordes qui monte. Renvoie de quoi l'arrêter. */
+  rise(ms: number, tier: number): () => void;
+  /** Frappe orchestrale + scintillement, au retournement d'une carte rare (cran 4 à 6). */
+  hit(tier: number): void;
+  /** Petite fanfare du générique de fin. */
+  fanfare(): void;
   setEnabled(on: boolean): void;
   /** Change le volume (0 à 1) en direct. */
   setVolume(v: number): void;
@@ -132,6 +148,43 @@ export function createProjector(enabled: boolean): Projector {
     gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
     setTimeout(stop, 500);
   }
+
+  /** Une note douce (attaque courte, extinction exponentielle) passée dans un passe-bas. */
+  function note(c: AudioContext, m: AudioNode, f: number, at: number, len: number, level: number, type: OscillatorType = 'sine', cutoff = 2400) {
+    const osc = c.createOscillator();
+    osc.type = type;
+    osc.frequency.value = f;
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = cutoff;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(level, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0006, at + len);
+    osc.connect(lp).connect(g).connect(m);
+    osc.start(at);
+    osc.stop(at + len + 0.05);
+  }
+
+  /** Un souffle de bruit filtré (froissement, glissement, souffle). */
+  function breath(c: AudioContext, m: AudioNode, at: number, len: number, level: number, from: number, to: number, q = 0.8) {
+    const src = c.createBufferSource();
+    src.buffer = noiseBuffer(c, len + 0.05);
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = q;
+    bp.frequency.setValueAtTime(from, at);
+    bp.frequency.exponentialRampToValueAtTime(to, at + len);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(level, at + Math.min(0.04, len / 3));
+    g.gain.exponentialRampToValueAtTime(0.0006, at + len);
+    src.connect(bp).connect(g).connect(m);
+    src.start(at);
+  }
+
+  // Déchirure continue : une source de bruit en boucle, dont le filtre et le volume suivent la vitesse du geste.
+  let tearing: { src: AudioBufferSourceNode; bp: BiquadFilterNode; crackle: GainNode; gain: GainNode } | null = null;
 
   return {
     click() {
@@ -234,6 +287,178 @@ export function createProjector(enabled: boolean): Projector {
       if (play) startHum();
       else stopHum();
     },
+    tear(speed) {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      if (!tearing) {
+        const src = c.createBufferSource();
+        // Bruit « granuleux » : des impulsions éparses, comme des fibres de papier qui cèdent.
+        const buffer = c.createBuffer(1, c.sampleRate, c.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (Math.random() < 0.18 ? 1 : 0.25);
+        src.buffer = buffer;
+        src.loop = true;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 0.7;
+        bp.frequency.value = 1200;
+        const crackle = c.createGain();
+        crackle.gain.value = 1;
+        const gain = c.createGain();
+        gain.gain.value = 0;
+        src.connect(bp).connect(crackle).connect(gain).connect(m);
+        src.start();
+        tearing = { src, bp, crackle, gain };
+      }
+      const v = Math.min(1, Math.max(0, speed));
+      tearing.bp.frequency.setTargetAtTime(900 + v * 2600, c.currentTime, 0.03);
+      tearing.gain.gain.setTargetAtTime(v < 0.02 ? 0 : 0.05 + v * 0.16, c.currentTime, 0.03);
+    },
+    tearEnd(done) {
+      if (tearing && ctx) {
+        const t = tearing;
+        tearing = null;
+        t.gain.gain.cancelScheduledValues(ctx.currentTime);
+        t.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.04);
+        setTimeout(() => t.src.stop(), 300);
+      }
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime;
+      if (done) {
+        // Le dernier morceau qui cède : un « scratch » sec et aigu.
+        breath(c, m, t, 0.16, 0.2, 2600, 5200, 1.2);
+      } else {
+        // La bande se recolle : un petit froissement grave.
+        breath(c, m, t, 0.22, 0.07, 700, 380, 0.9);
+      }
+    },
+    pop() {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime + 0.05;
+      // Pop de carton : une note grave qui tombe vite + un claquement.
+      const osc = c.createOscillator();
+      osc.frequency.setValueAtTime(220, t);
+      osc.frequency.exponentialRampToValueAtTime(55, t + 0.12);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.32, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(g).connect(m);
+      osc.start(t);
+      osc.stop(t + 0.2);
+      breath(c, m, t, 0.08, 0.16, 1400, 900, 1.5);
+      // Souffle d'air qui sort du paquet, puis un accord grave qui monte (la pile arrive).
+      breath(c, m, t + 0.04, 0.7, 0.08, 300, 1800, 0.6);
+      for (const [i, f] of [110, 164.81, 220, 277.18].entries()) note(c, m, f, t + 0.12 + i * 0.07, 1.4, 0.05, i ? 'sine' : 'triangle', 1200);
+    },
+    flip(step, tier) {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime;
+      // Claquement de carte : bruit très court et brillant, puis le « tac » de la carte qui retombe.
+      breath(c, m, t, 0.05, 0.22, 3200, 1800, 1.4);
+      breath(c, m, t + 0.07, 0.04, 0.12, 1200, 700, 2);
+      // Une note qui monte à chaque carte (gamme pentatonique), plus riche si la carte est rare.
+      const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66];
+      const f = scale[Math.min(scale.length - 1, step)];
+      note(c, m, f, t + 0.05, 0.5, 0.06, 'triangle', 3000);
+      if (tier >= 2) note(c, m, f * 1.5, t + 0.09, 0.6, 0.035, 'sine');
+      if (tier >= 3) {
+        note(c, m, f * 2, t + 0.13, 0.9, 0.03, 'sine');
+        for (const k of [1, 1.25, 1.5]) note(c, m, f / 2 * k, t + 0.06, 1.1, 0.03, 'sine', 1600);
+      }
+    },
+    slide() {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      breath(c, m, c.currentTime, 0.28, 0.045, 1800, 600, 0.7);
+    },
+    rise(ms, tier) {
+      const a = audio();
+      if (!a) return () => {};
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime;
+      const len = ms / 1000;
+      // Roulement de cordes : quelques dents de scie désaccordées, passe-bas qui s'ouvre, trémolo qui accélère.
+      const root = tier >= 6 ? 73.42 : tier >= 5 ? 98 : 110;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(380, t);
+      lp.frequency.exponentialRampToValueAtTime(2200, t + len);
+      const trem = c.createGain();
+      trem.gain.value = 0.6;
+      const lfo = c.createOscillator();
+      lfo.frequency.setValueAtTime(7, t);
+      lfo.frequency.linearRampToValueAtTime(15, t + len);
+      const depth = c.createGain();
+      depth.gain.value = 0.4;
+      lfo.connect(depth).connect(trem.gain);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.11, t + len);
+      lp.connect(trem).connect(g).connect(m);
+      const oscs = [1, 1.5, 2, 2.004, 3].map((k, i) => {
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(root * k, t);
+        // Le tout monte d'un ton pendant l'attente.
+        o.frequency.exponentialRampToValueAtTime(root * k * 1.122, t + len);
+        o.detune.value = (i - 2) * 6;
+        o.connect(lp);
+        o.start(t);
+        return o;
+      });
+      lfo.start(t);
+      let stopped = false;
+      return () => {
+        if (stopped) return;
+        stopped = true;
+        const now = c.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.12);
+        for (const o of oscs) o.stop(now + 0.15);
+        lfo.stop(now + 0.15);
+      };
+    },
+    hit(tier) {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime;
+      // Frappe orchestrale : basse + accord cuivré (dents de scie filtrées) + timbale.
+      const chord = tier >= 6 ? [73.42, 146.83, 220, 277.18, 369.99, 440] : tier >= 5 ? [98, 196, 246.94, 293.66, 392] : [110, 220, 277.18, 329.63];
+      for (const f of chord) note(c, m, f, t, tier >= 5 ? 2.6 : 1.6, 0.07 / Math.sqrt(chord.length) * 2, 'sawtooth', 1500);
+      const kick = c.createOscillator();
+      kick.frequency.setValueAtTime(120, t);
+      kick.frequency.exponentialRampToValueAtTime(42, t + 0.3);
+      const kg = c.createGain();
+      kg.gain.setValueAtTime(0.3, t);
+      kg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      kick.connect(kg).connect(m);
+      kick.start(t);
+      kick.stop(t + 0.55);
+      breath(c, m, t, 0.5, 0.06, 5000, 2500, 0.5);
+      // Scintillement : petites notes aiguës qui tombent en cascade.
+      const sparkle = [2093, 2637, 3136, 2349, 2794, 3520, 2637, 3951];
+      const count = tier >= 6 ? 8 : tier >= 5 ? 6 : 4;
+      for (let i = 0; i < count; i++) note(c, m, sparkle[i], t + 0.18 + i * 0.07, 0.6, 0.022, 'sine', 6000);
+    },
+    fanfare() {
+      const a = audio();
+      if (!a) return;
+      const { ctx: c, master: m } = a;
+      const t = c.currentTime + 0.05;
+      const line = [392, 523.25, 659.25, 783.99];
+      line.forEach((f, i) => note(c, m, f, t + i * 0.09, i === line.length - 1 ? 1.2 : 0.3, 0.05, 'square', 1800));
+      for (const f of [261.63, 329.63, 392]) note(c, m, f, t + 0.27, 1.3, 0.035, 'triangle', 1600);
+    },
     setEnabled(next) {
       on = next;
       if (!next) stopHum();
@@ -243,6 +468,10 @@ export function createProjector(enabled: boolean): Projector {
     },
     dispose() {
       stopHum();
+      if (tearing) {
+        tearing.src.stop();
+        tearing = null;
+      }
       void ctx?.close();
       ctx = null;
     },

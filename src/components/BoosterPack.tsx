@@ -12,6 +12,12 @@ type Props = {
   interactive?: boolean;
   /** Animation d'ouverture (le haut se déchire). */
   tearing?: boolean;
+  /** Ouverture à la main : avancée de la déchirure (0 à 1), qui suit le geste. */
+  tear?: number;
+  /** La bande est arrachée : elle s'envole et le corps n'a plus de haut (bord déchiré). */
+  torn?: boolean;
+  /** Le geste est en cours (pas de transition : la fente colle au doigt). */
+  held?: boolean;
   className?: string;
   style?: CSSProperties;
 };
@@ -36,6 +42,22 @@ const CLIP_TOP_ONLY = (() => {
   return `polygon(${pts.join(', ')}, 100% 100%, 0% 100%)`;
 })();
 
+/** Hauteur de la bande du haut, en % de la hauteur du paquet (3,6 em sur 31). */
+const STRIP_PCT = (3.6 / 31) * 100;
+/** Le corps une fois la bande arrachée : bord du haut déchiré (dents irrégulières), dents de soudure en bas. */
+const CLIP_TORN = (() => {
+  const top: string[] = [];
+  const teeth = 34;
+  for (let i = 0; i <= teeth; i++) {
+    const x = (i / teeth) * 100;
+    const y = STRIP_PCT - 0.2 + (i % 2 ? 0.9 : 0) + ((i * 7) % 5) * 0.12;
+    top.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`);
+  }
+  const bottom: string[] = [];
+  for (let i = 0; i <= 48; i++) bottom.push(`${(100 - (i / 48) * 100).toFixed(2)}% ${i % 2 ? 100 : 99}%`);
+  return `polygon(${[...top, ...bottom].join(', ')})`;
+})();
+
 function contents(booster: BoosterDef): string {
   const { actor, role } = slotKinds(booster);
   if (!role) return `${actor} ACTEURS`;
@@ -44,7 +66,7 @@ function contents(booster: BoosterDef): string {
 }
 
 /** Un sachet de cartes en aluminium sombre : la vedette sérigraphiée en points, dans la teinte du thème. */
-export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, className, style }: Props) {
+export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, tear, torn, held, className, style }: Props) {
   const t = booster.theme;
   const vars = {
     width,
@@ -52,16 +74,17 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
     '--hue': t.hue,
     '--base': t.base,
     '--metal': t.metal,
+    '--tear': tear ?? 0,
     ...style,
   } as CSSProperties;
   // Les bobines Événement sont des éditions limitées : leurs accents sont holographiques (multicolores).
   const holo = booster.group === 'event';
-  const classes = [styles.pack, holo && styles.holo, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, className].filter(Boolean).join(' ');
+  const classes = [styles.pack, holo && styles.holo, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, torn && styles.torn, tear !== undefined && styles.manual, held && styles.dragging, className].filter(Boolean).join(' ');
   const image = cover?.image?.replace(/\/t\/p\/\w+\//, width * 2 > 500 ? '/t/p/h632/' : '/t/p/w500/');
 
   return (
     <div className={classes} style={vars} role="img" aria-label={`Bobine ${booster.name}`}>
-      <div className={styles.body} style={{ clipPath: CLIP }}>
+      <div className={styles.body} style={{ clipPath: torn ? CLIP_TORN : CLIP }}>
         {image && (
           <div className={styles.art}>
             <img className={styles.dots} src={image} alt="" loading="lazy" decoding="async" />
@@ -97,6 +120,13 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
         <span className={`${styles.seal} ${styles.sealTop}`} />
         <span className={styles.tear}>ouvrir ici</span>
       </div>
+      {tear !== undefined && (
+        <>
+          {/* La fente lumineuse qui suit le geste, et le liseré de papier déchiré qui apparaît derrière. */}
+          <span className={styles.slit} aria-hidden="true" />
+          <span className={styles.rip} aria-hidden="true" />
+        </>
+      )}
     </div>
   );
 }

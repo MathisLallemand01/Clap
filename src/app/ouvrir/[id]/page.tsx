@@ -25,5 +25,7 @@ export default async function OpenPage({ params }: Props) {
     const guest = await guestPlayerId();
     if (guest && guestHasOpened(db, guest)) redirect('/connexion?mode=inscription&suite=/collection&garder=1');
   }
-  return <Projection booster={booster} cover={boosterCover(db, booster)} guest={!ctx} />;
+  // Premier paquet du compte (ou du visiteur) : le tutoriel passe avant tout.
+  const firstOpen = ctx ? ctx.stats.pulls === 0 : true;
+  return <Projection booster={booster} cover={boosterCover(db, booster)} guest={!ctx} firstOpen={firstOpen} />;
 }
