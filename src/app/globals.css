@@ -39,6 +39,11 @@ body {
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
+/* Contrôles natifs (listes déroulantes, barres de défilement, champs) en thème sombre :
+   sans ça, Windows ouvre les menus déroulants sur fond blanc avec le texte clair du site. */
+:root { color-scheme: dark; }
+option, optgroup { background-color: var(--panel); color: var(--text); }
+optgroup { color: var(--muted); font-style: normal; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 ::selection { background: var(--accent); color: var(--ink); }
 
@@ -252,7 +257,7 @@ body::after {
 .no-glow::before { content: none; }
 
 /* Ligne de scénario au-dessus des titres : « INT. SALLE — NUIT », très discrète. */
-.slug { margin: 0; display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: #4a4a52; text-transform: uppercase; }
+.slug { margin: 0; display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--faint); text-transform: uppercase; }
 .slug span { white-space: nowrap; }
 .page > .slug { margin-bottom: calc(12px - clamp(40px, 6vw, 72px)); }
 

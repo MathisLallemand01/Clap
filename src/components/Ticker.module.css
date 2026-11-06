@@ -12,7 +12,6 @@
   mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
 }
 .track { display: flex; width: max-content; height: 100%; align-items: center; animation: marquee 60s linear infinite; }
-.ticker:hover .track, .ticker:focus-within .track { animation-play-state: paused; }
 .item { display: flex; align-items: center; gap: 10px; padding: 0 24px; height: 100%; font-size: 15px; white-space: nowrap; color: var(--text); }
 a.item:hover .text { color: var(--accent); }
 .dot, .diamond { width: 9px; height: 9px; flex: none; box-shadow: 0 0 10px currentColor; }
