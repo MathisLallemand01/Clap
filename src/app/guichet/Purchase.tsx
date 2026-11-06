@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Celebrate } from '@/components/Celebrate';
+import { broadcastChange } from '@/components/TabSync';
 import { formatNumber } from '@/lib/format';
 import type { Card } from '@/lib/types';
 
@@ -10,6 +11,8 @@ import type { Card } from '@/lib/types';
 export function Purchase({ card, serial, price, balance, unlimited }: { card: Card; serial: number; price: number; balance: number; unlimited: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
+  // Les autres onglets voient le nouveau solde et la carte achetée.
+  useEffect(() => broadcastChange(), []);
   const close = useCallback(() => {
     setOpen(false);
     router.replace('/guichet', { scroll: false });

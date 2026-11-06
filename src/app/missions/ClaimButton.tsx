@@ -5,6 +5,7 @@ import { useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { TicketIcon } from '@/components/Icons';
 import { formatNumber } from '@/lib/format';
+import { broadcastChange } from '@/components/TabSync';
 import { createProjector, soundPreference } from '@/lib/sound';
 import { claimAction, claimMissionNow } from './actions';
 import styles from './ClaimButton.module.css';
@@ -42,6 +43,7 @@ export function ClaimButton({ missionId }: { missionId: string }) {
     window.setTimeout(() => setShow((s) => (s ? { ...s, phase: 'fly' } : s)), 1300);
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('clap:tickets', { detail: amount }));
+      broadcastChange();
       projector.coins(3);
     }, 1950);
     window.setTimeout(() => {

@@ -231,3 +231,13 @@ test('sécurité : redirections internes uniquement, limitation des tentatives, 
   assert.equal(userForSession(db, token)?.id, u.id);
   assert.equal((db.prepare('SELECT COUNT(*) AS n FROM sessions WHERE token = ?').get(token) as { n: number }).n, 0);
 });
+
+test('comptes : un seul par machine, cinq au plus par adresse IP', async () => {
+  const db = openDb(':memory:');
+  const origin = (i: number, device = `device-${i}-xxxxxxxxxxxx`, fp: string | null = null) => ({ ip: '203.0.113.7', device, fp });
+  await signUp(db, { name: 'Machine', email: 'm@exemple.fr', password: 'motdepasse', origin: origin(0, 'appareil-unique-0000', 'ab'.repeat(20)) });
+  await assert.rejects(signUp(db, { name: 'Bis', email: 'b@exemple.fr', password: 'motdepasse', origin: origin(1, 'appareil-unique-0000') }), isCode('device-taken'));
+  await assert.rejects(signUp(db, { name: 'Ter', email: 't@exemple.fr', password: 'motdepasse', origin: origin(2, 'autre-appareil-0000', 'ab'.repeat(20)) }), isCode('device-taken'));
+  for (let i = 3; i < 7; i++) await signUp(db, { name: `Joueur${i}`, email: `j${i}@exemple.fr`, password: 'motdepasse', origin: origin(i) });
+  await assert.rejects(signUp(db, { name: 'Sixieme', email: 's@exemple.fr', password: 'motdepasse', origin: origin(9) }), isCode('ip-limit'));
+});

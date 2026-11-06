@@ -4,7 +4,8 @@ import { publicOrigin } from '@/lib/origin';
 import { upsertGoogleUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { safePath } from '@/lib/security';
-import { startSession } from '@/lib/session';
+import { GameError } from '@/lib/game';
+import { signupOrigin, startSession } from '@/lib/session';
 
 type Pending = { state: string; next: string; referral: string };
 
@@ -45,9 +46,13 @@ export async function GET(request: NextRequest) {
       email: info.email_verified ? (info.email ?? null) : null,
       name: info.given_name ?? info.name ?? 'cinephile',
       picture: info.picture ?? null,
-    }, pending.referral || undefined);
+    }, pending.referral || undefined, Date.now(), await signupOrigin());
     await startSession(user.id);
-  } catch {
+  } catch (err) {
+    // Compte refusé (une machine = un compte, 5 comptes par adresse) : on dit pourquoi.
+    if (err instanceof GameError && (err.code === 'device-taken' || err.code === 'ip-limit')) {
+      return NextResponse.redirect(new URL(`/connexion?erreur=${err.code}`, origin));
+    }
     return fail();
   }
   const next = safePath(pending.next);

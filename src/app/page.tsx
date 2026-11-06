@@ -134,7 +134,7 @@ export default async function LandingPage() {
           <h2 id="jouer" className={`display h2 ${styles.h2}`}>Comment jouer</h2>
           <div className={styles.steps}>
             {[
-              { t: 'Choisissez une bobine', d: 'Casting : cinq cartes Acteur. Film : cinq cartes Rôle. Une bobine offerte toutes les 4 heures, des tickets pour en ouvrir plus.', art: <Leader size={150} /> },
+              { t: 'Choisissez une bobine', d: 'Casting : cinq cartes Acteur. Film : cinq cartes Rôle. Une bobine offerte toutes les 10 minutes (10 en réserve), des tickets pour en ouvrir plus.', art: <Leader size={150} /> },
               { t: 'Révélez les cartes', d: 'Cliquez pour faire défiler la pellicule : les cartes arrivent de la moins rare à la plus rare. La dernière peut être un Mythe.', art: <Reel size={150} reverse /> },
               { t: 'Formez des duos', d: 'La carte Acteur + un de ses Rôles = un duo. Complétez les sagas, échangez avec vos amis, vendez vos doublons au Guichet.', art: <TicketStub top="CLAP · SÉANCE 21:00" big="DUO" bottom="ACTEUR + RÔLE" /> },
             ].map((s, i) => (
@@ -237,7 +237,7 @@ export default async function LandingPage() {
           <div className={`container ${styles.finalInner}`}>
             <Clapper />
             <h2 id="action" className={`display ${styles.finalTitle}`}>Moteur…<br /><span className="accent">action !</span></h2>
-            <p className="lead">Trois bobines offertes et 600 tickets à l’inscription. Une bobine gratuite toutes les 4 heures.</p>
+            <p className="lead">Dix bobines offertes et 600 tickets à l’inscription, puis une bobine gratuite toutes les 10 minutes.</p>
             <Link href={play} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Jouer gratuitement'} <ArrowIcon /></Link>
           </div>
         </section>

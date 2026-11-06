@@ -138,17 +138,31 @@ export function openBoosterFor(
   db: DatabaseSync,
   playerId: string,
   boosterId: string,
-  { now = Date.now(), rng = Math.random as Rng, topFirst = false } = {},
+  { now = Date.now(), rng = Math.random as Rng, topFirst = false, requestId }: { now?: number; rng?: Rng; topFirst?: boolean; requestId?: string } = {},
 ): OpenResult {
   const def = getBooster(boosterId);
   if (!def) throw new GameError('unknown-booster', `Bobine inconnue : ${boosterId}`);
   const pool = poolOf(db, def);
 
+  // Toute l'ouverture se fait dans une seule transaction : la réserve et les tickets sont relus et débités
+  // au même instant, quel que soit l'onglet (ou la page pas actualisée) d'où vient la demande.
   return transaction(db, () => {
     const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at, unlimited FROM players WHERE id = ?').get(playerId) as
       | PlayerRow
       | undefined;
     if (!row) throw new GameError('unknown-player', 'Joueur inconnu');
+    if (requestId) {
+      // La même demande déjà traitée : on renvoie la même bobine, sans rien débiter une seconde fois.
+      const done = db.prepare('SELECT id, booster_id, paid_with FROM pulls WHERE player_id = ? AND request_id = ?').get(playerId, requestId) as
+        | { id: number; booster_id: string; paid_with: OpenResult['paidWith'] }
+        | undefined;
+      if (done) {
+        const { stock, updatedAt } = regenerate(row, now);
+        const cards = (db.prepare('SELECT c.*, o.serial FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.pull_id = ? ORDER BY o.id').all(done.id) as (CardRow & { serial: number })[])
+          .map((r) => ({ ...rowToCard(r), serial: r.serial, isNew: false }));
+        return { pullId: done.id, boosterId: done.booster_id, paidWith: done.paid_with, cards, player: toPlayer(row, stock, updatedAt) };
+      }
+    }
 
     let { stock, updatedAt } = regenerate(row, now);
     let tickets = row.tickets;
@@ -167,8 +181,8 @@ export function openBoosterFor(
 
     db.prepare('UPDATE players SET tickets = ?, free_stock = ?, free_updated_at = ? WHERE id = ?')
       .run(tickets, stock, updatedAt, playerId);
-    const { lastInsertRowid } = db.prepare('INSERT INTO pulls (player_id, booster_id, paid_with, created_at) VALUES (?, ?, ?, ?)')
-      .run(playerId, boosterId, paidWith, now);
+    const { lastInsertRowid } = db.prepare('INSERT INTO pulls (player_id, booster_id, paid_with, created_at, request_id) VALUES (?, ?, ?, ?, ?)')
+      .run(playerId, boosterId, paidWith, now, requestId ?? null);
     const pullId = Number(lastInsertRowid);
 
     const countCopies = db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ?');

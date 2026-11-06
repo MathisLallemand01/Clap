@@ -18,14 +18,16 @@ export async function POST(request: Request) {
     try { originHost = new URL(origin).host; } catch { originHost = null; }
     if (originHost !== host) return NextResponse.json({ error: 'Origine refusée.' }, { status: 403 });
   }
-  const body = (await request.json().catch(() => null)) as { boosterId?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { boosterId?: unknown; requestId?: unknown } | null;
   if (typeof body?.boosterId !== 'string') {
     return NextResponse.json({ error: 'Bobine manquante.' }, { status: 400 });
   }
+  // Identifiant de la demande, fourni par la page : rejouée, elle renvoie la même bobine au lieu d'en ouvrir une autre.
+  const requestId = typeof body.requestId === 'string' && /^[\w-]{8,64}$/.test(body.requestId) ? body.requestId : undefined;
   const db = getDb();
   const user = await currentUser();
   try {
-    if (user) return NextResponse.json({ ...openBoosterFor(db, user.playerId, body.boosterId), guest: false });
+    if (user) return NextResponse.json({ ...openBoosterFor(db, user.playerId, body.boosterId, { requestId }), guest: false });
 
     const jar = await cookies();
     let guestId = jar.get(GUEST_COOKIE)?.value;
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
       guestId = createPlayer(db).id;
       jar.set(GUEST_COOKIE, guestId, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 30 * 24 * 3600 });
     }
-    return NextResponse.json({ ...openBoosterFor(db, guestId, body.boosterId, { topFirst: true }), guest: true });
+    return NextResponse.json({ ...openBoosterFor(db, guestId, body.boosterId, { topFirst: true, requestId }), guest: true });
   } catch (err) {
     if (err instanceof GameError) {
       const status = err.code === 'not-enough-tickets' ? 402 : 400;

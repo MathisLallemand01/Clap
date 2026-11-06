@@ -178,3 +178,16 @@ test('séries : les bobines Séries ne donnent que des séries, les autres bobin
   assert.ok(boosterPool(getBooster('tout-clap')!, catalog).every((c) => !c.tags.includes('media:tv')));
   assert.ok(boosterPool(getBooster('series-drame')!, catalog).some((c) => c.id === role.id));
 });
+
+test('une même demande d’ouverture rejouée ne débite et n’ouvre qu’une bobine', () => {
+  const db = openDb(':memory:');
+  const p = createPlayer(db);
+  const first = openBoosterFor(db, p.id, 'casting', { requestId: 'demande-0001' });
+  const again = openBoosterFor(db, p.id, 'casting', { requestId: 'demande-0001' });
+  assert.equal(again.pullId, first.pullId);
+  assert.deepEqual(again.cards.map((c) => c.id), first.cards.map((c) => c.id));
+  assert.equal(getPlayer(db, p.id)!.freeStock, FREE_BOOSTER_CAP - 1);
+  assert.equal((db.prepare('SELECT COUNT(*) AS n FROM pulls WHERE player_id = ?').get(p.id) as { n: number }).n, 1);
+  openBoosterFor(db, p.id, 'casting', { requestId: 'demande-0002' });
+  assert.equal(getPlayer(db, p.id)!.freeStock, FREE_BOOSTER_CAP - 2);
+});

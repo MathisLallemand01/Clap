@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { Curtain } from '@/components/Curtain';
+import { DeviceMark } from '@/components/DeviceMark';
+import { TabSync } from '@/components/TabSync';
 import { SESSION_COOKIE } from '@/lib/session';
 import './globals.css';
 
@@ -28,6 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {children}
         <Curtain signedIn={signedIn} />
+        {signedIn ? <TabSync /> : <DeviceMark />}
       </body>
     </html>
   );

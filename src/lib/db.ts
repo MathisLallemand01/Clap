@@ -263,6 +263,18 @@ function migrate(db: DatabaseSync): void {
   // Raretés v2 : le cran Chef-d'œuvre disparaît ; ses cartes prennent le cran de même hauteur (Vedette)
   // en attendant le prochain import, qui recalcule toutes les raretés.
   db.exec("UPDATE cards SET rarity = 'vedette' WHERE rarity = 'chef'");
+  const pullColumns = new Set((db.prepare('PRAGMA table_info(pulls)').all() as { name: string }[]).map((c) => c.name));
+  // Identifiant de la demande d'ouverture : une même demande rejouée (double clic, réseau, deux onglets) n'ouvre qu'une bobine.
+  if (!pullColumns.has('request_id')) {
+    db.exec('ALTER TABLE pulls ADD COLUMN request_id TEXT');
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS pulls_request ON pulls (player_id, request_id) WHERE request_id IS NOT NULL');
+  }
+  // Comptes : adresse et appareil d'inscription, pour limiter les comptes multiples.
+  const userCols = new Set((db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name));
+  if (!userCols.has('signup_ip')) {
+    db.exec('ALTER TABLE users ADD COLUMN signup_ip TEXT; ALTER TABLE users ADD COLUMN device_id TEXT; ALTER TABLE users ADD COLUMN device_fp TEXT;');
+    db.exec('CREATE INDEX IF NOT EXISTS users_signup_ip ON users (signup_ip); CREATE INDEX IF NOT EXISTS users_device ON users (device_id); CREATE INDEX IF NOT EXISTS users_fp ON users (device_fp);');
+  }
   const tradeColumns = new Set((db.prepare('PRAGMA table_info(trades)').all() as { name: string }[]).map((c) => c.name));
   // Cadeau : un échange à sens unique, conclu aussitôt.
   if (!tradeColumns.has('gift')) db.exec('ALTER TABLE trades ADD COLUMN gift INTEGER NOT NULL DEFAULT 0');

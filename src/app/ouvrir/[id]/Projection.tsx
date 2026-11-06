@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { BoosterPack } from '@/components/BoosterPack';
 import { Beam, Dust } from '@/components/Decor';
 import { GameCard } from '@/components/GameCard';
+import { broadcastChange } from '@/components/TabSync';
 import { CloseIcon, SoundIcon } from '@/components/Icons';
 import { Wordmark } from '@/components/Mark';
 import type { BoosterDef } from '@/lib/boosters';
@@ -169,6 +170,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   const speedRef = useRef<readonly [number, number]>(SPEEDS.normal);
   const introDone = useRef(false);
   const started = useRef(false);
+  const opening = useRef(false);
   const batchCount = useRef(0);
   const gateRef = useRef(layout.gate);
   const [gate, setGate] = useState<{ x: number; y: number; angle: number } | null>(null);
@@ -214,13 +216,18 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
   }, []);
 
   const open = useCallback(async () => {
+    // Une seule ouverture à la fois, même si l'on clique deux fois.
+    if (opening.current) return;
+    opening.current = true;
     setLoading(true);
     setError(null);
+    // Identifiant de cette ouverture : si la requête est rejouée, le serveur renvoie la même bobine.
+    const requestId = crypto.randomUUID();
     try {
       const res = await fetch('/api/open', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boosterId: booster.id }),
+        body: JSON.stringify({ boosterId: booster.id, requestId }),
       });
       const data = (await res.json()) as OpenResult | { error: string };
       if (!res.ok || 'error' in data) {
@@ -248,9 +255,12 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
       setBatches((prev) => [...prev, { index, size: data.cards.length, paidWith: data.paidWith }]);
       // Les extraits des musiques cultes sont cherchés dès maintenant, pour démarrer pile à la révélation.
       for (const card of data.cards) if (themeFor(card)) void loadTheme(card.id);
+      // Les autres onglets ouverts se mettent à jour (réserve, tickets) : rien ne reste périmé.
+      broadcastChange();
     } catch {
       setError('Connexion perdue. Réessayez.');
     } finally {
+      opening.current = false;
       setLoading(false);
     }
   }, [booster]);
@@ -624,7 +634,7 @@ export function Projection({ booster, cover, guest = false }: { booster: Booster
             <h2 id="garder" className="display">Gardez vos {currentCards.length} cartes</h2>
             <p>
               {best && <>Dont <b>{best.character ?? `${best.first} ${best.last}`}</b>, {RARITIES[best.rarity].label}. </>}
-              Elles sont mises de côté : créez un compte gratuit et elles rejoignent votre collection, avec 3 bobines offertes et 600 tickets.
+              Elles sont mises de côté : créez un compte gratuit et elles rejoignent votre collection, avec 10 bobines offertes et 600 tickets.
             </p>
             <div className={styles.keepCards}>
               {currentCards.map((f) => <GameCard key={f.key} card={f.card} width={92} eager />)}

@@ -6,7 +6,7 @@ import { logIn, signUp } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { clientIp, rateLimit, resetRateLimit, safePath, waitText } from '@/lib/security';
-import { startSession } from '@/lib/session';
+import { signupOrigin, startSession } from '@/lib/session';
 
 export type AuthState = { error?: string; fields?: Record<string, string> };
 
@@ -39,7 +39,7 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
   const wait = rateLimit(`signup:ip:${clientIp(await headers())}`, 5, 60 * MINUTE);
   if (wait) return { error: `Trop de comptes créés depuis cette connexion. Réessayez dans ${waitText(wait)}.`, fields };
   try {
-    const user = await signUp(getDb(), { ...fields, password: String(form.get('password') ?? '') });
+    const user = await signUp(getDb(), { ...fields, password: String(form.get('password') ?? ''), origin: await signupOrigin() });
     await startSession(user.id);
     (await cookies()).delete('clap_ref');
   } catch (err) {

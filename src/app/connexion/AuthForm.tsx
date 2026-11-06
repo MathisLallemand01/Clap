@@ -38,7 +38,7 @@ export function AuthForm({ mode, next, referral, googleError }: Props) {
 
       <div className={styles.title}>
         <h1 className="display">{isSignup ? <>Votre place<br />vous attend</> : <>Bon retour<br />en salle</>}</h1>
-        <p>{isSignup ? 'Trois bobines offertes et 600 tickets pour commencer.' : 'Vos bobines vous attendent.'}</p>
+        <p>{isSignup ? 'Dix bobines offertes, puis une toutes les 10 minutes, et 600 tickets pour commencer.' : 'Vos bobines vous attendent.'}</p>
       </div>
 
       <a href={googleHref} className={`btn btn-lg btn-block ${styles.google}`} onClick={curtain}>

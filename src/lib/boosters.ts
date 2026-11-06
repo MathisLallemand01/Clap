@@ -235,9 +235,9 @@ export function slotKinds(def: BoosterDef): Record<CardKind, number> {
   );
 }
 
-/** Bobines offertes : une toutes les 4 heures, 3 en réserve au maximum. */
-export const FREE_BOOSTER_EVERY_MS = 4 * 60 * 60 * 1000;
-export const FREE_BOOSTER_CAP = 3;
+/** Bobines offertes : une toutes les 10 minutes, 10 en réserve au maximum. */
+export const FREE_BOOSTER_EVERY_MS = 10 * 60 * 1000;
+export const FREE_BOOSTER_CAP = 10;
 
 /** Bobines arrivées avec la refonte : marquées « Nouveau » sur la page des bobines. */
 export const NEW_BOOSTERS = new Set(['sagas', 'casting-france', 'casting-asie', 'casting-age-dor', 'casting-legendes', 'pantheon', 'tout-clap', 'bande-originale', 'cinematheque', 'coree', 'bollywood', 'italie', 'espagne', 'drames', 'annees-70', 'annees-2010', 'nouveautes']);

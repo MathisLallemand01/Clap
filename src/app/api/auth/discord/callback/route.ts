@@ -5,7 +5,7 @@ import { linkDiscord, upsertDiscordUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { GameError } from '@/lib/game';
 import { safePath } from '@/lib/security';
-import { currentUser, startSession } from '@/lib/session';
+import { currentUser, signupOrigin, startSession } from '@/lib/session';
 
 type Pending = { state: string; next: string; referral?: string };
 type DiscordUser = { id: string; username: string; global_name?: string | null; avatar?: string | null; email?: string | null; verified?: boolean };
@@ -66,7 +66,14 @@ export async function GET(request: NextRequest) {
   const name = profile.global_name || profile.username;
   const safeNext = (fallback: string) => safePath(pending.next, fallback);
   if (!user) {
-    const signed = upsertDiscordUser(db, { id: profile.id, name, avatar: profile.avatar ?? null, email: profile.verified ? (profile.email ?? null) : null }, pending.referral || undefined);
+    let signed;
+    try {
+      signed = upsertDiscordUser(db, { id: profile.id, name, avatar: profile.avatar ?? null, email: profile.verified ? (profile.email ?? null) : null }, pending.referral || undefined, Date.now(), await signupOrigin());
+    } catch (err) {
+      // Compte refusé (une machine = un compte, 5 comptes par adresse) : on dit pourquoi.
+      if (err instanceof GameError) return NextResponse.redirect(new URL(`/connexion?erreur=${err.code}`, origin));
+      throw err;
+    }
     await startSession(signed.id);
     return NextResponse.redirect(new URL(safeNext('/bobines'), origin));
   }

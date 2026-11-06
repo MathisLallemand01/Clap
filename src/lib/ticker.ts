@@ -83,7 +83,7 @@ export function tickerNews(db: DatabaseSync): TickerItem[] {
   const plain = (key: string, text: string): TickerItem => ({ key, color: 'var(--ink)', shape: 'dot', text });
   return [
     plain('cat', `${formatNumber(actors)} acteurs · ${formatNumber(catalog.length - actors)} rôles`),
-    plain('free', 'Une bobine offerte toutes les 4 heures'),
+    plain('free', 'Une bobine offerte toutes les 10 minutes, 10 en réserve'),
     plain('day', `Bobine du jour : ${boosterOfTheDay().name}`),
     plain('event', `Événement : ${event.booster.name} · encore ${days} jour${days > 1 ? 's' : ''}`),
     plain('icons', `${icons} Icônes à débusquer`),

@@ -91,11 +91,36 @@ function findReferrer(db: DatabaseSync, code: string | undefined): string | null
   return row.id;
 }
 
+/** D'où vient une inscription : adresse IP, identifiant d'appareil (cookie) et empreinte de la machine. */
+export type SignupOrigin = { ip: string | null; device: string | null; fp: string | null };
+
+/** Au plus 5 comptes par adresse IP, et un seul par machine. */
+export const ACCOUNTS_PER_IP = 5;
+
+/**
+ * Refuse un nouveau compte si la machine en a déjà un (même cookie d'appareil ou même empreinte),
+ * ou si l'adresse IP a déjà servi à créer 5 comptes. Désactivable en local avec ACCOUNT_LIMITS=off.
+ */
+export function checkSignupOrigin(db: DatabaseSync, origin: SignupOrigin | undefined): void {
+  if (!origin || process.env.ACCOUNT_LIMITS === 'off') return;
+  const known = (column: 'device_id' | 'device_fp', value: string | null) =>
+    !!value && !!db.prepare(`SELECT 1 FROM users WHERE ${column} = ?`).get(value);
+  if (known('device_id', origin.device) || known('device_fp', origin.fp)) {
+    throw new GameError('device-taken', 'Un compte existe déjà sur cet appareil. Connectez-vous avec celui-ci : un seul compte par machine.');
+  }
+  if (origin.ip) {
+    const { n } = db.prepare('SELECT COUNT(*) AS n FROM users WHERE signup_ip = ?').get(origin.ip) as { n: number };
+    if (n >= ACCOUNTS_PER_IP) throw new GameError('ip-limit', `Cette connexion a déjà servi à créer ${ACCOUNTS_PER_IP} comptes : c’est le maximum.`);
+  }
+}
+
 function insertUser(
   db: DatabaseSync,
   fields: { name: string; email: string | null; passwordHash: string | null; googleSub?: string | null; avatar?: string | null; referredBy: string | null },
   now: number,
+  origin?: SignupOrigin,
 ): User {
+  checkSignupOrigin(db, origin);
   const id = randomUUID();
   const player = createPlayer(db, now);
   db.prepare(`INSERT INTO users (id, email, name, password_hash, google_sub, avatar, player_id, referral_code, referred_by, created_at)
@@ -103,7 +128,8 @@ function insertUser(
     id, fields.email, fields.name, fields.passwordHash, fields.googleSub ?? null, fields.avatar ?? null,
     player.id, makeReferralCode(db, fields.name), fields.referredBy, now,
   );
-  notify(db, id, 'welcome', 'Bienvenue en salle ! Trois bobines vous attendent.', '/bobines', now);
+  if (origin) db.prepare('UPDATE users SET signup_ip = ?, device_id = ?, device_fp = ? WHERE id = ?').run(origin.ip, origin.device, origin.fp, id);
+  notify(db, id, 'welcome', 'Bienvenue en salle ! Dix bobines vous attendent.', '/bobines', now);
   if (fields.referredBy) {
     notify(db, fields.referredBy, 'referral', `${fields.name} s’est inscrit avec votre code. Plus que ${3} bobines à ouvrir pour valider.`, '/parrainage', now);
   }
@@ -112,7 +138,7 @@ function insertUser(
 
 export async function signUp(
   db: DatabaseSync,
-  input: { name: string; email: string; password: string; referral?: string },
+  input: { name: string; email: string; password: string; referral?: string; origin?: SignupOrigin },
   now = Date.now(),
 ): Promise<User> {
   const name = input.name.trim();
@@ -124,8 +150,9 @@ export async function signUp(
   if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new GameError('email-taken', 'Un compte existe déjà avec cet e-mail.');
   if (db.prepare('SELECT 1 FROM users WHERE name = ?').get(name)) throw new GameError('name-taken', 'Ce pseudo est déjà pris.');
   const referredBy = findReferrer(db, input.referral);
+  checkSignupOrigin(db, input.origin);
   const passwordHash = await hashPassword(input.password);
-  return transaction(db, () => insertUser(db, { name, email, passwordHash, referredBy }, now));
+  return transaction(db, () => insertUser(db, { name, email, passwordHash, referredBy }, now, input.origin));
 }
 
 export async function logIn(db: DatabaseSync, emailInput: string, password: string): Promise<User> {
@@ -142,6 +169,7 @@ export function upsertGoogleUser(
   profile: { sub: string; email: string | null; name: string; picture: string | null },
   referral: string | undefined,
   now = Date.now(),
+  origin?: SignupOrigin,
 ): User {
   return transaction(db, () => {
     const bySub = db.prepare('SELECT * FROM users WHERE google_sub = ?').get(profile.sub) as UserRow | undefined;
@@ -158,7 +186,7 @@ export function upsertGoogleUser(
     } catch {
       referredBy = null;
     }
-    return insertUser(db, { name: availableName(db, profile.name), email, passwordHash: null, googleSub: profile.sub, avatar: profile.picture, referredBy }, now);
+    return insertUser(db, { name: availableName(db, profile.name), email, passwordHash: null, googleSub: profile.sub, avatar: profile.picture, referredBy }, now, origin);
   });
 }
 
@@ -193,6 +221,7 @@ export function upsertDiscordUser(
   profile: { id: string; name: string; avatar: string | null; email: string | null },
   referral: string | undefined,
   now = Date.now(),
+  origin?: SignupOrigin,
 ): User {
   return transaction(db, () => {
     const linked = db.prepare('SELECT * FROM users WHERE discord_id = ?').get(profile.id) as UserRow | undefined;
@@ -211,7 +240,7 @@ export function upsertDiscordUser(
       } catch {
         referredBy = null;
       }
-      userId = insertUser(db, { name: availableName(db, profile.name), email, passwordHash: null, referredBy }, now).id;
+      userId = insertUser(db, { name: availableName(db, profile.name), email, passwordHash: null, referredBy }, now, origin).id;
     }
     linkDiscord(db, userId, profile);
     return getUser(db, userId)!;

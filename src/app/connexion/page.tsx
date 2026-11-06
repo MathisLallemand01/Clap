@@ -21,6 +21,8 @@ const GOOGLE_ERRORS: Record<string, string> = {
   'discord-config': 'La connexion Discord n’est pas encore activée sur ce serveur : renseignez DISCORD_CLIENT_ID et DISCORD_CLIENT_SECRET dans .env, puis redémarrez.',
   'discord-cle': 'Discord a refusé la connexion : vérifiez DISCORD_CLIENT_SECRET et que la redirection du portail Discord est exactement <adresse du site>/api/auth/discord/callback.',
   'discord-refus': 'Connexion annulée sur Discord.',
+  'device-taken': 'Un compte existe déjà sur cet appareil : connectez-vous avec celui-ci. Un seul compte par machine.',
+  'ip-limit': 'Cette connexion a déjà servi à créer 5 comptes : c’est le maximum.',
 };
 
 type Search = { mode?: string; suite?: string; parrain?: string; erreur?: string };

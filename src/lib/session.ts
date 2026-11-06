@@ -1,7 +1,8 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { randomBytes } from 'node:crypto';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createSession, deleteSession, getUser, SESSION_DAYS, userForSession, type User } from './auth';
+import { createSession, deleteSession, getUser, SESSION_DAYS, userForSession, type SignupOrigin, type User } from './auth';
 import { nextCelebration, type Celebration } from './celebrations';
 import { getDb } from './db';
 import { adoptGuest, getPlayer, getStats, type Player, type PlayerStats } from './game';
@@ -36,6 +37,28 @@ export async function startSession(userId: string): Promise<void> {
     if (moved) notify(db, user.id, 'pull', `Vos ${moved} cartes de la première bobine sont rangées dans votre collection.`, '/collection');
     jar.delete(GUEST_COOKIE);
   }
+}
+
+/** Cookie d'appareil : un identifiant aléatoire gardé 5 ans, pour reconnaître la machine d'une inscription. */
+export const DEVICE_COOKIE = 'clap_device';
+/** Empreinte de la machine, calculée par la page (components/DeviceMark.tsx). */
+export const FINGERPRINT_COOKIE = 'clap_fp';
+
+/**
+ * D'où vient une inscription. À appeler depuis une server action ou un route handler : on y pose le cookie
+ * d'appareil s'il manque encore.
+ */
+export async function signupOrigin(): Promise<SignupOrigin> {
+  const jar = await cookies();
+  let device = jar.get(DEVICE_COOKIE)?.value ?? null;
+  if (!device || !/^[\w-]{16,64}$/.test(device)) {
+    device = randomBytes(18).toString('base64url');
+    jar.set(DEVICE_COOKIE, device, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 5 * 365 * 24 * 3600 });
+  }
+  const fp = jar.get(FINGERPRINT_COOKIE)?.value ?? null;
+  const h = await headers();
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || null;
+  return { ip, device, fp: fp && /^[a-f0-9]{16,64}$/.test(fp) ? fp : null };
 }
 
 export async function guestPlayerId(): Promise<string | null> {
