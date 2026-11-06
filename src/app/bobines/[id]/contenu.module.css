@@ -38,3 +38,10 @@
 
 .search { display: flex; flex-wrap: wrap; gap: 8px; }
 .search .input { flex: 1 1 260px; max-width: 420px; height: 44px; border-radius: 999px; }
+
+/* Garanties (tapis rouge, bobine mythique) et ouverture multiple. */
+.pity { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.pity b { color: var(--text); }
+.pityNow { flex-basis: 100%; font-weight: 700; font-size: 13px; }
+.pityHelp { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
+.multi { display: inline-flex; gap: 8px; }

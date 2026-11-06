@@ -10,7 +10,10 @@ import { CloseIcon, SoundIcon } from '@/components/Icons';
 import { Wordmark } from '@/components/Mark';
 import type { BoosterDef } from '@/lib/boosters';
 import { formatNumber } from '@/lib/format';
-import type { OpenResult, PulledCard } from '@/lib/game';
+import type { MultiOpenResult, OpenResult, PulledCard } from '@/lib/game';
+import { affordable } from '@/lib/limits';
+import { SPECIALS, specialsAhead, type Pity, type Special } from '@/lib/pity';
+import { sortForReveal } from '@/lib/pull';
 import { FAMILY, ladderOf, RARITIES, rarityName } from '@/lib/rarity';
 import type { Card } from '@/lib/types';
 import { calmPreference, speedPreference } from '@/lib/prefs';
@@ -44,7 +47,9 @@ const SPARKS = [
 const SPARK_COUNT: Record<number, number> = { 3: 3, 4: 5, 5: 7, 6: 8 };
 
 type Phase = 'sealed' | 'opening' | 'stack' | 'summary';
-type Pull = { id: number; batch: number; cards: PulledCard[]; paidWith: OpenResult['paidWith'] };
+type Pull = { id: number; batch: number; cards: PulledCard[]; paidWith: OpenResult['paidWith']; packs: number; specials: Special[] };
+/** Choix du nombre de bobines à ouvrir d'un coup. */
+const COUNTS = [1, 5, 10] as const;
 type Game = {
   phase: Phase;
   /** Avancée de la déchirure (0 à 1) et geste en cours. */
@@ -87,7 +92,18 @@ function CardBack() {
   );
 }
 
-export function Projection({ booster, cover, guest = false, firstOpen = false }: { booster: BoosterDef; cover: Card | null; guest?: boolean; firstOpen?: boolean }) {
+export function Projection({ booster, cover, guest = false, firstOpen = false, initialCount = 1, wallet, initialPity }: {
+  booster: BoosterDef;
+  cover: Card | null;
+  guest?: boolean;
+  firstOpen?: boolean;
+  /** Nombre de bobines demandé en arrivant (?n=5, ?n=tout). */
+  initialCount?: number;
+  /** Réserve offerte et tickets au chargement, pour savoir combien on peut en ouvrir. */
+  wallet?: { freeStock: number; tickets: number; unlimited: boolean };
+  /** Compteurs des garanties (Tapis rouge, Bobine mythique). */
+  initialPity?: Pity;
+}) {
   // L'état du jeu vit dans une référence (les minuteries lisent toujours la valeur à jour) ; `render` redessine.
   const g = useRef<Game>({ phase: 'sealed', tear: 0, held: false, torn: false, pull: null, index: 0, shown: null, stored: 0, leaving: [], charging: null, fast: false, error: null, nudge: 0 });
   const [, render] = useReducer((n: number) => n + 1, 0);
@@ -96,8 +112,13 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
     render();
   }, []);
 
-  const [tickets, setTickets] = useState<number | null>(null);
-  const [freeStock, setFreeStock] = useState<number | null>(null);
+  const [tickets, setTickets] = useState<number | null>(wallet?.tickets ?? null);
+  const [freeStock, setFreeStock] = useState<number | null>(wallet?.freeStock ?? null);
+  const [pity, setPity] = useState<Pity>(initialPity ?? { legend: 0, mythe: 0 });
+  // Nombre de bobines de la prochaine ouverture (×1, ×5, ×10 ou tout ce qui est disponible).
+  const [count, setCount] = useState(guest ? 1 : initialCount);
+  const countRef = useRef(count);
+  countRef.current = count;
   const [loading, setLoading] = useState(false);
   const [sound, setSound] = useState(true);
   const [volume, setVolume] = useState(0.3);
@@ -207,9 +228,9 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
       const res = await fetch('/api/open', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boosterId: booster.id, requestId }),
+        body: JSON.stringify({ boosterId: booster.id, requestId, count: countRef.current }),
       });
-      const data = (await res.json()) as OpenResult | { error: string };
+      const data = (await res.json()) as MultiOpenResult | { error: string };
       if (!res.ok || 'error' in data) {
         // Pas de bobine : le paquet se referme et l'on explique pourquoi.
         set({ error: 'error' in data ? data.error : 'L’ouverture a échoué.', phase: 'sealed', torn: false, tear: 0 });
@@ -217,10 +238,14 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
       }
       setTickets(data.player.tickets);
       setFreeStock(data.player.freeStock);
+      setPity(data.player.pity);
       const batch = batchCount.current++;
-      set({ pull: { id: data.pullId, batch, cards: data.cards, paidWith: data.paidWith }, index: 0, shown: null, stored: 0, leaving: [] });
+      // Plusieurs bobines : toutes leurs cartes forment une seule pile, toujours de la moins rare à la plus rare.
+      const all = sortForReveal(data.pulls.flatMap((p) => p.cards));
+      const specials = data.pulls.map((p) => p.special).filter((x): x is Special => x !== null);
+      set({ pull: { id: data.pulls[0].pullId, batch, cards: all, paidWith: data.pulls[0].paidWith, packs: data.pulls.length, specials }, index: 0, shown: null, stored: 0, leaving: [] });
       // Les extraits des musiques cultes sont cherchés dès maintenant, pour démarrer pile à la révélation.
-      for (const card of data.cards) if (themeFor(card)) void loadTheme(card.id);
+      for (const card of all) if (themeFor(card)) void loadTheme(card.id);
       // Les autres onglets ouverts se mettent à jour (réserve, tickets) : rien ne reste périmé.
       broadcastChange();
       // La pile monte quand la bande a fini de s'envoler.
@@ -438,9 +463,10 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
     advance();
   };
 
-  const another = () => {
+  const another = (next?: number) => {
     if (fastTimer.current) window.clearTimeout(fastTimer.current);
     themes.current?.stop();
+    if (next) setCount(next);
     set({ phase: 'sealed', tear: 0, held: false, torn: false, pull: null, index: 0, shown: null, stored: 0, leaving: [], charging: null, fast: false, error: null });
   };
 
@@ -471,20 +497,37 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
 
   const s = g.current;
   const cards = s.pull?.cards ?? [];
-  const n = cards.length || booster.slots.length;
+  // Ce qu'on peut ouvrir d'un coup, et ce que coûtera la prochaine ouverture.
+  const avail = affordable({ freeStock: freeStock ?? 0, tickets: tickets ?? 0, unlimited: wallet?.unlimited ?? false }, booster.price);
+  const packs = s.pull?.packs ?? count;
+  const n = cards.length || booster.slots.length * packs;
+  const ahead = s.phase === 'sealed' || s.phase === 'opening'
+    ? (booster.guarantee ? Array.from({ length: count }, () => booster.guarantee!) : specialsAhead(pity, family, count))
+    : [];
+  // Le paquet prend l'habit de la plus forte garantie qu'il contient (la mythique passe avant le tapis rouge).
+  const packSpecial: Special | null = s.pull ? (s.pull.specials.includes('mythique') ? 'mythique' : s.pull.specials[0] ?? null)
+    : ahead.includes('mythique') ? 'mythique' : ahead.includes('tapis-rouge') ? 'tapis-rouge' : null;
+  const costOf = (k: number) => {
+    const free = Math.min(freeStock ?? 0, k);
+    const paid = (k - free) * booster.price;
+    return paid === 0 ? `offerte${k > 1 ? 's' : ''}` : free > 0 ? `${free} offerte${free > 1 ? 's' : ''} + ${formatNumber(paid)} tk` : `${formatNumber(paid)} tickets`;
+  };
   const top = s.phase === 'stack' && s.shown === null ? cards[s.index] : undefined;
   const topTier = top ? tierOf(top) : 0;
   const shownCard = s.shown !== null ? cards[s.shown] : undefined;
   const shownTier = shownCard ? tierOf(shownCard) : 0;
   const { cw, pw } = dims;
-  const best = [...cards].sort((a, b) => RARITIES[b.rarity].entries - RARITIES[a.rarity].entries)[0];
-  const bestIndex = best ? cards.indexOf(best) : -1;
+  // Générique : les 5 meilleures cartes (toutes s'il n'y en a que 5), la meilleure à la fin, soulevée.
+  const shownInSummary = cards.length > 5 ? sortForReveal([...cards].sort((a, b) => RARITIES[b.rarity].entries - RARITIES[a.rarity].entries).slice(0, 5)) : cards;
+  const best = shownInSummary[shownInSummary.length - 1];
+  const bestIndex = shownInSummary.length - 1;
   const newCount = cards.filter((c) => c.isNew).length;
   const gained = cards.reduce((sum, c) => sum + RARITIES[c.rarity].entries, 0);
-  const nextCost = freeStock && freeStock > 0 ? `offerte (${freeStock} en réserve)` : `${formatNumber(booster.price)} tickets`;
-  const canAfford = (freeStock ?? 0) > 0 || (tickets ?? 0) >= booster.price;
+  const canAfford = avail >= 1;
+  // ×1, ×5, ×10, puis « Tout » : tout ce que la réserve et les tickets permettent (50 au plus).
+  const pickOptions = [...COUNTS.map((k) => ({ k: k as number, label: `×${k}` })), ...(avail > 1 && !COUNTS.includes(avail as 1) ? [{ k: avail, label: `Tout · ${avail}` }] : [])];
   // Générique : 5 cartes de même taille (la meilleure un peu plus grande), qui tiennent en largeur et en hauteur.
-  const summaryW = Math.floor(Math.max(52, Math.min(cw * 0.62, (dims.tw - 32 - (n - 1) * (dims.tw < 560 ? 8 : 12)) / (n + 0.08), (dims.th - 150) / 1.4 / 1.08)));
+  const summaryW = Math.floor(Math.max(52, Math.min(cw * 0.62, (dims.tw - 32 - (shownInSummary.length - 1) * (dims.tw < 560 ? 8 : 12)) / (shownInSummary.length + 0.08), (dims.th - 150) / 1.4 / 1.08)));
   const mark = FAMILY[family].mark;
   // Salle teintée à la couleur d'une carte de cran 5 ou 6 (et assombrie pendant qu'on maintient un Mythe).
   const tint = shownCard && shownTier >= 5 && !s.fast ? RARITIES[shownCard.rarity].color : null;
@@ -557,7 +600,14 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
               tabIndex={0}
               aria-label={`Déchirer la bobine ${booster.name} : maintenez le clic et glissez vers la droite, ou maintenez la flèche droite`}
             >
-              <BoosterPack booster={booster} cover={cover} width={pw} tear={s.tear} torn={s.torn} held={s.held} className={styles.pack} />
+              {/* Plusieurs bobines : les autres paquets attendent derrière, un peu décalés. */}
+              {packs > 1 && [2, 1].map((k) => (
+                <span key={k} className={styles.packGhost} style={{ '--k': k } as CSSProperties} aria-hidden="true">
+                  <BoosterPack booster={booster} cover={cover} width={pw} special={packSpecial} />
+                </span>
+              ))}
+              <BoosterPack booster={booster} cover={cover} width={pw} tear={s.tear} torn={s.torn} held={s.held} special={packSpecial} className={styles.pack} />
+              {packs > 1 && <span className={styles.packCount}>×{packs}</span>}
               {s.phase === 'opening' && <span className={styles.leak} />}
               {s.held && s.tear > 0.02 && (
                 <span className={styles.flecks}>
@@ -570,6 +620,12 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
                 </span>
               )}
             </div>
+            {packSpecial && !s.error && (
+              <span className={`${styles.specialChip} ${packSpecial === 'mythique' ? styles.specialMythe : styles.specialRed}`}>
+                <b>{SPECIALS[packSpecial].name}</b> · {SPECIALS[packSpecial].guarantee(family)}
+                {packs > 1 && ahead.filter(Boolean).length > 1 ? ` (×${ahead.filter(Boolean).length})` : ''}
+              </span>
+            )}
             <div className={styles.packHint} role="status">
               {s.error ? (
                 <span className={styles.error}>{s.error} <Link href="/bobines">Voir les bobines</Link></span>
@@ -666,9 +722,9 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
         {/* Le générique de fin : les cartes alignées, la meilleure soulevée. */}
         {s.phase === 'summary' && s.pull && (
           <div className={styles.summary}>
-            <span className="eyebrow">Bobine {String(s.pull.batch + 1).padStart(2, '0')} · {booster.name} · résumé</span>
+            <span className="eyebrow">{s.pull.packs > 1 ? `${s.pull.packs} bobines · ${cards.length} cartes · les 5 meilleures` : `Bobine ${String(s.pull.batch + 1).padStart(2, '0')} · ${booster.name} · résumé`}</span>
             <div className={styles.summaryRow}>
-              {cards.map((card, i) => (
+              {shownInSummary.map((card, i) => (
                 <div key={`${s.pull!.id}-${i}`} className={`${styles.summaryCard} ${i === bestIndex ? styles.summaryBest : ''}`} style={{ animationDelay: `${i * 70}ms`, '--rc': RARITIES[card.rarity].color } as CSSProperties}>
                   <GameCard card={card} width={i === bestIndex ? Math.round(summaryW * 1.08) : summaryW} serial={card.serial} eager />
                   <span className={styles.summaryTag} style={{ color: i === bestIndex ? RARITIES[card.rarity].color : card.isNew ? '#3DDC97' : undefined }}>
@@ -678,7 +734,9 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
               ))}
             </div>
             <div className={styles.summaryStats}>
+              {s.pull.packs > 1 && <span>{cards.length} CARTES</span>}
               <span>+{newCount} NOUVELLE{newCount > 1 ? 'S' : ''}</span>
+              {s.pull.specials.map((sp, k) => <span key={k} style={{ color: SPECIALS[sp].color }}>{SPECIALS[sp].short}</span>)}
               <span className={styles.gain}>+{formatNumber(gained)} ENTRÉES</span>
               {best && <span style={{ color: RARITIES[best.rarity].color }}>{mark} {rarityName(best.rarity).toUpperCase()}</span>}
             </div>
@@ -710,7 +768,9 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
         </div>
         <div className={styles.trayRow}>
           <div className={styles.slots}>
-            {Array.from({ length: n }, (_, i) => {
+            {/* Au-delà de 10 cartes, la rangée montre les 10 dernières rangées et un compteur. */}
+            {n > 10 && s.stored > 10 && <span className={styles.miniMore}>+{s.stored - 10}</span>}
+            {(n > 10 ? Array.from({ length: Math.min(10, Math.max(s.stored, 0)) }, (_, k) => Math.max(0, s.stored - 10) + k) : Array.from({ length: n }, (_, i) => i)).map((i) => {
               const card = i < s.stored ? cards[i] : undefined;
               return card ? (
                 <span key={`${s.pull?.id}-${i}`} className={`${styles.mini} ${styles.miniIn}`} style={{ '--rc': RARITIES[card.rarity].color } as CSSProperties} title={`${cardTitle(card)} · ${rarityName(card.rarity)}`}>
@@ -728,9 +788,24 @@ export function Projection({ booster, cover, guest = false, firstOpen = false }:
             {s.phase === 'summary' && guest && (
               <button type="button" className="btn btn-sm btn-primary" onClick={() => setKeepOpen(true)}>Garder mes cartes</button>
             )}
+            {(s.phase === 'sealed' || s.phase === 'summary') && !guest && (
+              // Combien de bobines ouvrir : une, cinq, dix, ou tout ce qui est disponible.
+              <div className={styles.counts} role="radiogroup" aria-label="Nombre de bobines à ouvrir">
+                {pickOptions.map(({ k, label }) => (
+                  <button
+                    key={label} type="button" role="radio" aria-checked={count === k}
+                    className={count === k ? styles.countOn : undefined}
+                    disabled={k > avail || k < 1}
+                    onClick={() => (s.phase === 'summary' ? another(k) : setCount(k))}
+                    title={`${k} bobine${k > 1 ? 's' : ''} · ${costOf(k)}`}
+                  >{label}</button>
+                ))}
+              </div>
+            )}
+            {s.phase === 'sealed' && !guest && count > 1 && <span className={styles.costNote}>{costOf(count)}</span>}
             {s.phase === 'summary' && !guest && (
               <>
-                <button type="button" className="btn btn-sm btn-primary" onClick={another} disabled={loading || !canAfford}>Une autre · {nextCost}</button>
+                <button type="button" className="btn btn-sm btn-primary" onClick={() => another(Math.min(count, avail) || 1)} disabled={loading || !canAfford}>Encore ×{Math.min(count, avail) || 1} · {costOf(Math.min(count, avail) || 1)}</button>
                 <Link href="/bobines" className="btn btn-sm">Changer de bobine</Link>
                 <Link href="/collection" className="btn btn-sm">Ranger</Link>
               </>

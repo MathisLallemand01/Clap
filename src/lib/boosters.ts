@@ -1,4 +1,5 @@
 import type { ActorRarity, CardKind, Rarity, RoleRarity } from './rarity.ts';
+import type { Special } from './pity.ts';
 
 export type Odds<R extends Rarity = Rarity> = Partial<Record<R, number>>;
 
@@ -44,6 +45,8 @@ export type BoosterDef = {
   pool?: 'themes' | 'famous' | 'sagas' | 'acclaimed';
   /** `tv` : uniquement des rôles de séries. Les autres bobines Film ne contiennent que du cinéma. */
   media?: 'tv';
+  /** Bobines d'essai : garantie forcée à chaque ouverture (pour voir les paquets Tapis rouge et Mythique). */
+  guarantee?: Special;
   slots: Slot[];
   theme: PackTheme;
 };
@@ -198,6 +201,13 @@ const specs: Spec[] = [
   { id: 'casting-age-dor', name: 'Casting Âge d’or', group: 'era', price: 400, tags: ['decade:1920', 'decade:1930', 'decade:1940', 'decade:1950', 'decade:1960'],
     description: 'Cinq cartes Acteur des classiques : Bogart, Monroe, Gabin, Hepburn…', slots: actors(5),
     theme: { hue: '#D8CFC0', base: '#22201C', metal: '#3A372F', label: 'CASTING · 1920 – 1969', title: 'Âge\nd’or' } },
+  // Bobines d'essai : la garantie tombe à chaque fois, pour voir les paquets Tapis rouge et Mythique.
+  { id: 'essai-tapis-rouge', name: 'Essai · Tapis rouge', group: 'event', price: 100, guarantee: 'tapis-rouge',
+    description: 'Bobine d’essai : chaque ouverture est un Tapis rouge, Légende garantie.', slots: actors(5),
+    theme: { hue: '#FFC83D', base: '#2A0A0E', metal: '#4A1018', label: 'ESSAI · GARANTIE', title: 'Tapis\nrouge', chance: ['LÉGENDE', '100 %'] } },
+  { id: 'essai-mythique', name: 'Essai · Bobine mythique', group: 'event', price: 100, guarantee: 'mythique',
+    description: 'Bobine d’essai : chaque ouverture est une Bobine mythique, Mythe garanti.', slots: roles(5),
+    theme: { hue: '#FF2440', base: '#2A0308', metal: '#4A0A12', label: 'ESSAI · GARANTIE', title: 'Bobine\nmythique', chance: ['MYTHE', '100 %'] } },
   { id: 'casting-legendes', name: 'Casting Légendes', group: 'event', price: 1200,
     description: 'Cinq cartes Acteur, au moins Premier rôle : Légende 15 %.', slots: actors(5, ACTOR_LEGEND_ODDS),
     theme: { hue: '#FFC83D', base: '#2A2008', metal: '#4A3A10', label: 'CASTING · ÉVÉNEMENT', title: 'Légendes', chance: ['LÉGENDE', '15 %'] } },

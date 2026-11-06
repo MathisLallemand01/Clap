@@ -171,3 +171,41 @@
   100% { transform: translate(14em, -11em) rotate(32deg); opacity: 0; }
 }
 @keyframes slit-out { 0% { opacity: 1; } 100% { opacity: 0; transform: scaleY(3); } }
+
+/* ——— Paquets garantis ———
+   Tapis rouge : velours rouge, galons dorés, bandeau en travers, halo doré.
+   Bobine mythique : rouge profond, contour arc-en-ciel qui tourne lentement, comme la rareté Mythe. */
+.specialTint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; }
+.tapis .specialTint { background: linear-gradient(180deg, rgba(150, 18, 30, 0.55), rgba(90, 8, 16, 0.25) 40%, rgba(150, 18, 30, 0.6)); }
+.mythique .specialTint { background: radial-gradient(ellipse at 50% 35%, rgba(255, 36, 64, 0.35), rgba(60, 0, 8, 0.65)); }
+.sash {
+  /* Un tampon posé de travers sur la photo, comme un macaron « édition spéciale ». */
+  position: absolute; left: 1.3em; top: 10.6em; z-index: 4; padding: 0.4em 0.7em; transform: rotate(-9deg);
+  font-family: var(--display); font-stretch: 62%; font-weight: 900; font-size: 1.05em; letter-spacing: 0.06em; line-height: 1;
+  color: #ffe08a; background: rgba(60, 4, 10, 0.82); border: 0.14em solid #d4a446; border-radius: 0.2em;
+  box-shadow: 0 0 0 0.14em rgba(60, 4, 10, 0.82), 0 0.4em 1em rgba(0, 0, 0, 0.5);
+}
+.sash b { font-weight: 900; }
+.mythique .sash {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(rgba(60, 0, 8, 0.9), rgba(60, 0, 8, 0.9)) padding-box, linear-gradient(90deg, #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93) border-box;
+}
+.ribbon {
+  position: absolute; left: 0.9em; right: 0.9em; bottom: 2.35em; z-index: 4; padding: 0.42em 0.4em; border-radius: 0.25em;
+  text-align: center; font-family: var(--mono); font-size: 0.54em; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #ffe9b0; background: linear-gradient(180deg, #8a0f1c, #5a0712); border: 0.12em solid #d4a446; box-shadow: 0 0.4em 1em rgba(0, 0, 0, 0.5);
+}
+.mythique .ribbon { color: #fff; background: linear-gradient(180deg, #a3081d, #4a0009); border-color: #ff8a9a; }
+.tapis .foot, .mythique .foot, .tapis .seal2026, .mythique .seal2026 { opacity: 0; }
+/* Halo doré (tapis rouge) ou contour arc-en-ciel (mythique), autour du paquet. */
+@property --pack-turn { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.specialRing { position: absolute; inset: -0.35em; border-radius: 0.5em; pointer-events: none; z-index: -1; }
+.tapis .specialRing { box-shadow: 0 0 0 0.12em rgba(255, 200, 61, 0.7), 0 0 2.2em rgba(255, 200, 61, 0.45); animation: tapis-glow 2.4s ease-in-out infinite; }
+.mythique .specialRing {
+  padding: 0.18em; background: conic-gradient(from var(--pack-turn), #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93, #ff2440);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  filter: drop-shadow(0 0 1em rgba(255, 36, 64, 0.6)); animation: pack-turn 5s linear infinite;
+}
+@keyframes tapis-glow { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes pack-turn { to { --pack-turn: 360deg; } }

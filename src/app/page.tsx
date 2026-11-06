@@ -55,7 +55,6 @@ export default async function LandingPage() {
   return (
     <>
       <Nav ctx={ctx} />
-      <Ticker items={tickerDrops(db)} variant="live" />
       <SideRails left="CLAP · LE CINÉMA, CARTE PAR CARTE · 35 MM" right="EN SALLE · SÉANCE PERMANENTE" />
       <main className={styles.main}>
         {/* Hero */}
@@ -105,6 +104,9 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Les derniers grands tirages, entre l'accroche et la suite de la page. */}
+        <div className={styles.tickerSlot}><Ticker items={tickerDrops(db)} variant="live" /></div>
 
         {/* Bande de cartes */}
         <section aria-labelledby="generique">

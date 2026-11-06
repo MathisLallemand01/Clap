@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { createPlayer, GameError, getPlayer, guestHasOpened, openBoosterFor } from '@/lib/game';
+import { createPlayer, GameError, getPlayer, guestHasOpened, openBoostersFor } from '@/lib/game';
 import { clientIp, rateLimit, waitText } from '@/lib/security';
 import { currentUser, GUEST_COOKIE } from '@/lib/session';
 import { isHttpsHeaders } from '@/lib/origin';
@@ -19,16 +19,18 @@ export async function POST(request: Request) {
     try { originHost = new URL(origin).host; } catch { originHost = null; }
     if (originHost !== host) return NextResponse.json({ error: 'Origine refusée.' }, { status: 403 });
   }
-  const body = (await request.json().catch(() => null)) as { boosterId?: unknown; requestId?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { boosterId?: unknown; requestId?: unknown; count?: unknown } | null;
   if (typeof body?.boosterId !== 'string') {
     return NextResponse.json({ error: 'Bobine manquante.' }, { status: 400 });
   }
   // Identifiant de la demande, fourni par la page : rejouée, elle renvoie la même bobine au lieu d'en ouvrir une autre.
   const requestId = typeof body.requestId === 'string' && /^[\w-]{8,64}$/.test(body.requestId) ? body.requestId : undefined;
+  // Plusieurs bobines d'un coup (×5, ×10, tout) : chacune est une ouverture normale, voir openBoostersFor.
+  const count = typeof body.count === 'number' && Number.isFinite(body.count) ? body.count : 1;
   const db = getDb();
   const user = await currentUser();
   try {
-    if (user) return NextResponse.json({ ...openBoosterFor(db, user.playerId, body.boosterId, { requestId }), guest: false });
+    if (user) return NextResponse.json({ ...openBoostersFor(db, user.playerId, body.boosterId, count, { requestId }), guest: false });
 
     const jar = await cookies();
     let guestId = jar.get(GUEST_COOKIE)?.value;
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
       guestId = createPlayer(db).id;
       jar.set(GUEST_COOKIE, guestId, { httpOnly: true, sameSite: 'lax', secure: isHttpsHeaders(request.headers), path: '/', maxAge: 30 * 24 * 3600 });
     }
-    return NextResponse.json({ ...openBoosterFor(db, guestId, body.boosterId, { topFirst: true, requestId }), guest: true });
+    return NextResponse.json({ ...openBoostersFor(db, guestId, body.boosterId, 1, { topFirst: true, requestId }), guest: true });
   } catch (err) {
     if (err instanceof GameError) {
       const status = err.code === 'not-enough-tickets' ? 402 : 400;

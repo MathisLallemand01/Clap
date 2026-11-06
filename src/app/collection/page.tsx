@@ -6,7 +6,6 @@ import { Footer, Nav } from '@/components/Nav';
 import { PendingBar } from '@/components/PendingBar';
 import { SideRails } from '@/components/SideRails';
 import { TabContent } from '@/components/TabContent';
-import { Ticker } from '@/components/Ticker';
 import { countByRarity, getCatalog, searchCards } from '@/lib/catalog';
 import { playerDuos, playerSagas } from '@/lib/collections';
 import { getDb } from '@/lib/db';
@@ -14,7 +13,6 @@ import { formatEntries, formatNumber } from '@/lib/format';
 import { DUO_BONUS, getCollection, recyclePlan } from '@/lib/game';
 import { FAMILY, ladderOf, RARITIES, type CardKind, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
-import { tickerDrops } from '@/lib/ticker';
 import { claimSagaAction, recycleAction } from './actions';
 import styles from './collection.module.css';
 
@@ -61,7 +59,6 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
   return (
     <>
       <Nav ctx={ctx} current="/collection" />
-      <Ticker items={tickerDrops(db)} variant="live" />
       <SideRails left="CLAP · COLLECTION · INVENTAIRE DES BOBINES" right="RÉSERVE · RAYON A · ÉTAGÈRE 3" />
       <main className="container page">
         <p className="slug">INT. LA RÉSERVE DES BOBINES — NUIT <span>PLAN 02 / PRISE 01</span></p>

@@ -12,6 +12,8 @@ import { getDb } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { RARITIES, RARITIES_BY_VALUE, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
+import { affordable } from '@/lib/limits';
+import { nextSpecial, pityLeft, SPECIALS } from '@/lib/pity';
 import styles from './contenu.module.css';
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ rarete?: string; voir?: string; q?: string; page?: string }> };
@@ -43,6 +45,9 @@ export default async function BoosterContentPage({ params, searchParams }: Props
   const focus = (sp.rarete && sp.rarete in RARITIES ? sp.rarete : null) as Rarity | null;
   const missingOnly = sp.voir === 'manquantes';
   const free = ctx.wallet.freeStock > 0;
+  const can = affordable({ freeStock: ctx.player.freeStock, tickets: ctx.player.tickets, unlimited: ctx.player.unlimited }, booster.price);
+  const special = booster.guarantee ?? nextSpecial(ctx.player.pity, booster.family);
+  const left = pityLeft(ctx.player.pity);
 
   // Dans chaque rareté : d'abord les cartes possédées, puis les plus célèbres.
   const sortTier = (r: Rarity) => {
@@ -63,7 +68,7 @@ export default async function BoosterContentPage({ params, searchParams }: Props
 
         <header className={styles.hero}>
           <div className={styles.heroArt}>
-            <BoosterPack booster={booster} cover={boosterCover(db, booster)} width={260} float interactive />
+            <BoosterPack booster={booster} cover={boosterCover(db, booster)} width={260} float interactive special={special} />
           </div>
           <div className={styles.heroText}>
             <span className="eyebrow">Bobine {FAMILY_SHELVES[booster.family].title.replace(/s$/, '')} · {GROUP_LABELS[booster.group]} · {booster.slots.length} cartes {booster.family === 'actor' ? 'Acteur' : 'Rôle'}, de la moins rare à la plus rare</span>
@@ -76,8 +81,21 @@ export default async function BoosterContentPage({ params, searchParams }: Props
               </div>
               <span className={styles.meterNote}>Répartition des cartes possibles, de la moins probable à la plus probable.</span>
             </div>
+            {/* Garanties : où en est le joueur, et la prochaine bobine est-elle garantie ? */}
+            <div className={styles.pity}>
+              {special && <span className={styles.pityNow} style={{ color: SPECIALS[special].color }}>★ Votre prochaine bobine : {SPECIALS[special].name} · {SPECIALS[special].guarantee(booster.family)}</span>}
+              <span>Tapis rouge dans <b>{left.tapisRouge}</b> bobine{left.tapisRouge > 1 ? 's' : ''}</span>
+              {booster.family === 'role' && <span>Bobine mythique dans <b>{left.mythique}</b> bobine{left.mythique > 1 ? 's' : ''}</span>}
+              <Link href="/raretes#garanties" className={styles.pityHelp}>Comment ça marche</Link>
+            </div>
             <div className={styles.ctas}>
               <Link href={`/ouvrir/${booster.id}`} className="btn btn-primary btn-lg">{free ? 'Ouvrir · offerte' : `Ouvrir · ${formatNumber(booster.price)} TK`}</Link>
+              {can > 1 && (
+                <span className={styles.multi} aria-label="Ouvrir plusieurs bobines">
+                  {[5, 10].filter((k) => k <= can).map((k) => <Link key={k} href={`/ouvrir/${booster.id}?n=${k}`} className="btn btn-lg">×{k}</Link>)}
+                  {![5, 10].includes(can) && <Link href={`/ouvrir/${booster.id}?n=tout`} className="btn btn-lg">Tout · {can}</Link>}
+                </span>
+              )}
               <Link href={missingOnly ? `/bobines/${id}` : `/bobines/${id}?voir=manquantes`} className="btn btn-lg">{missingOnly ? 'Tout afficher' : 'Voir les manquantes'}</Link>
               <Link href={`/catalogue?bobine=${booster.id}`} className="btn btn-lg">Filtrer dans le catalogue</Link>
             </div>

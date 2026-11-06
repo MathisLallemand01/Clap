@@ -1,3 +1,4 @@
+import type { Special } from './pity.ts';
 import type { BoosterDef, Slot } from './boosters.ts';
 import { ladderOf, RARITIES, type Rarity } from './rarity.ts';
 import { themeFor } from './themes.ts';
@@ -83,12 +84,37 @@ export function topRarity(slot: Slot): Rarity {
  * `topFirst` : le premier slot donne la rareté la plus haute qu'il permet (cadeau de la toute première bobine) ;
  * cette carte-là est donc révélée en dernier.
  */
-export function openBooster(def: BoosterDef, catalog: Card[], rng: Rng = Math.random, { topFirst = false } = {}): Card[] {
+export function openBooster(
+  def: BoosterDef,
+  catalog: Card[],
+  rng: Rng = Math.random,
+  { topFirst = false, guarantee, fallback }: { topFirst?: boolean; guarantee?: Special | null; fallback?: Card[] } = {},
+): Card[] {
   const pool = boosterPool(def, catalog);
   const cards: Card[] = [];
   for (const [i, slot] of def.slots.entries()) {
     const card = pickCard(slot.kind, topFirst && i === 0 ? topRarity(slot) : rollRarity(slot, rng), pool, rng);
     if (card) cards.push(card);
+  }
+  // Garantie (tapis rouge, bobine mythique) : si la chance ne l'a pas déjà donnée, la carte la plus commune
+  // est remplacée par une carte du cran garanti, prise dans la bobine (ou, à défaut, dans tout le catalogue).
+  const family = def.slots[0]?.kind;
+  if (guarantee && family) {
+    const want: Rarity = guarantee === 'mythique' ? 'mythe' : family === 'actor' ? 'legende' : 'icone';
+    const meets = (c: Card) => (guarantee === 'mythique' ? c.rarity === 'mythe' : RARITIES[c.rarity].tier >= 5);
+    if (!cards.some(meets)) {
+      const series = def.media === 'tv';
+      const fromPool = pool.filter((c) => c.rarity === want);
+      const wider = (fallback ?? []).filter((c) => c.kind === family && c.rarity === want);
+      const sameMedia = wider.filter((c) => c.kind === 'actor' || isSeries(c) === series);
+      const source = fromPool.length ? fromPool : sameMedia.length ? sameMedia : wider;
+      if (source.length) {
+        const lowest = cards.reduce((lo, c, i) => (RARITIES[c.rarity].tier < RARITIES[cards[lo].rarity].tier ? i : lo), 0);
+        const pick = source[Math.floor(rng() * source.length)];
+        if (cards.length) cards[lowest] = pick;
+        else cards.push(pick);
+      }
+    }
   }
   return sortForReveal(cards);
 }

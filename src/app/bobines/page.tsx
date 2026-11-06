@@ -18,6 +18,7 @@ import { formatNumber } from '@/lib/format';
 import { FAMILY, ladderOf, RARITIES, rarityName, type Rarity } from '@/lib/rarity';
 import { requireContext } from '@/lib/session';
 import { tickerNews } from '@/lib/ticker';
+import { MYTHIQUE_AT, pityLeft, TAPIS_ROUGE_EVERY } from '@/lib/pity';
 import styles from './bobines.module.css';
 
 export const metadata: Metadata = { title: 'Bobines' };
@@ -63,10 +64,10 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
   const progress = (id: string) => progressAll.get(id) ?? { owned: 0, total: 0 };
   const eventOdds = event.slots[event.slots.length - 1].odds as Partial<Record<Rarity, number>>;
 
+  const pity = pityLeft(ctx.player.pity);
   return (
     <>
       <Nav ctx={ctx} current="/bobines" />
-      <Ticker items={tickerNews(db)} variant="news" />
       <SideRails left="CLAP · PELLICULE 35 MM · KODAK VISION3 5219 · 24 IPS" right={`BOBINES ${BOOSTERS.length} · SALLE 7 · SÉANCE EN COURS`} />
       <main className={styles.main}>
         <section className={styles.hero}>
@@ -91,6 +92,19 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
                 {Array.from({ length: FREE_BOOSTER_CAP }, (_, i) => <span key={i} className={i < ctx.wallet.freeStock ? styles.full : ''} />)}
                 <small>{ctx.wallet.freeStock >= FREE_BOOSTER_CAP ? 'RÉSERVE PLEINE' : 'RÉSERVE'} · {ctx.wallet.freeStock} / {FREE_BOOSTER_CAP}</small>
               </div>
+              {/* Garanties : deux jauges, Tapis rouge (toutes les 25) et Bobine mythique (à 200). */}
+              <div className={styles.pity}>
+                <Link href="/raretes#garanties" className={styles.pityGauge} title={`Toutes les ${TAPIS_ROUGE_EVERY} bobines : Légende ou Icône garantie`}>
+                  <span className={styles.pityName} style={{ color: '#FFC83D' }}>★ Tapis rouge</span>
+                  <span className={styles.pityBar}><i style={{ width: `${(ctx.player.pity.legend / TAPIS_ROUGE_EVERY) * 100}%`, background: '#FFC83D' }} /></span>
+                  <span className={styles.pityLeft}>{pity.tapisRouge === 1 ? 'la prochaine !' : `dans ${pity.tapisRouge}`}</span>
+                </Link>
+                <Link href="/raretes#garanties" className={styles.pityGauge} title={`À ${MYTHIQUE_AT} bobines sans Mythe : la prochaine bobine Film est mythique`}>
+                  <span className={styles.pityName} style={{ color: '#FF5A70' }}>◆ Bobine mythique</span>
+                  <span className={styles.pityBar}><i className={styles.pityRainbow} style={{ width: `${(ctx.player.pity.mythe / MYTHIQUE_AT) * 100}%` }} /></span>
+                  <span className={styles.pityLeft}>{pity.mythique === 1 ? 'la prochaine Film !' : `dans ${pity.mythique}`}</span>
+                </Link>
+              </div>
             </div>
             <div className={styles.fan}>
               <Rays color="rgba(255, 74, 28, 0.1)" className={styles.rays} />
@@ -103,6 +117,9 @@ export default async function BoostersPage({ searchParams }: { searchParams: Pro
             </div>
           </div>
         </section>
+
+        {/* À l'affiche : entre l'accroche et l'événement, à sa place dans la page. */}
+        <div className={styles.tickerSlot}><Ticker items={tickerNews(db)} variant="news" /></div>
 
         <section className="container" aria-labelledby="evenement" style={{ ['--hue' as string]: event.theme.hue }}>
           <EventFrame holo className={styles.event}>

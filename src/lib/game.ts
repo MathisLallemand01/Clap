@@ -5,12 +5,17 @@ import { getCard, getCatalog, poolOf } from './catalog.ts';
 import { rowToCard, transaction, type CardRow } from './db.ts';
 import { logEvent, notify, notifyPlayer } from './notify.ts';
 import { openBooster, type Rng } from './pull.ts';
+import { nextSpecial, type Pity, type Special } from './pity.ts';
+import { MAX_OPEN_AT_ONCE } from './limits.ts';
+export { MAX_OPEN_AT_ONCE } from './limits.ts';
 import { RARITIES, rarityName, suggestedTickets } from './rarity.ts';
 import type { Card, OwnedCard } from './types.ts';
 
 export { getCatalog };
 
 export const STARTING_TICKETS = 600;
+/** Sièges de départ : de quoi acheter une ou deux cartes communes au Guichet. */
+export const STARTING_SEATS = 20;
 /** Récompense de parrainage, pour le parrain comme pour le filleul. */
 export const REFERRAL_REWARD = 500;
 /** Le parrainage est validé quand le filleul a ouvert ce nombre de bobines. */
@@ -30,12 +35,17 @@ export type Player = {
   nextFreeAt: number | null;
   /** Compte de test : les tickets ne sont jamais débités. */
   unlimited: boolean;
+  /** Sièges : la monnaie du Guichet (acheter des cartes aux autres joueurs). */
+  seats: number;
+  /** Bobines ouvertes depuis la dernière grosse carte (garanties Tapis rouge et Bobine mythique). */
+  pity: Pity;
 };
 
 /** Solde affiché pour un compte illimité : assez pour que tous les achats passent. */
 export const UNLIMITED_TICKETS = 999_999_999;
 
-type PlayerRow = { id: string; tickets: number; free_stock: number; free_updated_at: number; unlimited: number };
+type PlayerRow = { id: string; tickets: number; free_stock: number; free_updated_at: number; unlimited: number; seats: number; pity_legend: number; pity_mythe: number };
+const PLAYER_COLUMNS = 'id, tickets, free_stock, free_updated_at, unlimited, seats, pity_legend, pity_mythe';
 
 export class GameError extends Error {
   readonly code: string;
@@ -61,18 +71,20 @@ function toPlayer(row: PlayerRow, stock: number, updatedAt: number): Player {
     freeStock: stock,
     nextFreeAt: stock >= FREE_BOOSTER_CAP ? null : updatedAt + FREE_BOOSTER_EVERY_MS,
     unlimited: row.unlimited === 1,
+    seats: row.seats,
+    pity: { legend: row.pity_legend, mythe: row.pity_mythe },
   };
 }
 
 export function createPlayer(db: DatabaseSync, now = Date.now()): Player {
   const id = randomUUID();
-  db.prepare('INSERT INTO players (id, created_at, tickets, free_stock, free_updated_at) VALUES (?, ?, ?, ?, ?)')
-    .run(id, now, STARTING_TICKETS, FREE_BOOSTER_CAP, now);
-  return { id, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null, unlimited: false };
+  db.prepare('INSERT INTO players (id, created_at, tickets, free_stock, free_updated_at, seats) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, now, STARTING_TICKETS, FREE_BOOSTER_CAP, now, STARTING_SEATS);
+  return { id, tickets: STARTING_TICKETS, freeStock: FREE_BOOSTER_CAP, nextFreeAt: null, unlimited: false, seats: STARTING_SEATS, pity: { legend: 0, mythe: 0 } };
 }
 
 export function getPlayer(db: DatabaseSync, id: string, now = Date.now()): Player | null {
-  const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at, unlimited FROM players WHERE id = ?').get(id) as
+  const row = db.prepare(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`).get(id) as
     | PlayerRow
     | undefined;
   if (!row) return null;
@@ -94,6 +106,8 @@ export type OpenResult = {
   boosterId: string;
   paidWith: 'free' | 'tickets';
   cards: PulledCard[];
+  /** Garantie portée par cette bobine (Tapis rouge, Bobine mythique), ou null. */
+  special: Special | null;
   player: Player;
 };
 
@@ -140,6 +154,7 @@ export function openBoosterFor(
   boosterId: string,
   { now = Date.now(), rng = Math.random as Rng, topFirst = false, requestId }: { now?: number; rng?: Rng; topFirst?: boolean; requestId?: string } = {},
 ): OpenResult {
+  // (Voir pity.ts) La garantie se décide au moment d'ouvrir, d'après les compteurs relus dans la transaction.
   const def = getBooster(boosterId);
   if (!def) throw new GameError('unknown-booster', `Bobine inconnue : ${boosterId}`);
   const pool = poolOf(db, def);
@@ -147,7 +162,7 @@ export function openBoosterFor(
   // Toute l'ouverture se fait dans une seule transaction : la réserve et les tickets sont relus et débités
   // au même instant, quel que soit l'onglet (ou la page pas actualisée) d'où vient la demande.
   return transaction(db, () => {
-    const row = db.prepare('SELECT id, tickets, free_stock, free_updated_at, unlimited FROM players WHERE id = ?').get(playerId) as
+    const row = db.prepare(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`).get(playerId) as
       | PlayerRow
       | undefined;
     if (!row) throw new GameError('unknown-player', 'Joueur inconnu');
@@ -160,7 +175,7 @@ export function openBoosterFor(
         const { stock, updatedAt } = regenerate(row, now);
         const cards = (db.prepare('SELECT c.*, o.serial FROM owned o JOIN cards c ON c.id = o.card_id WHERE o.pull_id = ? ORDER BY o.id').all(done.id) as (CardRow & { serial: number })[])
           .map((r) => ({ ...rowToCard(r), serial: r.serial, isNew: false }));
-        return { pullId: done.id, boosterId: done.booster_id, paidWith: done.paid_with, cards, player: toPlayer(row, stock, updatedAt) };
+        return { pullId: done.id, boosterId: done.booster_id, paidWith: done.paid_with, cards, special: null, player: toPlayer(row, stock, updatedAt) };
       }
     }
 
@@ -189,7 +204,17 @@ export function openBoosterFor(
     const countMine = db.prepare('SELECT COUNT(*) AS n FROM owned WHERE card_id = ? AND player_id = ?');
     const insertOwned = db.prepare('INSERT INTO owned (player_id, card_id, serial, pull_id, obtained_at) VALUES (?, ?, ?, ?, ?)');
 
-    const cards = openBooster({ ...def, tags: undefined }, pool, rng, { topFirst }).map((card): PulledCard => {
+    // Garantie : forcée sur les bobines d'essai, sinon d'après les compteurs du joueur.
+    const pity: Pity = { legend: row.pity_legend, mythe: row.pity_mythe };
+    const special: Special | null = def.guarantee ?? nextSpecial(pity, def.slots[0].kind);
+    const drawn = openBooster({ ...def, tags: undefined }, pool, rng, { topFirst, guarantee: special, fallback: getCatalog(db) });
+    const top = Math.max(...drawn.map((c) => RARITIES[c.rarity].tier));
+    db.prepare('UPDATE players SET pity_legend = ?, pity_mythe = ? WHERE id = ?').run(
+      top >= 5 ? 0 : pity.legend + 1,
+      drawn.some((c) => c.rarity === 'mythe') ? 0 : pity.mythe + 1,
+      playerId,
+    );
+    const cards = drawn.map((card): PulledCard => {
       const serial = (countCopies.get(card.id) as { n: number }).n + 1;
       const isNew = (countMine.get(card.id, playerId) as { n: number }).n === 0;
       insertOwned.run(playerId, card.id, serial, pullId, now);
@@ -206,9 +231,41 @@ export function openBoosterFor(
     rewardReferral(db, playerId, now);
     const fresh = db.prepare('SELECT tickets FROM players WHERE id = ?').get(playerId) as { tickets: number };
 
-    return { pullId, boosterId, paidWith, cards, player: toPlayer({ ...row, tickets: fresh.tickets }, stock, updatedAt) };
+    const after = db.prepare(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`).get(playerId) as PlayerRow;
+    return { pullId, boosterId, paidWith, cards, special, player: toPlayer({ ...after, tickets: fresh.tickets }, stock, updatedAt) };
   });
 }
+
+export type MultiOpenResult = { boosterId: string; pulls: Omit<OpenResult, 'player'>[]; player: Player; requested: number };
+
+/**
+ * Ouvre plusieurs bobines d'affilée (×5, ×10, tout). Chacune est une ouverture normale, avec son propre
+ * identifiant de demande (`<requestId>:<n>`) : rejouée, la demande renvoie les mêmes bobines. S'il n'y a plus
+ * de quoi payer en cours de route, on s'arrête là (au moins une doit pouvoir s'ouvrir).
+ */
+export function openBoostersFor(
+  db: DatabaseSync,
+  playerId: string,
+  boosterId: string,
+  count: number,
+  opts: { now?: number; rng?: Rng; topFirst?: boolean; requestId?: string } = {},
+): MultiOpenResult {
+  const n = Math.max(1, Math.min(MAX_OPEN_AT_ONCE, Math.floor(count)));
+  const pulls: Omit<OpenResult, 'player'>[] = [];
+  let player: Player | null = null;
+  for (let i = 0; i < n; i++) {
+    try {
+      const { player: p, ...pull } = openBoosterFor(db, playerId, boosterId, { ...opts, topFirst: opts.topFirst && i === 0, requestId: opts.requestId ? `${opts.requestId}:${i}` : undefined });
+      pulls.push(pull);
+      player = p;
+    } catch (err) {
+      if (err instanceof GameError && err.code === 'not-enough-tickets' && pulls.length > 0) break;
+      throw err;
+    }
+  }
+  return { boosterId, pulls, player: player!, requested: n };
+}
+
 
 /** Exemplaires d'un joueur actuellement en vente au Guichet. */
 function listedOwnedIds(db: DatabaseSync, playerId: string): Set<number> {

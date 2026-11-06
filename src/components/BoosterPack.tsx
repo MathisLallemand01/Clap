@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { slotKinds, type BoosterDef } from '@/lib/boosters';
 import type { Card } from '@/lib/types';
+import { SPECIALS, type Special } from '@/lib/pity';
 import styles from './BoosterPack.module.css';
 
 type Props = {
@@ -18,6 +19,8 @@ type Props = {
   torn?: boolean;
   /** Le geste est en cours (pas de transition : la fente colle au doigt). */
   held?: boolean;
+  /** Paquet garanti : Tapis rouge (Légende / Icône minimum) ou Bobine mythique (Mythe garanti). */
+  special?: Special | null;
   className?: string;
   style?: CSSProperties;
 };
@@ -66,7 +69,7 @@ function contents(booster: BoosterDef): string {
 }
 
 /** Un sachet de cartes en aluminium sombre : la vedette sérigraphiée en points, dans la teinte du thème. */
-export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, tear, torn, held, className, style }: Props) {
+export function BoosterPack({ booster, cover, width = 240, float, interactive, tearing, tear, torn, held, special, className, style }: Props) {
   const t = booster.theme;
   const vars = {
     width,
@@ -79,7 +82,7 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
   } as CSSProperties;
   // Les bobines Événement sont des éditions limitées : leurs accents sont holographiques (multicolores).
   const holo = booster.group === 'event';
-  const classes = [styles.pack, holo && styles.holo, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, torn && styles.torn, tear !== undefined && styles.manual, held && styles.dragging, className].filter(Boolean).join(' ');
+  const classes = [styles.pack, holo && styles.holo, float && styles.float, interactive && styles.interactive, tearing && styles.tearing, torn && styles.torn, tear !== undefined && styles.manual, held && styles.dragging, special === 'tapis-rouge' && styles.tapis, special === 'mythique' && styles.mythique, className].filter(Boolean).join(' ');
   const image = cover?.image?.replace(/\/t\/p\/\w+\//, width * 2 > 500 ? '/t/p/h632/' : '/t/p/w500/');
 
   return (
@@ -93,6 +96,7 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
           </div>
         )}
         <span className={styles.fade} />
+        {special && <span className={styles.specialTint} />}
         <span className={styles.crinkle} />
         <span className={`${styles.perf} ${styles.perfL}`} />
         <span className={`${styles.perf} ${styles.perfR}`} />
@@ -112,6 +116,13 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
         <div className={styles.foot}><span>{contents(booster)}</span></div>
         <span className={styles.seal2026} aria-hidden="true"><i /><b>2026</b></span>
 
+        {special && (
+          // L'habit des paquets garantis : un bandeau en travers et un ruban en bas.
+          <>
+            <span className={styles.sash}><b>{SPECIALS[special].short}</b></span>
+            <span className={styles.ribbon}>★ {SPECIALS[special].guarantee(booster.slots[0].kind)} ★</span>
+          </>
+        )}
         <span className={`${styles.seal} ${styles.sealBottom}`} />
         <span className={styles.edges} />
         <span className={styles.sheen} />
@@ -120,6 +131,7 @@ export function BoosterPack({ booster, cover, width = 240, float, interactive, t
         <span className={`${styles.seal} ${styles.sealTop}`} />
         <span className={styles.tear}>ouvrir ici</span>
       </div>
+      {special && <span className={styles.specialRing} aria-hidden="true" />}
       {tear !== undefined && (
         <>
           {/* La fente lumineuse qui suit le geste, et le liseré de papier déchiré qui apparaît derrière. */}

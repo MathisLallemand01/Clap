@@ -136,3 +136,6 @@
 .packFamily { padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid; }
 .packFamily.familyActor { color: #FFC83D; border-color: #FFC83D88; border-top-width: 1px; }
 .packFamily.familyRole { color: #FF7AB8; border-color: #FF2E9388; border-top-width: 1px; }
+
+/* Bande « derniers tirages » entre l'accroche et la suite. */
+.tickerSlot { margin-top: calc(-1 * clamp(8px, 2vw, 24px)); }

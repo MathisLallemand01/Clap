@@ -82,3 +82,17 @@
 .legendStep { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; }
 .legendStep i { display: inline-block; width: 9px; height: 9px; }
 .shelfLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+
+/* Bande « à l'affiche » entre l'accroche et l'événement. */
+.tickerSlot { margin: 0; }
+
+/* Jauges des garanties, sous la réserve. */
+.pity { display: grid; gap: 8px; max-width: 560px; }
+.pityGauge { display: grid; grid-template-columns: 150px minmax(0, 1fr) 120px; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.pityGauge:hover .pityName { text-decoration: underline; text-underline-offset: 3px; }
+.pityName { font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+.pityBar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.pityBar i { display: block; height: 100%; border-radius: 6px; }
+.pityRainbow { background: linear-gradient(90deg, #ff2440, #ff8a00, #ffe600, #3ddc97, #2ee6d6, #4c8dff, #b57bff, #ff2e93); }
+.pityLeft { text-align: right; white-space: nowrap; }
+@media (max-width: 560px) { .pityGauge { grid-template-columns: 1fr 90px; } .pityBar { grid-column: 1 / -1; grid-row: 2; } }
