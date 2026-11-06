@@ -124,3 +124,7 @@
 }
 .live.mythe, .mythe:hover { animation: mythe-turn 4s linear infinite; }
 @keyframes mythe-turn { to { --mythe-angle: 360deg; } }
+
+/* Affiche (l'acteur identifié dans son rôle) : on garde le haut, où sont les visages. */
+.still img.posterImg { object-position: center 12%; }
+.series { display: inline-block; margin-right: 0.45em; padding: 0 0.35em; border-radius: 0.2em; background: #9B7BFF; color: #0b0b0d; font-weight: 700; letter-spacing: 0.08em; }

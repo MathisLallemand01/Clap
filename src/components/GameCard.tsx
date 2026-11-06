@@ -19,9 +19,10 @@ type Props = {
  * Choisit la taille d'image TMDB pour garder deux pixels par point affiché (écrans haute densité).
  * Le photogramme d'un rôle est un plan large recadré en hauteur : il lui faut environ trois fois la largeur de la carte.
  */
-function sized(url: string, kind: Card['kind'], width: number): string {
-  const size = kind === 'actor'
-    ? (width * 2 <= 185 ? 'w185' : width * 2 <= 342 ? 'w342' : width * 2 <= 500 ? 'w500' : 'h632')
+function sized(url: string, kind: Card['kind'], width: number, poster: boolean): string {
+  // Une affiche est déjà au format portrait : deux pixels par point suffisent (tailles d'affiche TMDB).
+  const size = kind === 'actor' || poster
+    ? (width * 2 <= 185 ? 'w185' : width * 2 <= 342 ? 'w342' : width * 2 <= 500 ? 'w500' : 'w780')
     : (width * 3 <= 300 ? 'w300' : width * 3 <= 780 ? 'w780' : 'w1280');
   return url.replace(/\/t\/p\/\w+\//, `/t/p/${size}/`);
 }
@@ -46,10 +47,12 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
   const initials = `${card.first[0] ?? ''}${card.last[0] ?? ''}`;
   const number = serial ? `№ ${formatSerial(serial)}` : null;
   const top = isTopRarity(card.rarity);
+  const poster = card.tags.includes('img:poster');
+  const series = card.tags.includes('media:tv');
   const family = FAMILY[card.kind];
   const liveClass = live ? styles.live : '';
   const image = card.image
-    ? <img src={sized(card.image, card.kind, width)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    ? <img src={sized(card.image, card.kind, width, poster)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" className={poster ? styles.posterImg : undefined} />
     : null;
   const shine = rarity.foil && (
     <>
@@ -59,7 +62,7 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
   );
   const label = card.kind === 'actor'
     ? `${card.first} ${card.last}, carte Acteur · ${rarity.label}`
-    : `${card.first} ${card.last} dans ${card.film}, rôle de ${card.character}, carte Rôle · ${rarity.label}`;
+    : `${card.first} ${card.last} dans ${series ? 'la série ' : ''}${card.film}, rôle de ${card.character}, carte Rôle · ${rarity.label}`;
   // La famille, écrite sur la photo : on ne confond jamais une carte Acteur et une carte Rôle.
   const chip = <span className={`${styles.family} ${card.kind === 'actor' ? styles.familyActor : styles.familyRole}`}>{family.mark} {family.label.toUpperCase()}</span>;
 
@@ -102,7 +105,7 @@ export function GameCard({ card, width = 240, serial, eager = false, live = fals
           <span className={styles.rarity}><span className={styles.diamond} />{rarity.label}</span>
           {number && <span className={styles.num}>{number}</span>}
         </div>
-        <span className={styles.film}>{card.film}{card.year ? ` · ${card.year}` : ''}</span>
+        <span className={styles.film}>{series && <b className={styles.series}>SÉRIE</b>}{card.film}{card.year ? ` · ${card.year}` : ''}</span>
         <div className={`${styles.photo} ${styles.still}`}>
           {image ?? <span className={styles.source}>PHOTOGRAMME · TMDB</span>}
           {image && <span className={styles.scrim} />}

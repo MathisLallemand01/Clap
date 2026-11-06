@@ -1,10 +1,13 @@
 // Importe le catalogue réel depuis TMDB, à partir de deux sources :
 //   1. les films les plus vus au monde (5 000 par défaut), avec leurs 4 premiers rôles au générique ;
-//   2. les acteurs populaires (10 000 par défaut), avec leurs 10 rôles principaux les plus vus.
+//   2. les séries les plus vues (1 000 par défaut), avec leurs 4 rôles principaux ;
+//   3. les acteurs populaires (10 000 par défaut), avec leurs 10 rôles principaux les plus vus.
+// Quand TMDB a une affiche où l'acteur est identifié (Tom Cruise sur l'affiche de Top Gun : Maverick),
+// elle remplace le plan du film : on voit l'acteur dans son rôle.
 // Ainsi aucun grand film ne manque, et les stars de l'âge d'or arrivent par leurs films.
 //
 //   npm run import:tmdb                                (complet : compter environ 1 h 30)
-//   TMDB_PAGES=25 TMDB_FILM_PAGES=25 npm run import:tmdb   (essai rapide : 500 acteurs, 500 films)
+//   TMDB_PAGES=25 TMDB_FILM_PAGES=25 TMDB_TV_PAGES=5 npm run import:tmdb   (essai rapide)
 //
 // Les hôtes api.themoviedb.org et image.tmdb.org doivent être joignables.
 import { join } from 'node:path';
@@ -21,7 +24,13 @@ if (!KEY) {
 const PAGES = Math.min(500, Number(process.env.TMDB_PAGES ?? 500));
 /** Films les plus vus : pages de 20 (250 pages = 5 000 films). */
 const FILM_PAGES = Math.min(500, Number(process.env.TMDB_FILM_PAGES ?? 250));
+/** Séries les plus vues : pages de 20 (50 pages = 1 000 séries). */
+const TV_PAGES = Math.min(500, Number(process.env.TMDB_TV_PAGES ?? 50));
 const ROLES_PER_ACTOR = 10;
+/** Un rôle de série compte s'il apparaît dans au moins ce nombre d'épisodes. */
+const MIN_EPISODES = 6;
+/** Les séries ont environ deux fois moins de votes que les films : on double pour appliquer les mêmes seuils. */
+const TV_VOTE_FACTOR = 2;
 /** Les 4 premiers noms au générique (0 à 3). */
 const MAX_ORDER = 3;
 const IMG = 'https://image.tmdb.org/t/p';
@@ -66,6 +75,17 @@ const MYTHES = new Set([
   'Toshirō Mifune|七人の侍', 'Bruce Lee|Enter the Dragon', 'Shah Rukh Khan|Dilwale Dulhania Le Jayenge', "Robin Williams|Dead Poets Society",
   'Martin Sheen|Apocalypse Now', 'Ray Liotta|Goodfellas', 'Daniel Day-Lewis|There Will Be Blood', 'Javier Bardem|No Country for Old Men',
   'Kevin Costner|Dances with Wolves', 'Julia Roberts|Pretty Woman', 'Patrick Swayze|Dirty Dancing', 'Sharon Stone|Basic Instinct',
+  // Séries.
+  'Bryan Cranston|Breaking Bad', 'Aaron Paul|Breaking Bad', 'Peter Dinklage|Game of Thrones', 'Emilia Clarke|Game of Thrones',
+  'Kit Harington|Game of Thrones', 'Millie Bobby Brown|Stranger Things', 'Úrsula Corberó|La casa de papel', 'Álvaro Morte|La casa de papel',
+  'Lee Jung-jae|오징어 게임', 'Jennifer Aniston|Friends', 'Matthew Perry|Friends', 'Matt LeBlanc|Friends', 'David Schwimmer|Friends',
+  'Courteney Cox|Friends', 'Lisa Kudrow|Friends', 'Jim Parsons|The Big Bang Theory', 'Steve Carell|The Office', 'Hugh Laurie|House',
+  'Benedict Cumberbatch|Sherlock', 'Cillian Murphy|Peaky Blinders', 'Andrew Lincoln|The Walking Dead', 'Norman Reedus|The Walking Dead',
+  'Wentworth Miller|Prison Break', 'Jenna Ortega|Wednesday', 'Pedro Pascal|The Mandalorian', 'Pedro Pascal|The Last of Us',
+  'Bella Ramsey|The Last of Us', 'Omar Sy|Lupin', 'James Gandolfini|The Sopranos', 'Kiefer Sutherland|24', 'David Duchovny|The X-Files',
+  'Gillian Anderson|The X-Files', 'Sarah Jessica Parker|Sex and the City', 'Neil Patrick Harris|How I Met Your Mother',
+  'Sarah Michelle Gellar|Buffy the Vampire Slayer', 'Henry Cavill|The Witcher', 'Tom Ellis|Lucifer', 'Jon Hamm|Mad Men',
+  'Rami Malek|Mr. Robot', 'Jared Padalecki|Supernatural', 'Jensen Ackles|Supernatural', 'Matthew Fox|Lost',
 ].map((k) => norm(k)));
 
 /** Monstres sacrés : Légendes d'office, même si les votes TMDB favorisent les films récents. */
@@ -81,6 +101,9 @@ const LEGENDS = new Set([
 
 const GENRES: Record<number, string> = { 28: 'action', 35: 'comedy', 878: 'scifi', 27: 'horror', 18: 'drama', 16: 'animation', 37: 'western' };
 
+/** Genres TMDB des séries (l'animation, les documentaires, la télé-réalité et les talk-shows sont écartés). */
+const TV_GENRES: Record<number, string> = { 10759: 'action', 35: 'comedy', 80: 'crime', 18: 'drama', 9648: 'mystery', 10765: 'scifi', 10768: 'war', 37: 'western', 10751: 'family' };
+
 type Person = { id: number; name: string; known_for_department: string; adult: boolean; profile_path: string | null };
 type CastCredit = {
   id: number; title: string; original_title: string; character: string; order: number; release_date?: string;
@@ -94,7 +117,13 @@ type MovieDetails = {
   credits?: { cast: { id: number; name: string; character: string; order: number; profile_path: string | null; known_for_department?: string }[] };
 };
 /** Un rôle repéré, en attendant de connaître le rang de son acteur pour calculer sa rareté. */
-type RoleFacts = { personId: number; order: number; character: string; movie: MovieDetails };
+type RoleFacts = { personId: number; order: number; character: string; movie: MovieDetails; tv?: boolean };
+type TvDetails = {
+  id: number; name: string; original_name: string; first_air_date?: string; vote_count: number; vote_average: number;
+  genres: { id: number }[]; origin_country: string[]; backdrop_path: string | null; poster_path: string | null;
+  aggregate_credits?: { cast: { id: number; name: string; profile_path: string | null; order: number; total_episode_count: number; roles: { character: string; episode_count: number }[] }[] };
+};
+type Tagged = { results: { file_path: string; image_type: string; media_type: string; vote_average: number; media?: { id: number } }[] };
 
 async function tmdb<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`https://api.themoviedb.org/3${path}`);
@@ -148,10 +177,10 @@ async function main() {
   const db = openDb(process.env.CLAP_DB_PATH || join(process.cwd(), 'data', 'clap.db'));
   const people = new Map<number, { id: number; name: string; profile: string | null; popRank: number | null }>();
   const roles = new Map<string, RoleFacts>();
-  const addRole = (personId: number, order: number, character: string, m: MovieDetails) => {
-    const key = `role:${personId}:${m.id}`;
+  const addRole = (personId: number, order: number, character: string, m: MovieDetails, tv = false) => {
+    const key = `role:${personId}:${tv ? 'tv' : ''}${m.id}`;
     const prev = roles.get(key);
-    if (!prev || order < prev.order) roles.set(key, { personId, order, character, movie: m });
+    if (!prev || order < prev.order) roles.set(key, { personId, order, character, movie: m, tv });
   };
 
   // 1. Les films les plus vus, avec leurs premiers rôles.
@@ -173,7 +202,34 @@ async function main() {
     if (++done % 500 === 0) console.log(`  ${done} / ${filmIds.length} films, ${people.size} acteurs, ${roles.size} rôles`);
   });
 
-  // 2. Les acteurs populaires, avec leurs rôles principaux les plus vus.
+  // 2. Les séries les plus vues, avec leurs rôles principaux.
+  console.log(`Séries les plus vues : ${TV_PAGES} pages…`);
+  const tvPages = await pool(Array.from({ length: TV_PAGES }, (_, i) => i + 1), 8, (page) =>
+    tmdb<{ results: { id: number }[] }>('/discover/tv', { sort_by: 'vote_count.desc', page: String(page), without_genres: '16,99,10762,10763,10764,10767' })
+      .catch(() => ({ results: [] })));
+  const tvIds = [...new Set(tvPages.flatMap((p) => p.results.map((r) => r.id)))];
+  done = 0;
+  await pool(tvIds, 8, async (id) => {
+    const t = await tmdb<TvDetails>(`/tv/${id}`, { append_to_response: 'aggregate_credits' }).catch(() => null);
+    if (t?.aggregate_credits && t.first_air_date) {
+      // La série prend la forme d'un film pour le reste de l'import ; son genre et son pays suivent ses propres règles.
+      const asMovie: MovieDetails = {
+        id: t.id, title: t.name, original_title: t.original_name, release_date: t.first_air_date,
+        vote_count: t.vote_count * TV_VOTE_FACTOR, vote_average: t.vote_average, revenue: 0,
+        genres: t.genres, production_countries: t.origin_country.map((c) => ({ iso_3166_1: c })),
+        backdrop_path: t.backdrop_path, poster_path: t.poster_path, belongs_to_collection: null,
+      };
+      for (const c of t.aggregate_credits.cast) {
+        const main = [...c.roles].sort((a, b) => b.episode_count - a.episode_count)[0];
+        if (c.order > MAX_ORDER || c.total_episode_count < MIN_EPISODES || !c.profile_path || !main || !playsOnScreen(main.character)) continue;
+        if (!people.has(c.id)) people.set(c.id, { id: c.id, name: c.name, profile: c.profile_path, popRank: null });
+        addRole(c.id, c.order, main.character, asMovie, true);
+      }
+    }
+    if (++done % 250 === 0) console.log(`  ${done} / ${tvIds.length} séries, ${roles.size} rôles`);
+  });
+
+  // 3. Les acteurs populaires, avec leurs rôles principaux les plus vus.
   console.log(`Acteurs populaires : ${PAGES} pages…`);
   const pages = await pool(Array.from({ length: PAGES }, (_, i) => i + 1), 8, (page) =>
     tmdb<{ results: Person[] }>('/person/popular', { page: String(page) }).catch(() => ({ results: [] as Person[] })));
@@ -211,6 +267,24 @@ async function main() {
   const ranked = [...people.values()].filter((p) => fame.has(p.id)).sort((a, b) => fame.get(b.id)! - fame.get(a.id)!);
   const rankOf = new Map(ranked.map((p, i) => [p.id, i + 1]));
 
+  // 4. Les affiches où l'acteur est identifié : l'acteur dans son rôle, plutôt qu'un plan sans lui.
+  console.log(`Affiches identifiées : ${ranked.length} acteurs…`);
+  const tagged = new Map<string, { path: string; poster: boolean; score: number }>();
+  done = 0;
+  await pool(ranked, 8, async (p) => {
+    const t = await tmdb<Tagged>(`/person/${p.id}/tagged_images`).catch(() => null);
+    for (const im of t?.results ?? []) {
+      if (!im.media?.id || (im.media_type !== 'movie' && im.media_type !== 'tv')) continue;
+      if (im.image_type !== 'poster' && im.image_type !== 'backdrop') continue;
+      const key = `role:${p.id}:${im.media_type === 'tv' ? 'tv' : ''}${im.media.id}`;
+      // Un plan de scène (backdrop) passe avant une affiche ; à égalité, la mieux notée.
+      const score = (im.image_type === 'backdrop' ? 100 : 0) + im.vote_average;
+      const prev = tagged.get(key);
+      if (!prev || score > prev.score) tagged.set(key, { path: im.file_path, poster: im.image_type === 'poster', score });
+    }
+    if (++done % 1000 === 0) console.log(`  ${done} / ${ranked.length} acteurs, ${tagged.size} affiches`);
+  });
+
   const cards: Card[] = [];
   const sagas = new Map<number, string>();
   const countryCount = new Map<number, Map<string, number>>();
@@ -231,7 +305,9 @@ async function main() {
     const { first, last } = split(p.name);
     const year = Number(m.release_date.slice(0, 4));
     const countries = m.production_countries.map((c) => `country:${c.iso_3166_1}`);
-    const genres = m.genres.map((g) => GENRES[g.id]).filter(Boolean).map((g) => `genre:${g}`);
+    const genres = r.tv
+      ? m.genres.map((g) => TV_GENRES[g.id]).filter(Boolean).map((g) => `tvgenre:${g}`)
+      : m.genres.map((g) => GENRES[g.id]).filter(Boolean).map((g) => `genre:${g}`);
     const saga = m.belongs_to_collection;
     if (saga) sagas.set(saga.id, saga.name.replace(/\s*-\s*Saga$/i, '').replace(/^Saga\s+/i, ''));
     const mythe = MYTHES.has(norm(`${p.name}|${m.original_title}`)) || MYTHES.has(norm(`${p.name}|${m.title}`));
@@ -239,19 +315,26 @@ async function main() {
       votes: m.vote_count, average: m.vote_average, revenue: m.revenue ?? 0, order: r.order,
       saga: !!saga, actorRank: rankOf.get(p.id) ?? Infinity, mythe,
     });
-    const still = m.backdrop_path ?? m.poster_path;
+    const own = tagged.get(id);
+    const still = own?.path ?? m.backdrop_path ?? m.poster_path;
+    const isPoster = own ? own.poster : !m.backdrop_path;
     const counts = countryCount.get(p.id) ?? new Map<string, number>();
     for (const c of countries) counts.set(c, (counts.get(c) ?? 0) + 1);
     countryCount.set(p.id, counts);
     cards.push({
-      id, kind: 'role', personId: p.id, first, last, tone: TONES[p.id % TONES.length], rarity, rank: rankOf.get(p.id), votes: m.vote_count,
-      movieId: m.id, film: m.title, year, character: r.character.split(' / ')[0].replace(/\s*\(uncredited\)/i, ''),
+      id, kind: 'role', personId: p.id, first, last, tone: TONES[p.id % TONES.length], rarity, rank: rankOf.get(p.id),
+      votes: r.tv ? Math.round(m.vote_count / TV_VOTE_FACTOR) : m.vote_count,
+      // Une série est rangée sous un identifiant négatif pour ne jamais croiser un film du même numéro.
+      movieId: r.tv ? -m.id : m.id, film: m.title, year, character: r.character.split(' / ')[0].replace(/\s*\(uncredited\)/i, ''),
       image: still ? `${IMG}/w780${still}` : null,
       tags: [
         ...countries, ...genres, `decade:${Math.floor(year / 10) * 10}`,
+        ...(r.tv ? ['media:tv'] : []),
+        ...(own ? ['img:actor'] : []),
+        ...(isPoster ? ['img:poster'] : []),
         ...(m.revenue >= 300_000_000 ? ['blockbuster'] : []),
         ...(saga ? [`saga:${saga.id}`] : []),
-        ...(m.vote_average >= 7.8 && m.vote_count >= 3_000 ? ['acclaimed'] : []),
+        ...(!r.tv && m.vote_average >= 7.8 && m.vote_count >= 3_000 ? ['acclaimed'] : []),
       ],
     });
   }
@@ -270,7 +353,10 @@ async function main() {
   // Le catalogue de démarrage disparaît, sauf les cartes déjà possédées par des joueurs.
   db.exec('DELETE FROM cards WHERE person_id < 0 AND id NOT IN (SELECT card_id FROM owned)');
   const count = (kind: string, rarity?: string) => cards.filter((c) => c.kind === kind && (!rarity || c.rarity === rarity)).length;
-  console.log(`Importé : ${count('actor')} cartes Acteur, ${count('role')} cartes Rôle, ${sagas.size} sagas.`);
+  const series = cards.filter((c) => c.tags.includes('media:tv')).length;
+  const withActor = cards.filter((c) => c.tags.includes('img:actor')).length;
+  console.log(`Importé : ${count('actor')} cartes Acteur, ${count('role')} cartes Rôle (dont ${series} de séries), ${sagas.size} sagas.`);
+  console.log(`  ${withActor} rôles illustrés par une image où l'acteur est identifié.`);
   console.log(`  Rôles : ${['mythe', 'icone', 'vedette', 'culte', 'succes', 'serieb'].map((r) => `${r} ${count('role', r)}`).join(' · ')}`);
   console.log(`  Acteurs : ${['legende', 'tete', 'premier', 'second', 'figurant'].map((r) => `${r} ${count('actor', r)}`).join(' · ')}`);
 }

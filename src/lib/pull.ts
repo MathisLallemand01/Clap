@@ -5,6 +5,11 @@ import type { Card } from './types.ts';
 
 export type Rng = () => number;
 
+/** Un rôle de série (et non de film). */
+export function isSeries(card: Pick<Card, 'tags'>): boolean {
+  return card.tags.includes('media:tv');
+}
+
 /** Un film « que tout le monde a vu » : au moins 15 000 votes sur TMDB. */
 export const FAMOUS_VOTES = 15_000;
 
@@ -25,6 +30,10 @@ export function rollRarity(slot: Slot, rng: Rng): Rarity {
  * l'un des tags ou s'il a au moins un Rôle qui en porte un (ex. un acteur d'un film des années 80).
  */
 export function boosterPool(def: BoosterDef, catalog: Card[]): Card[] {
+  // Séries et cinéma ne se mélangent pas : une bobine Séries ne donne que des séries, les autres que du cinéma.
+  // Les cartes Acteur (une personne, toute sa carrière) restent communes aux deux.
+  const series = def.media === 'tv';
+  catalog = catalog.filter((c) => c.kind === 'actor' || isSeries(c) === series);
   if (def.pool === 'themes') return catalog.filter((c) => themeFor(c));
   if (def.pool === 'famous') return catalog.filter((c) => c.kind === 'role' && (c.votes ?? 0) >= FAMOUS_VOTES && RARITIES[c.rarity].tier >= 3);
   if (def.pool === 'sagas' || def.pool === 'acclaimed') {

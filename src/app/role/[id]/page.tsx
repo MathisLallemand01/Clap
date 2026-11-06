@@ -36,6 +36,7 @@ export default async function RolePage({ params }: Props) {
   const owned = ownedCardIds(db, ctx.player.id);
   const copies = ownedCopies(db, ctx.player.id, card.id);
   const info = card.movieId ? await movieInfo(card.movieId) : null;
+  const series = card.tags.includes('media:tv');
   const rarity = RARITIES[card.rarity];
   const cast = card.movieId ? cardsOfMovie(db, card.movieId) : [card];
   const otherRoles = cardsOfPerson(db, card.personId).filter((c) => c.kind === 'role' && c.id !== card.id).slice(0, 12);
@@ -65,8 +66,9 @@ export default async function RolePage({ params }: Props) {
             </p>
             <div className={styles.facts}>
               <span>{card.year}</span>
-              {info?.directors.length ? <span>Réal. {info.directors.join(', ')}</span> : null}
-              {runtime(info?.runtime ?? null) && <span>{runtime(info!.runtime)}</span>}
+              {series && <span>Série</span>}
+              {info?.directors.length ? <span>{series ? 'Créée par' : 'Réal.'} {info.directors.join(', ')}</span> : null}
+              {runtime(info?.runtime ?? null) && <span>{runtime(info!.runtime)}{series ? ' par épisode' : ''}</span>}
               {info?.genres.length ? <span>{info.genres.slice(0, 3).join(' · ')}</span> : null}
             </div>
             {info?.overview && <p className="lead">{info.overview}</p>}

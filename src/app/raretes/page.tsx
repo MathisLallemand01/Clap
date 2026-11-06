@@ -49,8 +49,8 @@ export default async function RaritiesPage() {
         <header className={styles.hero}>
           <h1 className="display h1">Acteur ou Rôle ?<br /><span className="accent">Tout comprendre.</span></h1>
           <ul className={styles.facts}>
-            <li><b>Deux familles de cartes</b> : la carte <b>Acteur</b> (une personne) et la carte <b>Rôle</b> (un acteur dans un film).</li>
-            <li><b>Deux sortes de bobines</b> : les <b>Castings</b> ne donnent que des Acteurs, les <b>Films</b> que des Rôles. Jamais de mélange.</li>
+            <li><b>Deux familles de cartes</b> : la carte <b>Acteur</b> (une personne) et la carte <b>Rôle</b> (un acteur dans un film ou une série).</li>
+            <li><b>Deux sortes de bobines</b> : les <b>Castings</b> ne donnent que des Acteurs, les <b>Films & séries</b> que des Rôles. Les bobines Séries ne contiennent que des séries.</li>
             <li><b>Les cartes se révèlent de la moins rare à la plus rare.</b> La dernière est toujours la meilleure.</li>
             <li><b>Les deux familles se complètent</b> : une carte Acteur + un de ses Rôles = un <b>duo</b> ; tous les rôles d’une saga = une <b>saga complète</b>.</li>
           </ul>
@@ -62,7 +62,7 @@ export default async function RaritiesPage() {
           <div className={styles.families}>
             {[
               { kind: 'actor' as const, card: actorExample, what: 'Une personne et toute sa carrière : pas de film, pas de personnage.', points: ['Pastille « ● ACTEUR » sur la photo', 'Portrait plein cadre, nom en grand, pays', 'Des ronds : de 1 (Figurant) à 5 (Légende)', 'Couleurs : gris, vert, bleu, violet, or'] },
-              { kind: 'role' as const, card: roleExample, what: 'Un acteur dans un film précis, avec son personnage.', points: ['Pastille « ◆ RÔLE » sur la photo', 'Pellicule perforée, titre du film, « Dans le rôle de… »', 'Des losanges : de 1 (Série B) à 6 (Mythe)', 'Couleurs : beige, lime, cyan, ambre, rose, rouge'] },
+              { kind: 'role' as const, card: roleExample, what: 'Un acteur dans un film ou une série, avec son personnage.', points: ['Pastille « ◆ RÔLE » sur la photo', 'Pellicule perforée, titre (et mention SÉRIE), « Dans le rôle de… »', 'Des losanges : de 1 (Série B) à 6 (Mythe)', 'Couleurs : beige, lime, cyan, ambre, rose, rouge'] },
             ].map((f) => (
               <article key={f.kind} className={`${styles.family} ${f.kind === 'actor' ? styles.familyActor : styles.familyRole}`}>
                 {f.card && <CardLink card={f.card}><GameCard card={f.card} width={210} live /></CardLink>}

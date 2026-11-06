@@ -73,7 +73,7 @@ export default async function LandingPage() {
                 <span className="accent">carte</span> par<br />carte.
               </h1>
               <p className="lead">
-                Deux familles de cartes : les <b>Acteurs</b>, du figurant à la légende, et leurs <b>Rôles</b>, de la série B au mythe. Ouvrez des bobines, formez des duos, complétez les sagas.
+                Deux familles de cartes : les <b>Acteurs</b>, du figurant à la légende, et leurs <b>Rôles</b> au cinéma et en série, de la série B au mythe. Ouvrez des bobines, formez des duos, complétez les sagas.
               </p>
               <div className={styles.ctas}>
                 <Link href={ctx ? '/bobines' : '/ouvrir/tout-clap'} className="btn btn-primary btn-lg">{ctx ? 'Ouvrir une bobine' : 'Ouvrir ma bobine offerte'} <ArrowIcon /></Link>
@@ -170,10 +170,10 @@ export default async function LandingPage() {
                   )}
                   <div className={styles.familyText}>
                     <span className={styles.familyKicker}>{FAMILY[kind].mark} CARTE {FAMILY[kind].label.toUpperCase()}</span>
-                    <h3 className="display h3">{kind === 'actor' ? 'Une personne' : 'Un rôle dans un film'}</h3>
+                    <h3 className="display h3">{kind === 'actor' ? 'Une personne' : 'Un rôle, film ou série'}</h3>
                     <p>{kind === 'actor'
                       ? 'Le portrait d’un acteur et toute sa carrière. Sa rareté dit à quel point il est célèbre.'
-                      : 'Un acteur dans un film précis, avec son personnage. Sa rareté dit à quel point le film et le rôle sont mythiques.'}</p>
+                      : 'Un acteur dans un film ou une série, avec son personnage. Sa rareté dit à quel point l’œuvre et le rôle sont mythiques.'}</p>
                     <span className={styles.familyWhere}>Dans les bobines <b>{FAMILY_SHELVES[kind].title}</b> · {kind === 'actor' ? 'marqueurs ronds' : 'marqueurs en losange'}</span>
                   </div>
                 </div>

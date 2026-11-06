@@ -20,7 +20,7 @@ export function RarityLadder({ kind, detailed = false }: { kind: CardKind; detai
     <div className={`${styles.ladder} ${kind === 'actor' ? styles.actor : styles.role}`}>
       <div className={styles.head}>
         <span className={styles.kicker}><i className={kind === 'actor' ? styles.round : styles.diamond} />CARTES {family.label.toUpperCase()} · BOBINES {FAMILY_SHELVES[kind].title.toUpperCase()}</span>
-        <span className={styles.basis}>{kind === 'actor' ? 'La personne, toute sa carrière.' : 'Un acteur dans un film précis.'}</span>
+        <span className={styles.basis}>{kind === 'actor' ? 'La personne, toute sa carrière.' : 'Un acteur dans un film ou une série.'}</span>
       </div>
       <ol className={styles.rows}>
         {rows.map((r) => {

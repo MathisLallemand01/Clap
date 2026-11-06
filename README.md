@@ -21,12 +21,16 @@ La base SQLite est créée au premier lancement dans `data/clap.db`, avec un cat
 
 ```bash
 cp .env.example .env   # puis renseigner TMDB_API_KEY
-npm run import:tmdb    # ~13 000 acteurs, ~45 000 rôles, ~1 800 sagas : environ 30 minutes
-TMDB_PAGES=25 TMDB_FILM_PAGES=25 npm run import:tmdb   # essai rapide
+npm run import:tmdb    # films, séries, acteurs, sagas : compter 45 minutes à 1 heure
+TMDB_PAGES=25 TMDB_FILM_PAGES=25 TMDB_TV_PAGES=5 npm run import:tmdb   # essai rapide
 ```
 
-Le script part de deux sources : les **5 000 films les plus vus** (avec leurs 4 premiers rôles au
-générique) et les **acteurs populaires** (avec leurs 10 rôles principaux les plus vus). Aucun grand
+Le script part de trois sources : les **5 000 films les plus vus** (avec leurs 4 premiers rôles au
+générique), les **1 000 séries les plus vues** (rôles principaux présents dans au moins 6 épisodes) et
+les **acteurs populaires** (avec leurs 10 rôles principaux les plus vus). Quand TMDB a une image où
+l’acteur est identifié (l’affiche de *Top Gun : Maverick* avec Tom Cruise), elle illustre la carte Rôle ;
+sinon c’est un plan du film. Les séries ont leurs propres bobines (Séries cultes, policières, SF,
+sitcoms, drames) et ne se mélangent pas aux bobines de cinéma. Aucun grand
 film ne manque, et les stars de l’âge d’or arrivent par leurs films. Les rôles de doublage et les
 dessins animés sont écartés : une carte Rôle doit montrer l’acteur à l’image.
 

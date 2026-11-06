@@ -65,7 +65,9 @@ export type MovieInfo = {
   videos: Video[];
 };
 
+/** Fiche d'un film, ou d'une série quand l'identifiant est négatif (convention du catalogue). */
 export function movieInfo(movieId: number): Promise<MovieInfo | null> {
+  if (movieId < 0) return tvInfo(-movieId);
   return cached(`movie:${movieId}`, async () => {
     type M = {
       title: string; original_title: string; overview: string; runtime: number | null; release_date: string | null;
@@ -83,6 +85,27 @@ export function movieInfo(movieId: number): Promise<MovieInfo | null> {
       title: m.title, originalTitle: m.original_title, overview: m.overview, runtime: m.runtime, releaseDate: m.release_date,
       genres: m.genres.map((g) => g.name), directors: m.credits.crew.filter((c) => c.job === 'Director').map((c) => c.name),
       backdrop: m.backdrop_path ? `${TMDB_IMG}/w1280${m.backdrop_path}` : null, videos,
+    };
+  });
+}
+
+/** Fiche d'une série : les créateurs tiennent la place des réalisateurs, la durée est celle d'un épisode. */
+function tvInfo(tvId: number): Promise<MovieInfo | null> {
+  return cached(`tv:${tvId}`, async () => {
+    type T = {
+      name: string; original_name: string; overview: string; episode_run_time: number[]; first_air_date: string | null;
+      genres: { name: string }[]; backdrop_path: string | null; created_by: { name: string }[];
+      videos: { results: { key: string; name: string; type: string; site: string; iso_639_1: string; official: boolean }[] };
+    };
+    const t = await tmdb<T>(`/tv/${tvId}`, { language: 'fr-FR', append_to_response: 'videos', include_video_language: 'fr,en,null' });
+    const videos = t.videos.results
+      .filter((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+      .map((v) => ({ key: v.key, name: v.name, type: v.type, language: v.iso_639_1, official: v.official }))
+      .sort((a, b) => Number(b.type === 'Trailer') - Number(a.type === 'Trailer') || Number(b.language === 'fr') - Number(a.language === 'fr') || Number(b.official) - Number(a.official));
+    return {
+      title: t.name, originalTitle: t.original_name, overview: t.overview, runtime: t.episode_run_time[0] ?? null, releaseDate: t.first_air_date,
+      genres: t.genres.map((g) => g.name), directors: t.created_by.map((c) => c.name),
+      backdrop: t.backdrop_path ? `${TMDB_IMG}/w1280${t.backdrop_path}` : null, videos,
     };
   });
 }

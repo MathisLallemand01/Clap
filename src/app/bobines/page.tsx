@@ -25,7 +25,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const SHELVES: { id: string; family: BoosterFamily | null; label: string }[] = [
   { id: 'tout', family: null, label: 'Tout' },
   { id: 'castings', family: 'actor', label: 'Castings · cartes Acteur' },
-  { id: 'films', family: 'role', label: 'Films · cartes Rôle' },
+  { id: 'films', family: 'role', label: 'Films & séries · cartes Rôle' },
 ];
 
 export default async function BoostersPage({ searchParams }: { searchParams: Promise<{ rayon?: string }> }) {

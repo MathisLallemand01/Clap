@@ -40,17 +40,17 @@ export const RARITIES: Record<Rarity, RarityInfo> = {
   legende: { id: 'legende', kind: 'actor', label: 'Légende', short: 'LÉG', color: '#FFC83D', tier: 5, entries: 100_000, foil: true,
     rule: 'Un monstre sacré du cinéma, âge d’or compris.' },
   serieb: { id: 'serieb', kind: 'role', label: 'Série B', short: 'SÉRIE B', color: '#D9B48A', tier: 1, entries: 2_500, foil: false,
-    rule: 'Un film peu vu : moins de 1 000 votes.' },
+    rule: 'Un film ou une série peu vus : moins de 1 000 votes.' },
   succes: { id: 'succes', kind: 'role', label: 'Succès', short: 'SUCCÈS', color: '#C6F05A', tier: 2, entries: 8_000, foil: false,
-    rule: 'Un film connu : 1 000 votes et plus.' },
+    rule: 'Un film ou une série connus : 1 000 votes et plus.' },
   culte: { id: 'culte', kind: 'role', label: 'Culte', short: 'CULTE', color: '#2EE6D6', tier: 3, entries: 30_000, foil: false,
-    rule: 'Un film vu par tous (5 000 votes) ou acclamé (note de 7,5 et plus).' },
+    rule: 'Un film ou une série vus par tous, ou acclamés (note de 7,5 et plus).' },
   vedette: { id: 'vedette', kind: 'role', label: 'Vedette', short: 'VEDETTE', color: '#FFB547', tier: 4, entries: 100_000, foil: true,
     rule: 'Une star en tête d’affiche : Brad Pitt dans Bullet Train, Tom Cruise dans Top Gun : Maverick.' },
   icone: { id: 'icone', kind: 'role', label: 'Icône', short: 'ICÔNE', color: '#FF2E93', tier: 5, entries: 400_000, foil: true,
-    rule: 'La tête d’affiche d’une saga ou d’un best-seller : Star Wars, Harry Potter, Fast & Furious…' },
+    rule: 'La tête d’affiche d’une saga, d’un best-seller ou d’une série phare : Star Wars, Harry Potter, Breaking Bad…' },
   mythe: { id: 'mythe', kind: 'role', label: 'Mythe', short: 'MYTHE', color: '#FF2440', tier: 6, entries: 1_500_000, foil: true,
-    rule: 'Un personnage entré dans la légende, choisi un à un : Vito Corleone, Jack Sparrow, Neo…' },
+    rule: 'Un personnage entré dans la légende, choisi un à un : Vito Corleone, Jack Sparrow, Walter White…' },
 };
 
 export const ACTOR_LADDER: ActorRarity[] = ['figurant', 'second', 'premier', 'tete', 'legende'];

@@ -6,7 +6,7 @@ export type Slot =
   | { kind: 'actor'; odds: Odds<ActorRarity> }
   | { kind: 'role'; odds: Odds<RoleRarity> };
 
-export type BoosterGroup = 'permanent' | 'event' | 'country' | 'genre' | 'era';
+export type BoosterGroup = 'permanent' | 'event' | 'series' | 'country' | 'genre' | 'era';
 
 /**
  * Habillage du paquet : un aluminium sombre teinté d'une seule couleur, la vedette en photo atténuée,
@@ -42,6 +42,8 @@ export type BoosterDef = {
    * `famous` = uniquement les grands rôles (Culte et au-dessus) des films les plus vus.
    */
   pool?: 'themes' | 'famous' | 'sagas' | 'acclaimed';
+  /** `tv` : uniquement des rôles de séries. Les autres bobines Film ne contiennent que du cinéma. */
+  media?: 'tv';
   slots: Slot[];
   theme: PackTheme;
 };
@@ -172,6 +174,21 @@ const specs: Spec[] = [
   { id: 'sagas', name: 'Sagas', group: 'event', price: 1200, pool: 'sagas',
     description: 'Les rôles principaux des sagas : Star Wars, Harry Potter, Fast & Furious, 007, Marvel…', slots: roles(5, SAGA_ODDS),
     theme: { hue: '#FF2E93', base: '#2A0A1C', metal: '#46122E', label: 'ÉVÉNEMENT', chance: ['ICÔNE', '27 %'] } },
+  { id: 'series', name: 'Séries cultes', group: 'series', price: 800, media: 'tv',
+    description: 'Les rôles principaux des séries les plus vues : Breaking Bad, Friends, Game of Thrones, Stranger Things…',
+    theme: { hue: '#9B7BFF', base: '#1A1436', metal: '#2A2252', label: 'SÉRIES', title: 'Séries\ncultes' } },
+  { id: 'series-crime', name: 'Séries policières', group: 'series', price: 800, media: 'tv', tags: ['tvgenre:crime', 'tvgenre:mystery'],
+    description: 'Enquêtes, braquages et mafieux : La casa de papel, Peaky Blinders, Sherlock, Les Soprano…',
+    theme: { hue: '#C9A26B', base: '#241B10', metal: '#3C2E1A', label: 'SÉRIES · CRIME', title: 'Séries\npolicières' } },
+  { id: 'series-sf', name: 'Séries SF & fantastique', group: 'series', price: 800, media: 'tv', tags: ['tvgenre:scifi'],
+    description: 'Dragons, mondes parallèles et vaisseaux : Game of Thrones, Stranger Things, The Mandalorian…',
+    theme: { hue: '#5FD3C8', base: '#0A2226', metal: '#12363B', label: 'SÉRIES · SF', title: 'SF &\nfantastique' } },
+  { id: 'series-comedie', name: 'Sitcoms & comédies', group: 'series', price: 800, media: 'tv', tags: ['tvgenre:comedy'],
+    description: 'Friends, The Office, How I Met Your Mother, The Big Bang Theory…',
+    theme: { hue: '#E8C35A', base: '#2A220A', metal: '#463814', label: 'SÉRIES · COMÉDIE', title: 'Sitcoms' } },
+  { id: 'series-drame', name: 'Séries dramatiques', group: 'series', price: 800, media: 'tv', tags: ['tvgenre:drama'],
+    description: 'Breaking Bad, The Last of Us, Mad Men, Succession…',
+    theme: { hue: '#C79BB8', base: '#24121F', metal: '#3A1E33', label: 'SÉRIES · DRAME', title: 'Drames' } },
   { id: 'casting-france', name: 'Casting France', group: 'country', price: 400, tags: ['country:FR'],
     description: 'Cinq cartes Acteur du cinéma français, de Gabin à Omar Sy.', slots: actors(5),
     theme: { hue: '#8EA6E8', base: '#141B38', metal: '#232D5A', label: 'CASTING · FRANCE', title: 'Casting\nFrance' } },
@@ -194,13 +211,14 @@ export const BOOSTERS: Booster[] = specs.map((s, i) => {
 /** Les deux rayons de la page Bobines. */
 export const FAMILY_SHELVES: Record<BoosterFamily, { title: string; chip: string; description: string }> = {
   actor: { title: 'Castings', chip: '5 ACTEURS', description: 'Uniquement des cartes Acteur : la personne, toute sa carrière. Pour compléter vos duos.' },
-  role: { title: 'Films', chip: '5 RÔLES', description: 'Uniquement des cartes Rôle : un acteur dans un film précis, du moins rare au plus rare.' },
+  role: { title: 'Films & séries', chip: '5 RÔLES', description: 'Uniquement des cartes Rôle : un acteur dans un film ou une série, du moins rare au plus rare.' },
 };
 
 /** L'ordre des catégories à l'écran : les événements d'abord. */
 export const GROUP_LABELS: Record<BoosterGroup, string> = {
   event: 'Événements',
   permanent: 'Permanentes',
+  series: 'Séries',
   country: 'Pays',
   genre: 'Genres',
   era: 'Époques',

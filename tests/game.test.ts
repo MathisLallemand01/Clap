@@ -166,3 +166,14 @@ test('une bobine ne mélange jamais les familles : Casting = Acteurs, Film = Rô
   }
   assert.ok(BOOSTERS.some((b) => b.family === 'actor') && BOOSTERS.some((b) => b.family === 'role'));
 });
+
+test('séries : les bobines Séries ne donnent que des séries, les autres bobines Film que du cinéma', () => {
+  const db = openDb(':memory:');
+  const role = db.prepare("SELECT id FROM cards WHERE kind = 'role' LIMIT 1").get() as { id: string };
+  db.prepare("UPDATE cards SET tags = ? WHERE id = ?").run(JSON.stringify(['media:tv', 'tvgenre:drama']), role.id);
+  const catalog = getCatalog(db);
+  const series = boosterPool(getBooster('series')!, catalog);
+  assert.deepEqual(series.filter((c) => c.kind === 'role').map((c) => c.id), [role.id]);
+  assert.ok(boosterPool(getBooster('tout-clap')!, catalog).every((c) => !c.tags.includes('media:tv')));
+  assert.ok(boosterPool(getBooster('series-drame')!, catalog).some((c) => c.id === role.id));
+});
